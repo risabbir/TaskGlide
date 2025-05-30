@@ -42,7 +42,9 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
       setSuggestions([]);
 
       try {
-        const tasksForAI: SuggestFocusBatchInput['tasks'] = allTasks.map(task => ({
+        const tasksForAI: SuggestFocusBatchInput['tasks'] = allTasks
+          .filter(task => task.columnId !== 'done') // Only suggest from non-done tasks
+          .map(task => ({
           id: task.id,
           title: task.title,
           priority: task.priority,
@@ -51,6 +53,12 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
           dueDate: task.dueDate ? (task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate) : undefined,
         }));
 
+        if (tasksForAI.length === 0) {
+          setError("All tasks are marked as done. Nothing to suggest for focus.");
+          setIsLoading(false);
+          return;
+        }
+        
         const result = await suggestFocusBatch({ tasks: tasksForAI });
         if (result.suggestions && result.suggestions.length > 0) {
           setSuggestions(result.suggestions);
@@ -84,7 +92,8 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </DialogDescription>
       </DialogHeader>
       
-      <ScrollArea className="flex-grow min-h-0 custom-scrollbar">
+      {/* The ScrollArea will enable scrolling if its content overflows */}
+      <ScrollArea className="flex-grow min-h-0"> {/* Removed custom-scrollbar class */}
         <div className="p-6 space-y-4">
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-10">
