@@ -7,7 +7,7 @@ import { SheetTrigger } from "@/components/ui/sheet"; // For filter sidebar
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Search, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
 import { useKanban } from "@/lib/store";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,14 @@ import {
 
 export function Header() {
   const { dispatch, filters } = useKanban();
-  const [searchTerm, setSearchTerm] = useState(filters.searchTerm);
+  const [searchTerm, setSearchTerm] = useState(filters?.searchTerm ?? "");
   const [isFocusBatchModalOpen, setIsFocusBatchModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (filters?.searchTerm !== searchTerm) {
+      setSearchTerm(filters?.searchTerm ?? "");
+    }
+  }, [filters?.searchTerm, searchTerm]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -37,10 +43,6 @@ export function Header() {
   };
 
   const handleSuggestFocusBatch = () => {
-    // Placeholder for AI "Suggest Focus Batch"
-    // In a real app, call an AI flow here
-    // const suggestedTasks = await suggestFocusBatchAI();
-    // For now, just open the modal with dummy data
     setIsFocusBatchModalOpen(true);
     console.log("Suggest Focus Batch clicked");
   };
@@ -85,7 +87,7 @@ export function Header() {
           </form>
 
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" onClick={() => dispatch({ type: "TOGGLE_FILTER_SIDEBAR" })}>
+            <Button variant="outline" size="sm"> {/* Removed onClick here, SheetTrigger handles it */}
               <SlidersHorizontal className="mr-2 h-4 w-4" />
               Filters & Sort
             </Button>
