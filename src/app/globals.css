@@ -5,41 +5,41 @@
 
 @layer base {
   :root {
-    --background: 220 40% 98%; /* Very light cool gray */
-    --foreground: 220 20% 25%; /* Dark desaturated blue-gray */
+    --background: 220 40% 98%; /* Very light cool gray - Preserved */
+    --foreground: 220 20% 25%; /* Dark desaturated blue-gray - Preserved */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 25%;
+    --card: 0 0% 100%; /* Preserved */
+    --card-foreground: 220 20% 25%; /* Preserved */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 25%;
+    --popover: 0 0% 100%; /* Preserved */
+    --popover-foreground: 220 20% 25%; /* Preserved */
 
-    --primary: 217 90% 61%; /* Previous primary: Standard Blue */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --primary: 215 65% 55%; /* REVERTED: Standard Blue */
+    --primary-foreground: 0 0% 100%; /* REVERTED: White text on primary */
 
-    --secondary: 205 75% 58%; /* New Secondary: Light Blue */
-    --secondary-foreground: 210 40% 98%; /* Very light, almost white for contrast on light blue */
+    --secondary: 220 30% 92%; /* REVERTED: Muted light gray/blue */
+    --secondary-foreground: 220 10% 45%; /* REVERTED */
 
-    --muted: 220 30% 90%; /* For less prominent elements */
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 30% 90%; /* Preserved */
+    --muted-foreground: 220 10% 45%; /* Preserved */
 
-    --accent: 145 65% 45%; /* Vibrant Green */
-    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent */
+    --accent: 145 65% 45%; /* Vibrant Green - Preserved */
+    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent - Preserved */
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 75% 55%; /* Preserved */
+    --destructive-foreground: 0 0% 98%; /* Preserved */
 
-    --border: 220 20% 88%; /* Lighter border */
-    --input: 220 25% 92%; /* Lighter input */
-    --ring: 217 90% 61%; /* Match new primary (Standard Blue) */
+    --border: 220 20% 88%; /* Lighter border - Preserved */
+    --input: 220 25% 92%; /* Lighter input - Preserved */
+    --ring: 215 65% 55%; /* REVERTED: Match new primary (Standard Blue) */
 
-    --radius: 0.5rem;
+    --radius: 0.5rem; /* Preserved */
 
-    --chart-1: 217 90% 61%; /* New Primary (Standard Blue) */
-    --chart-2: 145 65% 45%; /* Accent Green */
-    --chart-3: 30 80% 60%;  /* Warm Accent (Amber/Orange) - was 35 85% 65% */
-    --chart-4: 260 60% 70%; /* Softer Purple */
-    --chart-5: 340 70% 70%;   /* Softer Pink/Rose */
+    --chart-1: 215 65% 55%; /* REVERTED: Primary Blue */
+    --chart-2: 145 65% 45%; /* Accent Green - Preserved */
+    --chart-3: 30 80% 60%;  /* Warm Accent (Amber/Orange) - Preserved */
+    --chart-4: 260 60% 70%; /* Softer Purple - Preserved */
+    --chart-5: 340 70% 70%;   /* Softer Pink/Rose - Preserved */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -52,39 +52,39 @@
   }
 
   .dark {
-    --background: 220 15% 12%; /* Darker, cooler gray */
-    --foreground: 210 30% 90%; /* Light gray text */
+    --background: 220 15% 12%; /* Darker, cooler gray - Preserved */
+    --foreground: 210 30% 90%; /* Light gray text - Preserved */
 
-    --card: 220 15% 18%;
-    --card-foreground: 210 30% 90%;
+    --card: 220 15% 18%; /* Preserved */
+    --card-foreground: 210 30% 90%; /* Preserved */
 
-    --popover: 220 15% 10%;
-    --popover-foreground: 210 30% 90%;
+    --popover: 220 15% 10%; /* Preserved */
+    --popover-foreground: 210 30% 90%; /* Preserved */
 
-    --primary: 217 90% 70%; /* Previous primary: Lighter standard blue for dark mode */
-    --primary-foreground: 210 40% 98%; /* Light text on dark primary */
+    --primary: 215 65% 65%; /* REVERTED: Lighter standard blue for dark mode */
+    --primary-foreground: 210 40% 98%; /* REVERTED: Light text on dark primary */
 
-    --secondary: 205 75% 68%; /* New Secondary: Lighter vivid blue for dark mode */
-    --secondary-foreground: 205 25% 20%; /* Dark blue/gray text for contrast on lighter blue secondary */
+    --secondary: 220 15% 25%; /* REVERTED: Darker muted gray/blue */
+    --secondary-foreground: 210 20% 70%; /* REVERTED */
 
-    --muted: 220 15% 22%;
-    --muted-foreground: 210 20% 65%;
+    --muted: 220 15% 22%; /* Preserved */
+    --muted-foreground: 210 20% 65%; /* Preserved */
 
-    --accent: 145 65% 55%; /* Lighter Green for dark mode */
-    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent */
+    --accent: 145 65% 55%; /* Lighter Green for dark mode - Preserved */
+    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent - Preserved */
 
-    --destructive: 0 65% 50%; /* Adjusted destructive for dark */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 65% 50%; /* Adjusted destructive for dark - Preserved */
+    --destructive-foreground: 0 0% 98%; /* Preserved */
 
-    --border: 220 15% 30%;
-    --input: 220 15% 28%;
-    --ring: 217 90% 70%; /* Match new dark primary (Lighter standard blue) */
+    --border: 220 15% 30%; /* Preserved */
+    --input: 220 15% 28%; /* Preserved */
+    --ring: 215 65% 65%; /* REVERTED: Match new dark primary (Lighter standard blue) */
 
-    --chart-1: 217 90% 70%; /* New Primary (Lighter standard blue) Dark */
-    --chart-2: 145 65% 55%; /* Accent Green Dark */
-    --chart-3: 30 80% 65%;  /* Warm Accent (Amber/Orange) Dark - was 35 85% 70% */
-    --chart-4: 260 60% 75%; /* Softer Purple Dark */
-    --chart-5: 340 70% 75%;   /* Softer Pink/Rose Dark */
+    --chart-1: 215 65% 65%; /* REVERTED: Primary Blue Dark */
+    --chart-2: 145 65% 55%; /* Accent Green Dark - Preserved */
+    --chart-3: 30 80% 65%;  /* Warm Accent (Amber/Orange) Dark - Preserved */
+    --chart-4: 260 60% 75%; /* Softer Purple Dark - Preserved */
+    --chart-5: 340 70% 75%;   /* Softer Pink/Rose Dark - Preserved */
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -113,23 +113,23 @@
   height: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--secondary)); /* Changed to new secondary for track */
+  background: hsl(var(--muted)); /* Changed to muted for track */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--primary) / 0.7); /* Primary color for thumb */
   border-radius: 10px;
-  border: 3px solid hsl(var(--secondary)); /* Creates a border effect around thumb, using new secondary */
+  border: 3px solid hsl(var(--muted)); /* Creates a border effect around thumb, using muted */
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary)); /* Darken on hover */
 }
 .dark ::-webkit-scrollbar-track {
-  background: hsl(var(--secondary)); /* Changed to new secondary for dark track */
+  background: hsl(var(--muted)); /* Changed to muted for dark track */
 }
 .dark ::-webkit-scrollbar-thumb {
   background: hsl(var(--primary) / 0.7);
-  border: 3px solid hsl(var(--secondary)); /* Using new secondary for dark border */
+  border: 3px solid hsl(var(--muted)); /* Using muted for dark border */
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
@@ -153,4 +153,3 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
 }
-
