@@ -25,7 +25,7 @@ import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description";
 import { suggestTaskTags } from "@/ai/flows/suggest-task-tags";
-// import { suggestTaskSubtasks } from "@/ai/flows/suggest-task-subtasks"; // Placeholder for future AI flow
+import { suggestTaskSubtasks } from "@/ai/flows/suggest-task-subtasks";
 import { SubtaskItem } from "./subtask-item";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,7 +42,7 @@ const taskSchema = z.object({
     title: z.string().min(1, "Subtask title cannot be empty"),
     completed: z.boolean(),
   })).optional(),
-  dependencies: z.array(z.string()).optional(), // Array of task IDs
+  dependencies: z.array(z.string()).optional(), 
   recurrenceType: z.enum(["", "daily", "weekly", "monthly"]).optional(),
 });
 
@@ -188,15 +188,22 @@ export function TaskModal() {
         return;
     }
     setIsAiSubtasksLoading(true);
-    // This is a placeholder for AI subtask suggestion.
-    // In a real implementation, this would call an AI flow.
-    // Example: const result = await suggestTaskSubtasks({ title: watchedTitle, description: watchedDescription || "" });
-    // if (result.subtasks) { result.subtasks.forEach(st => appendSubtask({id: crypto.randomUUID(), title: st.title, completed: false})) }
-    console.log("Placeholder: AI Suggesting subtasks for:", watchedTitle, watchedDescription);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    // Example: appendSubtask({ id: crypto.randomUUID(), title: "AI Suggested Subtask 1", completed: false });
-    toast({ title: "AI Subtask Suggestion (Demo)", description: "This feature is a placeholder. AI would suggest subtasks here." });
-    setIsAiSubtasksLoading(false);
+    try {
+        const result = await suggestTaskSubtasks({ title: watchedTitle, description: watchedDescription || "" });
+        if (result.subtasks && result.subtasks.length > 0) {
+            result.subtasks.forEach(subtaskTitle => {
+                appendSubtask({ id: crypto.randomUUID(), title: subtaskTitle, completed: false });
+            });
+            toast({ title: "Subtasks Suggested", description: "AI has suggested subtasks for your task." });
+        } else {
+            toast({ title: "No Subtasks Suggested", description: "AI could not suggest any subtasks for this task." });
+        }
+    } catch (error) {
+        console.error("Error suggesting subtasks:", error);
+        toast({ title: "Error", description: "Could not suggest subtasks.", variant: "destructive" });
+    } finally {
+        setIsAiSubtasksLoading(false);
+    }
   };
 
   const handleAddSubtask = () => {
@@ -231,14 +238,14 @@ export function TaskModal() {
   return (
     <Dialog open={isTaskModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="sm:max-w-[600px] md:max-w-[750px] lg:max-w-[900px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{activeTaskModal ? "Edit Task" : "Add New Task"}</DialogTitle>
           <DialogDescription>
             {activeTaskModal ? "Update the details of your task." : "Fill in the details for your new task."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-1">
+        <ScrollArea className="flex-grow min-h-0"> {/* Ensure ScrollArea can shrink and grow */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-3"> {/* Added pr-3 for scrollbar space */}
             {/* Title */}
             <div>
               <Label htmlFor="title">Title</Label>
@@ -456,7 +463,7 @@ export function TaskModal() {
             </div>
           </form>
         </ScrollArea>
-        <DialogFooter className="pt-4 border-t">
+        <DialogFooter className="pt-4 border-t flex-shrink-0">
           <DialogClose asChild>
             <Button type="button" variant="outline">Cancel</Button>
           </DialogClose>
