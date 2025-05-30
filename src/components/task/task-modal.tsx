@@ -36,7 +36,7 @@ const taskSchema = z.object({
   columnId: z.string().min(1, "Column is required"),
   dueDate: z.date().optional(),
   priority: z.enum(PRIORITIES),
-  tags: z.string().optional(), 
+  tags: z.string().optional(),
   subtasks: z.array(z.object({
     id: z.string(),
     title: z.string().min(1, "Subtask title cannot be empty"),
@@ -78,7 +78,7 @@ export function TaskModal() {
     control,
     name: "subtasks",
   });
-  
+
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
 
@@ -91,12 +91,12 @@ export function TaskModal() {
         dueDate: activeTaskModal.dueDate ? (activeTaskModal.dueDate instanceof Date ? activeTaskModal.dueDate : parseISO(activeTaskModal.dueDate as any)) : undefined,
         priority: activeTaskModal.priority,
         tags: activeTaskModal.tags.join(", "),
-        subtasks: activeTaskModal.subtasks.map(st => ({...st})), 
+        subtasks: activeTaskModal.subtasks.map(st => ({...st})),
         dependencies: activeTaskModal.dependencies,
         recurrenceType: activeTaskModal.recurrenceRule?.type || "",
       });
     } else {
-      reset({ 
+      reset({
         title: "", description: "", columnId: DEFAULT_COLUMNS[0].id,
         priority: "medium", tags: "", subtasks: [], dependencies: [], recurrenceType: "", dueDate: undefined,
       });
@@ -134,12 +134,12 @@ export function TaskModal() {
 
   const closeModal = () => {
     dispatch({ type: "CLOSE_TASK_MODAL" });
-    reset(); 
+    reset();
     setIsAiDescriptionLoading(false);
     setIsAiTagsLoading(false);
     setIsAiSubtasksLoading(false);
   };
-  
+
   const handleEnhanceDescription = async () => {
     if (!watchedTitle) {
         toast({ title: "Title Needed", description: "Please provide a title to enhance the description.", variant: "destructive" });
@@ -198,7 +198,7 @@ export function TaskModal() {
     toast({ title: "AI Subtask Suggestion (Demo)", description: "This feature is a placeholder. AI would suggest subtasks here." });
     setIsAiSubtasksLoading(false);
   };
-  
+
   const handleAddSubtask = () => {
     appendSubtask({ id: crypto.randomUUID(), title: "", completed: false });
   };
@@ -237,8 +237,8 @@ export function TaskModal() {
             {activeTaskModal ? "Update the details of your task." : "Fill in the details for your new task."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow pr-6 -mr-6"> 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-1"> 
+        <ScrollArea className="flex-grow">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-1">
             {/* Title */}
             <div>
               <Label htmlFor="title">Title</Label>
@@ -353,7 +353,7 @@ export function TaskModal() {
                 />
               </div>
             </div>
-            
+
             {/* Tags */}
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -383,7 +383,7 @@ export function TaskModal() {
                     </Button>
                 </div>
               </div>
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-2 border rounded-md p-2">
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-2 border rounded-md p-2 custom-scrollbar">
                 {subtaskFields.map((field, index) => (
                    <SubtaskItem
                     key={field.id}
@@ -425,7 +425,7 @@ export function TaskModal() {
                                             </SelectItem>
                                         ))}
                                     {allTasks.filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id)).length === 0 && (
-                                        <SelectItem value="no_options_dependencies" disabled>No available tasks to select</SelectItem>
+                                        <SelectItem value="no_options_dependencies_placeholder_value" disabled>No available tasks to select</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
@@ -468,5 +468,3 @@ export function TaskModal() {
     </Dialog>
   );
 }
-
-    
