@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 25%;
 
-    --primary: 215 65% 55%; /* Vibrant professional blue */
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 90% 61%; /* New: Lighter, vivid blue */
+    --primary-foreground: 0 0% 100%; /* New: White for contrast */
 
     --secondary: 220 30% 94%; /* Lighter secondary for subtle contrast */
     --secondary-foreground: 220 20% 25%;
@@ -23,23 +23,23 @@
     --muted: 220 30% 90%; /* For less prominent elements */
     --muted-foreground: 220 10% 45%;
 
-    --accent: 145 65% 45%; /* Vibrant Green */
-    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent */
+    --accent: 145 65% 45%; /* Vibrant Green (kept from previous) */
+    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent (kept) */
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 20% 88%; /* Lighter border */
     --input: 220 25% 92%; /* Lighter input */
-    --ring: 215 65% 55%; /* Primary color for ring */
+    --ring: 217 90% 61%; /* New: Match new primary */
 
     --radius: 0.5rem;
 
-    --chart-1: 215 65% 55%; /* Primary Blue */
+    --chart-1: 217 90% 61%; /* New Primary Blue */
     --chart-2: 145 65% 45%; /* Accent Green */
-    --chart-3: 40 70% 60%;  /* Complementary Muted Orange/Yellow */
-    --chart-4: 270 50% 65%; /* Muted Purple */
-    --chart-5: 0 60% 65%;   /* Muted Coral/Red */
+    --chart-3: 35 85% 65%;  /* Complementary Orange */
+    --chart-4: 260 60% 70%; /* Softer Purple */
+    --chart-5: 340 70% 70%;   /* Softer Pink/Rose */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -48,7 +48,7 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 217.2 91.2% 59.8%; /* Will take primary for focus if not overridden by component */
   }
 
   .dark {
@@ -61,8 +61,8 @@
     --popover: 220 15% 10%;
     --popover-foreground: 210 30% 90%;
 
-    --primary: 215 65% 65%; /* Primary for dark mode */
-    --primary-foreground: 220 15% 15%;
+    --primary: 217 90% 70%; /* New: Lighter vivid blue for dark mode */
+    --primary-foreground: 217 30% 15%; /* New: Dark blue/gray text */
 
     --secondary: 220 15% 22%;
     --secondary-foreground: 210 30% 90%;
@@ -70,21 +70,21 @@
     --muted: 220 15% 22%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 145 65% 55%; /* Lighter Green for dark mode */
-    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent */
+    --accent: 145 65% 55%; /* Lighter Green for dark mode (kept) */
+    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent (kept) */
 
     --destructive: 0 65% 50%; /* Adjusted destructive for dark */
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 15% 30%;
     --input: 220 15% 28%;
-    --ring: 215 65% 65%;
+    --ring: 217 90% 70%; /* New: Match new dark primary */
 
-    --chart-1: 215 65% 65%; /* Primary Blue Dark */
+    --chart-1: 217 90% 70%; /* New Primary Blue Dark */
     --chart-2: 145 65% 55%; /* Accent Green Dark */
-    --chart-3: 40 70% 65%;  /* Muted Orange/Yellow Dark */
-    --chart-4: 270 50% 70%; /* Muted Purple Dark */
-    --chart-5: 0 60% 70%;   /* Muted Coral/Red Dark */
+    --chart-3: 35 85% 70%;  /* Complementary Orange Dark */
+    --chart-4: 260 60% 75%; /* Softer Purple Dark */
+    --chart-5: 340 70% 75%;   /* Softer Pink/Rose Dark */
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -107,7 +107,7 @@
   }
 }
 
-/* Custom scrollbar for webkit browsers */
+/* Custom scrollbar for webkit browsers - Made more obvious for debugging */
 ::-webkit-scrollbar {
   width: 12px; /* Made scrollbar slightly wider for visibility */
   height: 12px;
@@ -117,23 +117,24 @@
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.6); /* Slightly less opaque primary */
+  background: hsl(var(--primary) / 0.7); /* Primary color for thumb */
   border-radius: 10px;
   border: 3px solid hsl(var(--secondary)); /* Creates a border effect around thumb */
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary));
+  background: hsl(var(--primary)); /* Darken on hover */
 }
 .dark ::-webkit-scrollbar-track {
   background: hsl(var(--secondary));
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.6);
+  background: hsl(var(--primary) / 0.7);
   border: 3px solid hsl(var(--secondary));
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
 }
+
 
 /* More subtle custom scrollbar for specific areas like modal subtask list */
 .custom-scrollbar::-webkit-scrollbar {
