@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface SubtaskItemProps {
   subtask: Subtask;
@@ -28,15 +29,17 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
   };
 
   const handleTitleBlur = () => {
-    if (title.trim() !== subtask.title) {
+    if (title.trim() !== subtask.title && title.trim() !== "") { // Prevent saving empty title
       onUpdate({ ...subtask, title: title.trim() });
+    } else if (title.trim() === "" && subtask.title !== "") { // Revert if cleared
+        setTitle(subtask.title);
     }
   };
   
   const handleInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleTitleBlur();
-      (e.target as HTMLInputElement).blur(); // Remove focus
+      (e.target as HTMLInputElement).blur(); 
     }
   };
 
@@ -48,6 +51,7 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
         checked={subtask.completed}
         onCheckedChange={() => onToggle(subtask.id)}
         aria-label={`Mark subtask ${subtask.title} as ${subtask.completed ? 'incomplete' : 'complete'}`}
+        disabled={!isEditing} // Disable checkbox if not in editing mode
       />
       {isEditing ? (
         <Input
@@ -55,11 +59,18 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
           onChange={handleTitleChange}
           onBlur={handleTitleBlur}
           onKeyPress={handleInputKeyPress}
-          className={`h-8 text-sm flex-grow ${subtask.completed ? "line-through text-muted-foreground" : ""}`}
+          className={cn(
+            "h-8 text-sm flex-grow border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1",
+            subtask.completed ? "line-through text-muted-foreground" : ""
+           )}
           placeholder="Subtask title"
         />
       ) : (
-         <span className={`text-sm flex-grow ${subtask.completed ? "line-through text-muted-foreground" : ""}`}>
+         <span className={cn(
+            "text-sm flex-grow",
+            subtask.completed ? "line-through text-muted-foreground" : ""
+          )}
+         >
           {subtask.title}
         </span>
       )}
@@ -67,11 +78,11 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
         <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 opacity-0 group-hover:opacity-100 focus:opacity-100 text-destructive hover:text-destructive"
+            className="h-7 w-7 opacity-0 group-hover:opacity-100 focus:opacity-100 text-destructive hover:text-destructive shrink-0"
             onClick={() => onDelete(subtask.id)}
             aria-label="Delete subtask"
         >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>

@@ -15,18 +15,18 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+// import { Checkbox } from "@/components/ui/checkbox"; // Checkbox for dependencies might be complex for now
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useKanban } from "@/lib/store";
 import type { Task, Priority, RecurrenceRule, RecurrenceType, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, DEFAULT_COLUMNS } from "@/lib/constants";
-import { CalendarIcon, PlusCircle, Sparkles, Trash2, Loader2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react"; // Removed Sparkles, Loader2
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description";
-import { suggestTaskTags } from "@/ai/flows/suggest-task-tags";
-import { SubtaskItem } from "./subtask-item"; // We'll create this next
+// import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description"; // AI feature removed
+// import { suggestTaskTags } from "@/ai/flows/suggest-task-tags"; // AI feature removed
+import { SubtaskItem } from "./subtask-item";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -34,13 +34,13 @@ const taskSchema = z.object({
   columnId: z.string().min(1, "Column is required"),
   dueDate: z.date().optional(),
   priority: z.enum(PRIORITIES),
-  tags: z.string().optional(), // Comma-separated string initially
+  tags: z.string().optional(), 
   subtasks: z.array(z.object({
     id: z.string(),
     title: z.string().min(1, "Subtask title cannot be empty"),
     completed: z.boolean(),
   })).optional(),
-  dependencies: z.array(z.string()).optional(),
+  dependencies: z.array(z.string()).optional(), // Array of task IDs
   recurrenceType: z.enum(["", "daily", "weekly", "monthly"]).optional(),
 });
 
@@ -52,9 +52,10 @@ export function TaskModal() {
   const { state, dispatch } = useKanban();
   const { isTaskModalOpen, activeTaskModal, columns, tasks: allTasks } = state;
 
-  const [isAiDescriptionLoading, setIsAiDescriptionLoading] = useState(false);
-  const [isAiTagsLoading, setIsAiTagsLoading] = useState(false);
-  const [isAiSubtasksLoading, setIsAiSubtasksLoading] = useState(false); // Placeholder
+  // const [isAiDescriptionLoading, setIsAiDescriptionLoading] = useState(false); // AI feature removed
+  // const [isAiTagsLoading, setIsAiTagsLoading] = useState(false); // AI feature removed
+  // const [isAiSubtasksLoading, setIsAiSubtasksLoading] = useState(false); // AI feature removed
+
 
   const { control, register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -75,8 +76,8 @@ export function TaskModal() {
     name: "subtasks",
   });
   
-  const watchedTitle = watch("title");
-  const watchedDescription = watch("description");
+  // const watchedTitle = watch("title"); // Not needed without AI
+  // const watchedDescription = watch("description"); // Not needed without AI
 
   useEffect(() => {
     if (activeTaskModal) {
@@ -87,12 +88,12 @@ export function TaskModal() {
         dueDate: activeTaskModal.dueDate ? (activeTaskModal.dueDate instanceof Date ? activeTaskModal.dueDate : parseISO(activeTaskModal.dueDate as any)) : undefined,
         priority: activeTaskModal.priority,
         tags: activeTaskModal.tags.join(", "),
-        subtasks: activeTaskModal.subtasks.map(st => ({...st})), // Ensure fresh array of objects
+        subtasks: activeTaskModal.subtasks.map(st => ({...st})), 
         dependencies: activeTaskModal.dependencies,
         recurrenceType: activeTaskModal.recurrenceRule?.type || "",
       });
     } else {
-      reset({ // Reset to default for new task
+      reset({ 
         title: "", description: "", columnId: DEFAULT_COLUMNS[0].id,
         priority: "medium", tags: "", subtasks: [], dependencies: [], recurrenceType: "", dueDate: undefined,
       });
@@ -128,62 +129,10 @@ export function TaskModal() {
 
   const closeModal = () => {
     dispatch({ type: "CLOSE_TASK_MODAL" });
-    reset(); // Reset form on close
+    reset(); 
   };
 
-  const handleEnhanceDescription = async () => {
-    if (!watchedTitle) {
-      alert("Please enter a title first to enhance the description.");
-      return;
-    }
-    setIsAiDescriptionLoading(true);
-    try {
-      const result = await enhanceTaskDescription({ title: watchedTitle, existingDescription: watchedDescription || "" });
-      setValue("description", result.enhancedDescription);
-    } catch (error) {
-      console.error("Error enhancing description:", error);
-      dispatch({type: "SET_ERROR", payload: "Failed to enhance description."});
-    } finally {
-      setIsAiDescriptionLoading(false);
-    }
-  };
-  
-  const handleSuggestTags = async () => {
-    if (!watchedTitle && !watchedDescription) {
-      alert("Please enter a title or description to suggest tags.");
-      return;
-    }
-    setIsAiTagsLoading(true);
-    try {
-      const result = await suggestTaskTags({ title: watchedTitle || "", description: watchedDescription || "" });
-      const currentTags = watch("tags")?.split(",").map(t => t.trim()).filter(t => t) || [];
-      const newTags = Array.from(new Set([...currentTags, ...result.tags]));
-      setValue("tags", newTags.join(", "));
-    } catch (error) {
-      console.error("Error suggesting tags:", error);
-      dispatch({type: "SET_ERROR", payload: "Failed to suggest tags."});
-    } finally {
-      setIsAiTagsLoading(false);
-    }
-  };
-
-  const handleSuggestSubtasks = async () => {
-    // Placeholder for AI Subtask Suggestions
-    if (!watchedTitle && !watchedDescription) {
-      alert("Please enter a title or description to suggest subtasks.");
-      return;
-    }
-    setIsAiSubtasksLoading(true);
-    console.log("Suggesting subtasks for:", watchedTitle, watchedDescription);
-    // Mock adding subtasks
-    // In real app: const result = await suggestSubtasksAI({ title: watchedTitle, description: watchedDescription });
-    // result.subtasks.forEach(subTitle => appendSubtask({ id: crypto.randomUUID(), title: subTitle, completed: false }));
-    setTimeout(() => {
-        appendSubtask({ id: crypto.randomUUID(), title: "AI Suggested Subtask 1", completed: false });
-        appendSubtask({ id: crypto.randomUUID(), title: "AI Suggested Subtask 2", completed: false });
-        setIsAiSubtasksLoading(false);
-    }, 1000);
-  };
+  // Removed handleEnhanceDescription, handleSuggestTags, handleSuggestSubtasks (AI features)
   
   const handleAddSubtask = () => {
     appendSubtask({ id: crypto.randomUUID(), title: "", completed: false });
@@ -223,8 +172,8 @@ export function TaskModal() {
             {activeTaskModal ? "Update the details of your task." : "Fill in the details for your new task."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow pr-6 -mr-6"> {/* Added pr-6 and -mr-6 for scrollbar spacing */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-1"> {/* Added pl-1 pr-1 for spacing from edge */}
+        <ScrollArea className="flex-grow pr-6 -mr-6"> 
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-1"> 
             {/* Title */}
             <div>
               <Label htmlFor="title">Title</Label>
@@ -236,10 +185,7 @@ export function TaskModal() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <Label htmlFor="description">Description</Label>
-                <Button type="button" variant="ghost" size="sm" onClick={handleEnhanceDescription} disabled={isAiDescriptionLoading}>
-                  {isAiDescriptionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />}
-                  Enhance with AI
-                </Button>
+                {/* AI Enhance button removed */}
               </div>
               <Textarea id="description" {...register("description")} placeholder="Add more details about the task..." rows={4} />
             </div>
@@ -344,14 +290,11 @@ export function TaskModal() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <Label htmlFor="tags">Tags (comma-separated)</Label>
-                 <Button type="button" variant="ghost" size="sm" onClick={handleSuggestTags} disabled={isAiTagsLoading}>
-                  {isAiTagsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />}
-                  Suggest Tags
-                </Button>
+                 {/* AI Suggest Tags button removed */}
               </div>
               <Input id="tags" {...register("tags")} placeholder="E.g., project-alpha, urgent, bug" />
               {watch("tags") && <div className="mt-2 flex flex-wrap gap-1">
-                {watch("tags")!.split(",").map(t => t.trim()).filter(t => t).map(tag => <Badge key={tag}>{tag}</Badge>)}
+                {watch("tags")!.split(",").map(t => t.trim()).filter(t => t).map(tag => <Badge key={tag} variant="outline" className="px-2 py-0.5">{tag}</Badge>)}
               </div>}
             </div>
 
@@ -360,10 +303,7 @@ export function TaskModal() {
               <div className="flex justify-between items-center mb-2">
                 <Label className="text-base font-semibold">Subtasks</Label>
                 <div className="flex gap-2">
-                    <Button type="button" variant="ghost" size="sm" onClick={handleSuggestSubtasks} disabled={isAiSubtasksLoading}>
-                        {isAiSubtasksLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />}
-                        AI Suggest
-                    </Button>
+                    {/* AI Suggest Subtasks button removed */}
                     <Button type="button" variant="outline" size="sm" onClick={handleAddSubtask}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Subtask
                     </Button>
@@ -385,49 +325,60 @@ export function TaskModal() {
 
             {/* Dependencies */}
             <div>
-              <Label htmlFor="dependencies" className="text-base font-semibold">Dependencies (Prerequisites)</Label>
-              <Controller
-                  name="dependencies"
-                  control={control}
-                  render={({ field }) => (
-                      <Select
-                          onValueChange={(value) => {
-                              // This is for single select. For multi-select, a custom component would be needed.
-                              // For simplicity, let's assume single dependency selection or use a multi-select component.
-                              // This example shows how to handle it if it were a single string.
-                              // For multi (array of strings):
-                              const currentDeps = field.value || [];
-                              const newDeps = currentDeps.includes(value) 
-                                  ? currentDeps.filter(d => d !== value) 
-                                  : [...currentDeps, value];
-                              // field.onChange(newDeps); // If react-select or similar was used for multi-select
-                              // For now, this Select is not ideal for multi. This is a placeholder.
-                              // A better UI would be checkboxes or a multi-select dropdown.
-                              // For this example, we'll just log it. In a real app, this needs a proper multi-select.
-                              console.log("Dependency selection needs a multi-select component for:", value);
-                              // A quick workaround for single dependency for demo:
-                              // field.onChange(value ? [value] : []);
-                          }}
-                          // value={field.value?.[0] || ""} // For single select demo
-                      >
-                          <SelectTrigger><SelectValue placeholder="Select prerequisite tasks (multi-select needed)" /></SelectTrigger>
-                          <SelectContent>
-                              {allTasks.filter(t => t.id !== activeTaskModal?.id).map(task => (
-                                  <SelectItem key={task.id} value={task.id} 
-                                    // disabled={(field.value || []).includes(task.id)} // for multi
-                                  >
-                                      {task.title}
-                                  </SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                  )}
-              />
-              <p className="text-xs text-muted-foreground mt-1">Selected: {(watch("dependencies") || []).map(depId => {
-                  const depTask = allTasks.find(t => t.id === depId);
-                  return depTask ? <Badge key={depId} variant="outline" className="mr-1">{depTask.title}</Badge> : null;
-              })}</p>
-              {/* Proper multi-select for dependencies would be implemented here */}
+                <Label htmlFor="dependencies" className="text-base font-semibold mb-1 block">Dependencies (Prerequisites)</Label>
+                <Controller
+                    name="dependencies"
+                    control={control}
+                    render={({ field }) => (
+                        <div className="space-y-2">
+                            <Select
+                                onValueChange={(value) => {
+                                    const currentDeps = field.value || [];
+                                    if (value && !currentDeps.includes(value)) {
+                                        field.onChange([...currentDeps, value]);
+                                    }
+                                }}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Add prerequisite task..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allTasks
+                                        .filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id))
+                                        .map(task => (
+                                            <SelectItem key={task.id} value={task.id}>
+                                                {task.title}
+                                            </SelectItem>
+                                        ))}
+                                    {allTasks.filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id)).length === 0 && (
+                                        <SelectItem value="no_options" disabled>No available tasks to select</SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            {(field.value && field.value.length > 0) && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {field.value.map(depId => {
+                                        const depTask = allTasks.find(t => t.id === depId);
+                                        return depTask ? (
+                                            <Badge key={depId} variant="secondary" className="flex items-center gap-1 pr-1">
+                                                {depTask.title}
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-5 w-5 hover:bg-transparent text-muted-foreground hover:text-destructive"
+                                                    onClick={() => field.onChange((field.value || []).filter(id => id !== depId))}
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            </Badge>
+                                        ) : null;
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                />
             </div>
           </form>
         </ScrollArea>
@@ -443,4 +394,3 @@ export function TaskModal() {
     </Dialog>
   );
 }
-

@@ -1,7 +1,8 @@
+
 import type { Column, Priority } from "@/lib/types";
 import { ListTodo, Flame, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
-export const APP_NAME = "KanvasAI";
+export const APP_NAME = "ProTasker"; // Changed from KanvasAI
 export const DEVELOPER_NAME = "R.Sabbir";
 export const DEVELOPER_URL = "https://rsabbir.com";
 
@@ -35,4 +36,5 @@ export const DEFAULT_FILTER_STATE = {
   searchTerm: "",
 };
 
-export const MOCK_TASKS_KEY = "kanvasai_mock_tasks_generated";
+export const MOCK_TASKS_KEY = "protasker_mock_tasks_generated"; // Updated key to reflect new app name
+

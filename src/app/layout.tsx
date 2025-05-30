@@ -1,14 +1,14 @@
 
 import type {Metadata} from 'next';
-import { GeistSans } from 'geist/font/sans'; // Corrected import
-import { GeistMono } from 'geist/font/mono'; // Corrected import
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import { APP_NAME } from '@/lib/constants';
 
 
 export const metadata: Metadata = {
-  title: APP_NAME,
-  description: 'Comprehensive Task Management Tool with AI-driven assistance.',
+  title: APP_NAME, // Will now use "ProTasker"
+  description: 'Comprehensive Task Management Tool.', // Simplified description
 };
 
 export default function RootLayout({
