@@ -14,30 +14,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 25%;
 
-    --primary: 205 75% 58%; /* New: Light Blue */
-    --primary-foreground: 210 40% 98%; /* New: Very light, almost white for contrast */
+    --primary: 217 90% 61%; /* Previous primary: Standard Blue */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
 
-    --secondary: 220 30% 94%; /* Lighter secondary for subtle contrast */
-    --secondary-foreground: 220 20% 25%;
+    --secondary: 205 75% 58%; /* New Secondary: Light Blue */
+    --secondary-foreground: 210 40% 98%; /* Very light, almost white for contrast on light blue */
 
     --muted: 220 30% 90%; /* For less prominent elements */
     --muted-foreground: 220 10% 45%;
 
-    --accent: 145 65% 45%; /* Vibrant Green (kept from previous) */
-    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent (kept) */
+    --accent: 145 65% 45%; /* Vibrant Green */
+    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent */
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 20% 88%; /* Lighter border */
     --input: 220 25% 92%; /* Lighter input */
-    --ring: 205 75% 58%; /* New: Match new primary (Light Blue) */
+    --ring: 217 90% 61%; /* Match new primary (Standard Blue) */
 
     --radius: 0.5rem;
 
-    --chart-1: 205 75% 58%; /* New Primary (Light Blue) */
+    --chart-1: 217 90% 61%; /* New Primary (Standard Blue) */
     --chart-2: 145 65% 45%; /* Accent Green */
-    --chart-3: 35 85% 65%;  /* Complementary Orange */
+    --chart-3: 30 80% 60%;  /* Warm Accent (Amber/Orange) - was 35 85% 65% */
     --chart-4: 260 60% 70%; /* Softer Purple */
     --chart-5: 340 70% 70%;   /* Softer Pink/Rose */
 
@@ -61,28 +61,28 @@
     --popover: 220 15% 10%;
     --popover-foreground: 210 30% 90%;
 
-    --primary: 205 75% 68%; /* New: Lighter vivid blue for dark mode */
-    --primary-foreground: 205 25% 20%; /* New: Dark blue/gray text for contrast */
+    --primary: 217 90% 70%; /* Previous primary: Lighter standard blue for dark mode */
+    --primary-foreground: 210 40% 98%; /* Light text on dark primary */
 
-    --secondary: 220 15% 22%;
-    --secondary-foreground: 210 30% 90%;
+    --secondary: 205 75% 68%; /* New Secondary: Lighter vivid blue for dark mode */
+    --secondary-foreground: 205 25% 20%; /* Dark blue/gray text for contrast on lighter blue secondary */
 
     --muted: 220 15% 22%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 145 65% 55%; /* Lighter Green for dark mode (kept) */
-    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent (kept) */
+    --accent: 145 65% 55%; /* Lighter Green for dark mode */
+    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent */
 
     --destructive: 0 65% 50%; /* Adjusted destructive for dark */
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 15% 30%;
     --input: 220 15% 28%;
-    --ring: 205 75% 68%; /* New: Match new dark primary (Light Blue) */
+    --ring: 217 90% 70%; /* Match new dark primary (Lighter standard blue) */
 
-    --chart-1: 205 75% 68%; /* New Primary (Light Blue) Dark */
+    --chart-1: 217 90% 70%; /* New Primary (Lighter standard blue) Dark */
     --chart-2: 145 65% 55%; /* Accent Green Dark */
-    --chart-3: 35 85% 70%;  /* Complementary Orange Dark */
+    --chart-3: 30 80% 65%;  /* Warm Accent (Amber/Orange) Dark - was 35 85% 70% */
     --chart-4: 260 60% 75%; /* Softer Purple Dark */
     --chart-5: 340 70% 75%;   /* Softer Pink/Rose Dark */
 
@@ -113,23 +113,23 @@
   height: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--secondary));
+  background: hsl(var(--secondary)); /* Changed to new secondary for track */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--primary) / 0.7); /* Primary color for thumb */
   border-radius: 10px;
-  border: 3px solid hsl(var(--secondary)); /* Creates a border effect around thumb */
+  border: 3px solid hsl(var(--secondary)); /* Creates a border effect around thumb, using new secondary */
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary)); /* Darken on hover */
 }
 .dark ::-webkit-scrollbar-track {
-  background: hsl(var(--secondary));
+  background: hsl(var(--secondary)); /* Changed to new secondary for dark track */
 }
 .dark ::-webkit-scrollbar-thumb {
   background: hsl(var(--primary) / 0.7);
-  border: 3px solid hsl(var(--secondary));
+  border: 3px solid hsl(var(--secondary)); /* Using new secondary for dark border */
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
