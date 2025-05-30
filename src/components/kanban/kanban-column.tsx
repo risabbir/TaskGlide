@@ -17,7 +17,7 @@ export function KanbanColumn({ column, tasks, allColumns }: KanbanColumnProps) {
 
   return (
     <div className="flex flex-col w-full sm:w-72 md:w-80 lg:w-[350px] shrink-0 bg-secondary/50 dark:bg-secondary/60 rounded-lg shadow-sm h-full">
-      <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-secondary/90 dark:bg-secondary backdrop-blur-sm z-10 rounded-t-lg">
+      <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-secondary/80 dark:bg-secondary/90 backdrop-blur-sm z-10 rounded-t-lg">
         <div className="flex items-center gap-2 min-w-0">
           {ColumnIcon && <ColumnIcon className="h-5 w-5 text-primary shrink-0" />}
           <h2 className="font-semibold text-base break-words truncate">{column.title}</h2>

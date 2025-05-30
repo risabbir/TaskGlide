@@ -64,7 +64,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const toggleExpand = (e?: React.MouseEvent) => {
      if (e) {
         const target = e.target as HTMLElement;
-        // Allow clicks on interactive elements within the card without toggling expand
         if (target.closest('[data-radix-dropdown-menu-trigger], button, a, input[type="checkbox"], label')) {
             return;
         }
@@ -85,18 +84,18 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   return (
     <Card 
       className={cn(
-        "mb-3 shadow-md hover:shadow-lg transition-shadow duration-200 group/task-card rounded-lg",
+        "mb-2.5 shadow-sm hover:shadow-md transition-shadow duration-200 group/task-card rounded-lg",
         !isExpanded && "cursor-pointer", 
         isOverdue && "border-destructive border-2 ring-1 ring-destructive/30",
         hasIncompletePrerequisites && isInWorkingColumn && "border-yellow-500 border-2 ring-1 ring-yellow-300",
-        isExpanded && "shadow-xl ring-1 ring-primary/50"
+        isExpanded && "shadow-lg ring-1 ring-primary/30"
       )}
       onClick={!isExpanded ? toggleExpand : undefined} 
     >
       <CardHeader className="p-3 pb-2">
         <div className="flex justify-between items-start gap-2">
           <div 
-            className={cn("text-base font-semibold leading-tight pr-1 flex-grow break-words", 
+            className={cn("text-base font-semibold leading-tight pr-1 flex-grow break-words overflow-hidden", 
                          !isExpanded ? "line-clamp-2" : "",
                          isExpanded && "cursor-pointer")} 
             onClick={isExpanded ? toggleExpand : undefined}
@@ -124,12 +123,9 @@ export function TaskCard({ task, columns }: TaskCardProps) {
             </DropdownMenu>
           </div>
         </div>
-        {!isExpanded && task.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">{task.description}</p>
-        )}
       </CardHeader>
 
-      <CardContent className={cn("p-3 pt-0", !isExpanded && "pb-2.5")}>
+      <CardContent className={cn("p-3 pt-0", !isExpanded ? "pb-2.5" : "pb-3")}>
         {!isExpanded && (
           <div className="space-y-1.5 text-xs">
             <div className="flex items-center justify-between text-muted-foreground">
@@ -138,15 +134,15 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 <span className={cn(priorityColor, "font-medium")}>{PRIORITY_STYLES[task.priority].label}</span>
               </div>
               <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
-                  <Clock className="h-3 w-3" />
+                  <Clock className="h-3.5 w-3.5" />
                   <span>{format(task.createdAt, "MMM d")}</span>
               </div>
             </div>
             
             {task.dueDate && (
                  <div className="flex items-center gap-1 text-muted-foreground" title={`Due: ${format(task.dueDate, "PPP")}`}>
-                    <CalendarDays className={cn("h-3 w-3", isOverdue && "text-destructive")} />
-                    <span className={cn(isOverdue && "text-destructive font-semibold")}>
+                    <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
+                    <span className={cn(isOverdue && "text-destructive font-semibold", "font-medium")}>
                         Due {format(task.dueDate, "MMM d")}
                     </span>
                 </div>
@@ -215,7 +211,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                       onToggle={() => dispatch({type: "TOGGLE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
                       onUpdate={(updatedSubtask) => dispatch({type: "UPDATE_SUBTASK", payload: {taskId: task.id, subtask: updatedSubtask}})}
                       onDelete={() => dispatch({type: "DELETE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
-                      isEditing={false} // Read-only in expanded card view
+                      isEditing={false} 
                       className="py-0.5 text-xs bg-background/30 hover:bg-background/70 rounded px-1"
                     />
                   ))}

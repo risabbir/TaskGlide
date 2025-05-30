@@ -1,44 +1,45 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Brighter light gray */
-    --foreground: 220 15% 25%; /* Cooler dark gray for text */
+    --background: 220 40% 98%; /* Very light cool gray */
+    --foreground: 220 20% 25%; /* Dark desaturated blue-gray */
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 25%;
+    --card-foreground: 220 20% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 25%;
+    --popover-foreground: 220 20% 25%;
 
-    --primary: 220 65% 60%; /* Softer, slightly desaturated blue */
-    --primary-foreground: 210 40% 98%; /* Lighter text for primary */
+    --primary: 215 65% 55%; /* Vibrant professional blue */
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 30% 94%; /* Lighter secondary for subtle contrast */
-    --secondary-foreground: 220 15% 25%;
+    --secondary: 220 30% 94%; /* Lighter secondary for subtle contrast */
+    --secondary-foreground: 220 20% 25%;
 
-    --muted: 210 30% 90%; /* For less prominent elements */
+    --muted: 220 30% 90%; /* For less prominent elements */
     --muted-foreground: 220 10% 45%;
 
-    --accent: 170 60% 65%; /* Soft teal/mint accent */
-    --accent-foreground: 170 100% 15%; /* Darker text for accent */
+    --accent: 30 80% 60%; /* Gentle orange/amber */
+    --accent-foreground: 25 100% 15%; /* Darker text for accent */
 
-    --destructive: 0 75% 55%; /* Slightly adjusted destructive */
+    --destructive: 0 75% 55%; 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 20% 88%; /* Lighter border */
-    --input: 210 25% 92%; /* Lighter input */
-    --ring: 220 65% 60%; /* Primary color for ring */
+    --border: 220 20% 88%; /* Lighter border */
+    --input: 220 25% 92%; /* Lighter input */
+    --ring: 215 65% 55%; /* Primary color for ring */
 
     --radius: 0.5rem;
 
-    --chart-1: 220 70% 50%;
-    --chart-2: 170 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 215 70% 50%;
+    --chart-2: 170 60% 45%; /* Complementary teal */
+    --chart-3: 30 80% 55%; /* Accent color */
+    --chart-4: 280 65% 60%; /* Purple tone */
+    --chart-5: 340 75% 55%; /* Pink/Red tone */
     
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -60,7 +61,7 @@
     --popover: 220 15% 10%;
     --popover-foreground: 210 30% 90%;
 
-    --primary: 220 70% 65%; /* Primary for dark mode */
+    --primary: 215 65% 65%; /* Primary for dark mode */
     --primary-foreground: 220 15% 15%;
 
     --secondary: 220 15% 22%;
@@ -69,17 +70,17 @@
     --muted: 220 15% 22%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 170 60% 55%; /* Accent for dark mode */
+    --accent: 30 80% 65%; /* Accent for dark mode */
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 65% 45%; /* Adjusted destructive for dark */
+    --destructive: 0 65% 50%; /* Adjusted destructive for dark */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 15% 30%;
-    --input: 210 15% 28%;
-    --ring: 220 70% 65%;
+    --border: 220 15% 30%;
+    --input: 220 15% 28%;
+    --ring: 215 65% 65%;
     
-    --chart-1: 220 70% 50%;
+    --chart-1: 215 70% 50%;
     --chart-2: 170 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
