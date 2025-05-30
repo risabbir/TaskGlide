@@ -9,10 +9,10 @@ import { TaskModal } from "@/components/task/task-modal";
 import { FilterSidebar } from "@/components/filter-sort/filter-sidebar";
 import { Confetti } from "@/components/ui/confetti";
 import { Toaster } from "@/components/ui/toaster";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, SlidersHorizontal } from "lucide-react";
 import { FocusBatchModalContent } from "@/components/ai/focus-batch-modal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import React, { useState } from "react";
@@ -54,13 +54,21 @@ function PageContent() {
   return (
     <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
       <div className="flex flex-col min-h-screen">
-        <Header />
+        <Header>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="h-9 w-9 md:hidden"> {/* Show only on mobile for filter trigger */}
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="sr-only">Filters & Sort</span>
+            </Button>
+          </SheetTrigger>
+        </Header>
         <QuickActionsBar /> 
         <main className="flex-grow flex flex-col overflow-hidden">
           <KanbanBoard />
         </main>
         <Footer />
         <TaskModal />
+        {/* SheetContent for FilterSidebar, triggered by button in Header for mobile, and potentially a desktop button if added */}
         <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
             <FilterSidebar />
         </SheetContent>

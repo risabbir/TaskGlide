@@ -10,7 +10,7 @@ import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills"
 import { isPast, isToday, isThisISOWeek, parseISO, startOfDay, endOfDay, isWithinInterval, isSameDay, isAfter, isBefore } from "date-fns";
 import React from "react";
 import { ClipboardList, PlusCircle, SearchX } from "lucide-react";
-import { DEFAULT_COLUMNS } from "@/lib/constants"; // Added import
+import { DEFAULT_COLUMNS } from "@/lib/constants";
 
 // Helper function to sort tasks
 const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
@@ -44,7 +44,7 @@ const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
 const filterTasks = (tasks: Task[], filters: FilterState): Task[] => {
   return tasks.filter(task => {
     // Status filter
-    if (filters.status.length > 0 && !filters.status.includes(task.columnId)) {
+    if (!filters.status.includes(task.columnId)) {
       return false;
     }
 
@@ -129,8 +129,9 @@ export function KanbanBoard() {
   return (
     <div className="flex flex-col flex-grow p-4 space-y-4 overflow-hidden">
       <ActiveFilterPills />
-      <ScrollArea className="flex-grow w-full">
-        <div className="flex flex-col md:flex-row md:whitespace-nowrap gap-4 h-full pb-4">
+      {/* On mobile, columns stack and the page scrolls. On md+, columns are in a row and scroll horizontally */}
+      <ScrollArea className="flex-grow w-full md:h-auto"> {/* md:h-auto allows natural height for horizontal scroll */}
+        <div className="flex flex-col md:flex-row gap-4 pb-4 md:whitespace-nowrap h-full"> {/* md:whitespace-nowrap for horizontal scroll */}
           {visibleColumns.map((column) => {
             const columnTasks = filteredAndSortedTasks.filter((task) => task.columnId === column.id);
             const sortedColumnTasks = sortTasks(columnTasks, sort);
@@ -151,7 +152,8 @@ export function KanbanBoard() {
             </div>
           )}
         </div>
-        <ScrollBar orientation="horizontal" />
+        {/* Horizontal scrollbar only visible on md+ screens */}
+        <ScrollBar orientation="horizontal" className="hidden md:flex" /> 
       </ScrollArea>
     </div>
   );
