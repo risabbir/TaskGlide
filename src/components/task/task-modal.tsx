@@ -43,7 +43,6 @@ const taskSchema = z.object({
   })).optional(),
   dependencies: z.array(z.string()).optional(),
   recurrenceType: z.enum(["", "daily", "weekly", "monthly"]).optional(),
-  // Timer fields are managed by the store, not directly editable in form for now
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -123,7 +122,6 @@ export function TaskModal() {
       dispatch({ type: "UPDATE_TASK", payload: {
         ...activeTaskModal,
         ...baseTaskData,
-        // Preserve existing timer state
         timerActive: activeTaskModal.timerActive,
         timeSpentSeconds: activeTaskModal.timeSpentSeconds,
         timerStartTime: activeTaskModal.timerStartTime,
@@ -134,7 +132,6 @@ export function TaskModal() {
           ...baseTaskData,
           id: crypto.randomUUID(),
           createdAt: new Date(),
-          // Initialize timer state for new task
           timerActive: false,
           timeSpentSeconds: 0,
           timerStartTime: null,
@@ -449,7 +446,9 @@ export function TaskModal() {
                                             </SelectItem>
                                         ))}
                                     {allTasks.filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id)).length === 0 && (
-                                        <SelectItem value={NO_DEPENDENCIES_PLACEHOLDER} disabled>{NO_DEPENDENCIES_PLACEHOLDER === "no_options_dependencies_placeholder_value" ? "No available tasks to select" : NO_DEPENDENCIES_PLACEHOLDER}</SelectItem>
+                                        <SelectItem value={NO_DEPENDENCIES_PLACEHOLDER} disabled>
+                                          {NO_DEPENDENCIES_PLACEHOLDER === "no_options_dependencies_placeholder_value" ? "No available tasks to select" : NO_DEPENDENCIES_PLACEHOLDER}
+                                        </SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
@@ -492,3 +491,4 @@ export function TaskModal() {
     </Dialog>
   );
 }
+

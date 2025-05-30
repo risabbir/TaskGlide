@@ -6,9 +6,11 @@ import type { Task, Column as ColumnType, FilterState, SortState } from "@/lib/t
 import { KanbanColumn } from "./kanban-column";
 import { QuickAddTask } from "./quick-add-task";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills";
 import { isPast, isToday, isThisISOWeek, parseISO } from "date-fns";
 import React from "react";
+import { ClipboardList, PlusCircle, SearchX } from "lucide-react";
 
 // Helper function to sort tasks
 const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
@@ -42,15 +44,10 @@ const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
 const filterTasks = (tasks: Task[], filters: FilterState): Task[] => {
   return tasks.filter(task => {
     if (filters.status.length > 0 && !filters.status.includes(task.columnId)) {
-      // If a column is not selected in filter, visually de-emphasize, but still show if search matches.
-      // The actual hiding/showing of columns is handled by what columns are rendered.
-      // This filter is more for de-emphasizing if we were to show all columns regardless of filter.
-      // For now, we assume columns are filtered out at the board level.
-      // However, if search term matches, we should show it.
       if (filters.searchTerm) {
          // continue to other checks if search term exists
       } else {
-        return false; // This task's column is not in the selected statuses
+        return false; 
       }
     }
     if (filters.priority && task.priority !== filters.priority) return false;
@@ -74,12 +71,33 @@ const filterTasks = (tasks: Task[], filters: FilterState): Task[] => {
 
 
 export function KanbanBoard() {
-  const { state } = useKanban();
+  const { state, dispatch } = useKanban();
   const { tasks, columns, filters, sort } = state;
 
+  const handleOpenNewTaskModal = () => {
+    dispatch({ type: "OPEN_TASK_MODAL", payload: null });
+  };
+
+  if (tasks.length === 0 && !filters.searchTerm) {
+    return (
+      <div className="flex flex-col flex-grow p-4 space-y-4 items-center justify-center text-center">
+        <QuickAddTask />
+        <div className="flex flex-col items-center justify-center flex-grow w-full bg-muted/30 rounded-lg p-8 mt-4">
+          <ClipboardList className="h-24 w-24 text-muted-foreground mb-6" data-ai-hint="clipboard list" />
+          <h3 className="text-xl font-semibold mb-2 text-foreground">Your Task Board is Empty!</h3>
+          <p className="text-muted-foreground mb-6 max-w-md">
+            It looks like there are no tasks here yet. Get started by adding your first task and take control of your workflow.
+          </p>
+          <Button onClick={handleOpenNewTaskModal} size="lg">
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Add New Task
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const filteredAndSortedTasks = filterTasks(tasks, filters);
-  
-  // Filter columns based on filter.status
   const visibleColumns = columns.filter(col => filters.status.includes(col.id));
 
 
@@ -101,10 +119,11 @@ export function KanbanBoard() {
               />
             );
           })}
-           {visibleColumns.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full w-full text-muted-foreground p-8">
-              <p className="text-lg">No columns match your current filters.</p>
-              <p className="text-sm">Try adjusting your filter settings.</p>
+           {visibleColumns.length === 0 && tasks.length > 0 && (
+            <div className="flex flex-col items-center justify-center h-full w-full text-muted-foreground p-8 text-center flex-grow bg-muted/30 rounded-lg">
+              <SearchX className="h-16 w-16 text-muted-foreground mb-4" data-ai-hint="search magnifying glass" />
+              <p className="text-lg font-medium text-foreground">No tasks match your current filters.</p>
+              <p className="text-sm">Try adjusting your filter settings or clearing them.</p>
             </div>
           )}
         </div>
@@ -113,4 +132,3 @@ export function KanbanBoard() {
     </div>
   );
 }
-
