@@ -101,7 +101,8 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const toggleExpand = (e?: React.MouseEvent) => {
      if (e) {
         const target = e.target as HTMLElement;
-        if (target.closest('[data-radix-dropdown-menu-trigger], [data-radix-alert-dialog-trigger], button, a, input[type="checkbox"], label, .no-expand')) {
+        // Check if the click originated from an element that should not trigger expansion
+        if (target.closest('.no-expand, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="dialog"], [role="alertdialog"], button, a, input[type="checkbox"], label')) {
             return;
         }
     }
@@ -174,6 +175,11 @@ export function TaskCard({ task, columns }: TaskCardProps) {
               </DropdownMenu>
             </div>
           </div>
+           {!isExpanded && task.description && (
+             <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
+               {task.description}
+             </p>
+           )}
         </CardHeader>
 
         <CardContent className={cn("p-3 pt-0", !isExpanded ? "pb-2.5" : "pb-3")}>
@@ -219,23 +225,23 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
               
-              {/* Timer display and controls for collapsed view */}
-              <div className="flex items-center justify-between pt-1.5">
-                <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{formatTime(displayTime)}</span>
+              {task.columnId !== 'done' && (
+                <div className="flex items-center justify-between pt-1.5">
+                  <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{formatTime(displayTime)}</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 no-expand" 
+                    onClick={handleTimerToggle}
+                    aria-label={task.timerActive ? "Stop timer" : "Start timer"}
+                  >
+                    {task.timerActive ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4 text-primary" />}
+                  </Button>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 no-expand" 
-                  onClick={handleTimerToggle}
-                  aria-label={task.timerActive ? "Stop timer" : "Start timer"}
-                >
-                  {task.timerActive ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4 text-primary" />}
-                </Button>
-              </div>
-
+              )}
             </div>
           )}
 
@@ -248,26 +254,27 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
               
-              {/* Timer display and controls for expanded view */}
-              <div className="flex items-center justify-between pt-2 pb-1 border-b border-dashed">
-                 <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
-                 <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
-                      <Clock className="h-4 w-4" />
-                      <span className="font-medium text-foreground">{formatTime(displayTime)}</span>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-8 no-expand" 
-                      onClick={handleTimerToggle}
-                      aria-label={task.timerActive ? "Stop timer" : "Start timer"}
-                    >
-                      {task.timerActive ? <Pause className="mr-1.5 h-4 w-4" /> : <Play className="mr-1.5 h-4 w-4" />}
-                      {task.timerActive ? "Stop" : "Start"}
-                    </Button>
-                 </div>
-              </div>
+              {task.columnId !== 'done' && (
+                <div className="flex items-center justify-between pt-2 pb-1 border-b border-dashed">
+                  <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
+                  <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-medium text-foreground">{formatTime(displayTime)}</span>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 no-expand" 
+                        onClick={handleTimerToggle}
+                        aria-label={task.timerActive ? "Stop timer" : "Start timer"}
+                      >
+                        {task.timerActive ? <Pause className="mr-1.5 h-4 w-4" /> : <Play className="mr-1.5 h-4 w-4" />}
+                        {task.timerActive ? "Stop" : "Start"}
+                      </Button>
+                  </div>
+                </div>
+              )}
 
 
               {task.dueDate && (
@@ -390,3 +397,4 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </AlertDialog>
   );
 }
+
