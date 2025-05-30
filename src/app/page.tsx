@@ -21,22 +21,24 @@ import React, { useState } from "react";
 function QuickActionsBar() {
   const [isFocusBatchModalOpen, setIsFocusBatchModalOpen] = useState(false);
   return (
-    <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center gap-3 justify-between">
-      <div className="w-full sm:flex-grow">
-        <QuickAddTask />
+    <div className="container mx-auto px-4 py-3">
+      <div className="bg-card p-3 sm:p-4 rounded-lg shadow-sm flex flex-col sm:flex-row items-center gap-3">
+        <div className="w-full sm:flex-grow">
+          <QuickAddTask />
+        </div>
+        <Dialog open={isFocusBatchModalOpen} onOpenChange={setIsFocusBatchModalOpen}>
+          <DialogTrigger asChild>
+            <Button
+              size="lg"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center gap-2"
+            >
+              <Sparkles className="h-5 w-5" />
+              Suggest Focus Batch
+            </Button>
+          </DialogTrigger>
+          <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
+        </Dialog>
       </div>
-      <Dialog open={isFocusBatchModalOpen} onOpenChange={setIsFocusBatchModalOpen}>
-        <DialogTrigger asChild>
-          <Button 
-            size="lg"
-            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center gap-2"
-          >
-            <Sparkles className="h-5 w-5" />
-            Suggest Focus Batch
-          </Button>
-        </DialogTrigger>
-        <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
-      </Dialog>
     </div>
   );
 }
@@ -55,6 +57,8 @@ function PageContent() {
     <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
       <div className="flex flex-col min-h-screen">
         <Header>
+          {/* Desktop Filter Trigger (conditionally rendered in Header itself) */}
+          {/* Mobile Filter Trigger */}
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="h-9 w-9 md:hidden"> {/* Show only on mobile for filter trigger */}
               <SlidersHorizontal className="h-4 w-4" />
@@ -62,13 +66,12 @@ function PageContent() {
             </Button>
           </SheetTrigger>
         </Header>
-        <QuickActionsBar /> 
+        <QuickActionsBar />
         <main className="flex-grow flex flex-col overflow-hidden">
           <KanbanBoard />
         </main>
         <Footer />
         <TaskModal />
-        {/* SheetContent for FilterSidebar, triggered by button in Header for mobile, and potentially a desktop button if added */}
         <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
             <FilterSidebar />
         </SheetContent>

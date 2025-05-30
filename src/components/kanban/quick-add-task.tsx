@@ -38,14 +38,14 @@ export function QuickAddTask() {
   };
 
   return (
-    // Ensures it takes full width of its parent in QuickActionsBar
-    <form onSubmit={handleSubmit} className="flex gap-2 bg-muted/50 rounded-lg shadow p-3 sm:p-4 w-full"> 
+    // The parent QuickActionsBar will provide the background and shadow
+    <form onSubmit={handleSubmit} className="flex gap-2 w-full">
       <Input
         type="text"
         placeholder="Enter a title for your new task & press Enter..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="flex-grow h-10 sm:h-11 text-base" // Slightly larger input
+        className="flex-grow h-10 sm:h-11 text-base bg-background/70 dark:bg-input" // Adjusted background for input
       />
       <Button type="submit" size="icon" className="h-10 w-10 sm:h-11 sm:w-11" aria-label="Add task">
         <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
