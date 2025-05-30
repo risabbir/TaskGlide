@@ -65,7 +65,8 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const toggleExpand = (e?: React.MouseEvent) => {
      if (e) {
         const target = e.target as HTMLElement;
-        if (target.closest('[data-radix-dropdown-menu-trigger], button, a')) {
+        // Prevent toggle if clicking on dropdown trigger or any button inside the card
+        if (target.closest('[data-radix-dropdown-menu-trigger], button, a, input[type="checkbox"]')) {
             return;
         }
     }
@@ -85,17 +86,22 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   return (
     <Card 
       className={cn(
-        "mb-4 shadow-md hover:shadow-lg transition-shadow duration-200",
-        !isExpanded && "cursor-pointer", // Only apply cursor-pointer when not expanded
+        "mb-4 shadow-md hover:shadow-lg transition-shadow duration-200 group/task-card",
+        !isExpanded && "cursor-pointer", 
         isOverdue && "border-destructive border-2",
         hasIncompletePrerequisites && isInWorkingColumn && "border-yellow-500 border-2 ring-2 ring-yellow-300",
         isExpanded && "shadow-xl ring-1 ring-primary/30"
       )}
-      onClick={!isExpanded ? toggleExpand : undefined} // Only allow expand click when collapsed
+      onClick={!isExpanded ? toggleExpand : undefined} 
     >
       <CardHeader className="p-3 pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-semibold leading-tight pr-2 flex-grow break-words" onClick={isExpanded ? toggleExpand : undefined} style={isExpanded ? {cursor: 'pointer'} : {}}>{task.title}</CardTitle>
+          <CardTitle 
+            className={cn("text-base font-semibold leading-tight pr-2 flex-grow break-words", isExpanded && "cursor-pointer")} 
+            onClick={isExpanded ? toggleExpand : undefined}
+          >
+            {task.title}
+          </CardTitle>
           <div className="flex items-center shrink-0">
             <Button variant="ghost" size="icon" className="h-7 w-7 mr-1" onClick={toggleExpand} aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -116,7 +122,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           </div>
         </div>
         {!isExpanded && task.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">{task.description}</p>
         )}
       </CardHeader>
 
@@ -140,7 +146,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </span>
             </div>
         )}
-
 
         {!isExpanded && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
@@ -203,7 +208,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                       onToggle={() => dispatch({type: "TOGGLE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
                       onUpdate={(updatedSubtask) => dispatch({type: "UPDATE_SUBTASK", payload: {taskId: task.id, subtask: updatedSubtask}})}
                       onDelete={() => dispatch({type: "DELETE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
-                      isEditing={false} 
+                      isEditing={false} // Subtasks in expanded card are view-only
                       className="py-0.5 text-xs"
                     />
                   ))}

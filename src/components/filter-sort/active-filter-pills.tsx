@@ -15,21 +15,29 @@ export function ActiveFilterPills() {
 
   // Status pills (selected columns)
   const allColumnsSelected = filters.status.length === DEFAULT_COLUMNS.length;
+  const noColumnsExplicitlySelected = filters.status.length === 0; // Should not happen if unchecking last resets to all
+
   if (!allColumnsSelected && filters.status.length > 0) {
-     filters.status.forEach(columnId => {
-        const column = columns.find(c => c.id === columnId);
-        if (column) {
-            activePills.push({
-                id: `status-${columnId}`,
-                label: `Status: ${column.title}`,
-                onDismiss: () => {
-                    const newStatusFilters = filters.status.filter(s => s !== columnId);
-                    // If removing the last status filter, reset to all columns
-                    dispatch({ type: "SET_FILTERS", payload: { status: newStatusFilters.length > 0 ? newStatusFilters : DEFAULT_COLUMNS.map(c => c.id) } });
-                }
-            });
+    if (filters.status.length === 1) {
+      const column = columns.find(c => c.id === filters.status[0]);
+      if (column) {
+        activePills.push({
+          id: `status-single-${column.id}`,
+          label: `Status: ${column.title}`,
+          onDismiss: () => {
+            dispatch({ type: "SET_FILTERS", payload: { status: DEFAULT_COLUMNS.map(c => c.id) } });
+          }
+        });
+      }
+    } else { // Multiple (but not all) columns selected
+      activePills.push({
+        id: `status-multiple`,
+        label: `Status: ${filters.status.length} selected`,
+        onDismiss: () => {
+          dispatch({ type: "SET_FILTERS", payload: { status: DEFAULT_COLUMNS.map(c => c.id) } });
         }
-    });
+      });
+    }
   }
 
 
@@ -56,8 +64,7 @@ export function ActiveFilterPills() {
     });
   }
 
-  // Search term is handled by the search input's clear button, not a pill usually.
-  // But if desired:
+  // Search term is handled by the search input's clear button
   // if (filters.searchTerm) {
   //   activePills.push({
   //     id: "search",
@@ -66,9 +73,21 @@ export function ActiveFilterPills() {
   //   });
   // }
 
-  if (activePills.length === 0) {
+  if (activePills.length === 0 && !filters.searchTerm) { // Only return null if no pills AND no search term
     return null;
   }
+  
+  if (activePills.length === 0 && filters.searchTerm) { // Only search term is active
+     return (
+        <div className="flex flex-wrap gap-2 items-center mb-4 px-1">
+            <span className="text-sm font-medium text-muted-foreground">Searching for: "{filters.searchTerm}"</span>
+            <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
+                Clear All
+            </Button>
+        </div>
+     );
+  }
+
 
   return (
     <div className="flex flex-wrap gap-2 items-center mb-4 px-1">
@@ -87,9 +106,12 @@ export function ActiveFilterPills() {
           </Button>
         </Badge>
       ))}
-      <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
-        Clear All
-      </Button>
+      {/* Show Clear All if there's any pill OR if there's a search term but no other pills */}
+      {(activePills.length > 0 || filters.searchTerm) && (
+        <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
+          Clear All
+        </Button>
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function FilterSidebar() {
   const { state, dispatch } = useKanban();
-  const { filters, sort } = state;
+  const { filters, sort, columns } = state; // Added columns to get titles if needed
 
   const handleStatusChange = (columnId: string, checked: boolean) => {
     const currentStatusFilters = filters.status || [];
@@ -24,12 +24,14 @@ export function FilterSidebar() {
     } else {
       newStatusFilters = currentStatusFilters.filter(id => id !== columnId);
     }
+    // If removing the last status filter, reset to all columns
     dispatch({ type: "SET_FILTERS", payload: { status: newStatusFilters.length > 0 ? newStatusFilters : DEFAULT_COLUMNS.map(c => c.id) } });
   };
   
   const handleSelectAllStatuses = (checked: boolean) => {
     const allColumnIds = DEFAULT_COLUMNS.map(col => col.id);
-    dispatch({ type: "SET_FILTERS", payload: { status: checked ? allColumnIds : [] } });
+    // If unchecking "Select All", reset to all columns selected, otherwise select all specified.
+    dispatch({ type: "SET_FILTERS", payload: { status: checked ? allColumnIds : DEFAULT_COLUMNS.map(c => c.id) } });
   };
 
   const handlePriorityChange = (priority?: Priority) => {
@@ -48,6 +50,10 @@ export function FilterSidebar() {
     dispatch({ type: "CLEAR_FILTERS" });
   };
 
+  // Determine if all statuses are selected by comparing filtered length with default columns length
+  const areAllStatusesSelected = (filters.status || []).length === DEFAULT_COLUMNS.length;
+
+
   return (
     <>
       <SheetHeader className="p-6 pb-4 border-b">
@@ -64,7 +70,7 @@ export function FilterSidebar() {
             <div className="mt-1.5 flex items-center space-x-2">
               <Checkbox
                   id="select-all-statuses"
-                  checked={(filters.status || []).length === DEFAULT_COLUMNS.length}
+                  checked={areAllStatusesSelected}
                   onCheckedChange={(checked) => handleSelectAllStatuses(checked as boolean)}
               />
               <Label htmlFor="select-all-statuses" className="font-normal">
@@ -93,7 +99,7 @@ export function FilterSidebar() {
           <div>
             <Label className="text-base font-semibold">Priority</Label>
             <RadioGroup
-              value={filters.priority || ""} // Ensure value is a string for RadioGroup
+              value={filters.priority || ""} 
               onValueChange={(value) => handlePriorityChange(value === "" ? undefined : value as Priority)}
               className="mt-2 space-y-1"
             >
@@ -116,7 +122,7 @@ export function FilterSidebar() {
           <div>
             <Label className="text-base font-semibold">Due Date</Label>
             <RadioGroup
-              value={filters.dueDate || ""} // Ensure value is a string
+              value={filters.dueDate || ""} 
               onValueChange={(value) => handleDueDateChange(value === "" ? undefined : value as any)}
               className="mt-2 space-y-1"
             >
@@ -147,12 +153,12 @@ export function FilterSidebar() {
                     {crit.replace(/([A-Z])/g, ' $1').trim()}
                   </Label>
                   <RadioGroup
-                    value={`${sort.criteria === crit ? crit : ''}-${sort.criteria === crit ? sort.direction : ''}`} // Simplified logic for current selection
+                    value={`${sort.criteria === crit ? crit : ''}-${sort.criteria === crit ? sort.direction : ''}`}
                     onValueChange={(value) => {
                       const [newCrit, newDir] = value.split("-");
                       if (newCrit && newDir) {
                         handleSortChange(newCrit as SortCriteria, newDir as SortDirection);
-                      } else if (newCrit) { // If only crit is selected, default to asc
+                      } else if (newCrit) { 
                         handleSortChange(newCrit as SortCriteria, "asc");
                       }
                     }}
