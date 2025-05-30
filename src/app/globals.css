@@ -23,8 +23,8 @@
     --muted: 220 30% 90%; /* Preserved */
     --muted-foreground: 220 10% 45%; /* Preserved */
 
-    --accent: 145 65% 45%; /* Vibrant Green - Preserved */
-    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent - Preserved */
+    --accent: 215 70% 95%; /* NEW: Very Pale Blue (like 10% opacity primary) */
+    --accent-foreground: 215 60% 25%; /* NEW: Dark Blue for contrast on pale blue accent */
 
     --destructive: 0 75% 55%; /* Preserved */
     --destructive-foreground: 0 0% 98%; /* Preserved */
@@ -36,7 +36,7 @@
     --radius: 0.5rem; /* Preserved */
 
     --chart-1: 215 65% 55%; /* REVERTED: Primary Blue */
-    --chart-2: 145 65% 45%; /* Accent Green - Preserved */
+    --chart-2: 215 70% 95%; /* NEW: Match new Accent (Very Pale Blue) */
     --chart-3: 30 80% 60%;  /* Warm Accent (Amber/Orange) - Preserved */
     --chart-4: 260 60% 70%; /* Softer Purple - Preserved */
     --chart-5: 340 70% 70%;   /* Softer Pink/Rose - Preserved */
@@ -70,8 +70,8 @@
     --muted: 220 15% 22%; /* Preserved */
     --muted-foreground: 210 20% 65%; /* Preserved */
 
-    --accent: 145 65% 55%; /* Lighter Green for dark mode - Preserved */
-    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent - Preserved */
+    --accent: 215 35% 25%; /* NEW: Dark, Desaturated Blue for Dark Mode Accent */
+    --accent-foreground: 215 70% 85%; /* NEW: Light Blueish Gray for text on dark accent */
 
     --destructive: 0 65% 50%; /* Adjusted destructive for dark - Preserved */
     --destructive-foreground: 0 0% 98%; /* Preserved */
@@ -81,7 +81,7 @@
     --ring: 215 65% 65%; /* REVERTED: Match new dark primary (Lighter standard blue) */
 
     --chart-1: 215 65% 65%; /* REVERTED: Primary Blue Dark */
-    --chart-2: 145 65% 55%; /* Accent Green Dark - Preserved */
+    --chart-2: 215 35% 25%; /* NEW: Match new Dark Accent */
     --chart-3: 30 80% 65%;  /* Warm Accent (Amber/Orange) Dark - Preserved */
     --chart-4: 260 60% 75%; /* Softer Purple Dark - Preserved */
     --chart-5: 340 70% 75%;   /* Softer Pink/Rose Dark - Preserved */
@@ -153,3 +153,4 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
 }
+
