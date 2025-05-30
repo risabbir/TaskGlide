@@ -95,7 +95,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     >
       <CardHeader className="p-3 pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-semibold leading-tight pr-2 flex-grow" onClick={isExpanded ? toggleExpand : undefined} style={isExpanded ? {cursor: 'pointer'} : {}}>{task.title}</CardTitle>
+          <CardTitle className="text-base font-semibold leading-tight pr-2 flex-grow break-words" onClick={isExpanded ? toggleExpand : undefined} style={isExpanded ? {cursor: 'pointer'} : {}}>{task.title}</CardTitle>
           <div className="flex items-center shrink-0">
             <Button variant="ghost" size="icon" className="h-7 w-7 mr-1" onClick={toggleExpand} aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -166,7 +166,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
             {task.description && (
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground mb-0.5">DESCRIPTION</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap text-sm">{task.description}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap text-sm break-words">{task.description}</p>
               </div>
             )}
             
@@ -218,7 +218,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                         {task.dependencies.map(depId => {
                             const depTask = allTasks.find(t => t.id === depId);
                             return (
-                                <li key={depId} className={cn(depTask && depTask.columnId === 'done' && "line-through")}>
+                                <li key={depId} className={cn("break-words", depTask && depTask.columnId === 'done' && "line-through")}>
                                     {depTask ? depTask.title : `Task ID: ${depId}`} {depTask && depTask.columnId === 'done' ? '(Done)' : ''}
                                 </li>
                             );
@@ -227,7 +227,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
             )}
             
-            <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-dashed mt-3">
+            <div className="text-xs text-muted-foreground space-y-1 pt-3 border-t border-dashed mt-3">
                 {task.recurrenceRule && (
                     <div className="flex items-center gap-1.5">
                         <RECURRENCE_ICON className="h-3.5 w-3.5" />

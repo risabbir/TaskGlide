@@ -68,7 +68,7 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
         />
       ) : (
          <span className={cn(
-            "text-sm flex-grow",
+            "text-sm flex-grow break-words", // Added break-words
             subtask.completed ? "line-through text-muted-foreground" : ""
           )}
          >
