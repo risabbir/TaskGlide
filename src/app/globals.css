@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 25%;
 
-    --primary: 217 90% 61%; /* New: Lighter, vivid blue */
-    --primary-foreground: 0 0% 100%; /* New: White for contrast */
+    --primary: 205 75% 58%; /* New: Light Blue */
+    --primary-foreground: 210 40% 98%; /* New: Very light, almost white for contrast */
 
     --secondary: 220 30% 94%; /* Lighter secondary for subtle contrast */
     --secondary-foreground: 220 20% 25%;
@@ -31,11 +31,11 @@
 
     --border: 220 20% 88%; /* Lighter border */
     --input: 220 25% 92%; /* Lighter input */
-    --ring: 217 90% 61%; /* New: Match new primary */
+    --ring: 205 75% 58%; /* New: Match new primary (Light Blue) */
 
     --radius: 0.5rem;
 
-    --chart-1: 217 90% 61%; /* New Primary Blue */
+    --chart-1: 205 75% 58%; /* New Primary (Light Blue) */
     --chart-2: 145 65% 45%; /* Accent Green */
     --chart-3: 35 85% 65%;  /* Complementary Orange */
     --chart-4: 260 60% 70%; /* Softer Purple */
@@ -61,8 +61,8 @@
     --popover: 220 15% 10%;
     --popover-foreground: 210 30% 90%;
 
-    --primary: 217 90% 70%; /* New: Lighter vivid blue for dark mode */
-    --primary-foreground: 217 30% 15%; /* New: Dark blue/gray text */
+    --primary: 205 75% 68%; /* New: Lighter vivid blue for dark mode */
+    --primary-foreground: 205 25% 20%; /* New: Dark blue/gray text for contrast */
 
     --secondary: 220 15% 22%;
     --secondary-foreground: 210 30% 90%;
@@ -78,9 +78,9 @@
 
     --border: 220 15% 30%;
     --input: 220 15% 28%;
-    --ring: 217 90% 70%; /* New: Match new dark primary */
+    --ring: 205 75% 68%; /* New: Match new dark primary (Light Blue) */
 
-    --chart-1: 217 90% 70%; /* New Primary Blue Dark */
+    --chart-1: 205 75% 68%; /* New Primary (Light Blue) Dark */
     --chart-2: 145 65% 55%; /* Accent Green Dark */
     --chart-3: 35 85% 70%;  /* Complementary Orange Dark */
     --chart-4: 260 60% 75%; /* Softer Purple Dark */
@@ -153,3 +153,4 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
 }
+
