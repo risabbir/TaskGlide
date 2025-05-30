@@ -80,7 +80,7 @@ export function Header() {
 
         {/* Action Buttons - Right Aligned */}
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleOpenNewTaskModal}>
+          <Button size="sm" onClick={handleOpenNewTaskModal}> {/* Removed variant="outline" */}
             <PlusCircle className="mr-2 h-4 w-4" />
             New Task
           </Button>
