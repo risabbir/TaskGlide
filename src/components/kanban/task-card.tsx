@@ -16,6 +16,7 @@ import { MoreVertical, Edit2, Trash2, ChevronsUpDown } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import { format, isPast, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
+import React from "react"; // Added React import
 
 interface TaskCardProps {
   task: Task;
@@ -23,7 +24,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, columns }: TaskCardProps) {
-  const { dispatch, tasks: allTasks } = useKanban();
+  const { dispatch, state: { tasks: allTasks } } = useKanban(); // Corrected to access allTasks from state
   const PriorityIcon = PRIORITY_STYLES[task.priority].icon;
   const priorityColor = PRIORITY_STYLES[task.priority].colorClass;
 
