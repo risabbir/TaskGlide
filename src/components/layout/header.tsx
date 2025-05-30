@@ -45,20 +45,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center space-x-2 sm:space-x-4">
-        <div className="flex items-center gap-2 md:gap-4">
+      <div className="container flex h-16 items-center justify-between gap-4 md:gap-6"> {/* Adjusted gap */}
+        {/* Logo & Name - Left Aligned */}
+        <div className="flex items-center gap-2">
           <a href="/" className="flex items-center space-x-2">
             <LayoutDashboard className="h-6 w-6 text-primary" />
             <span className="inline-block font-bold text-lg">{APP_NAME}</span>
           </a>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 ml-auto max-w-xs">
+        {/* Search Input - Center, Flexible Width */}
+        <form onSubmit={handleSearchSubmit} className="relative flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg"> {/* Responsive max-width */}
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Search tasks..."
-            className="pl-8 pr-8 h-9"
+            className="pl-8 pr-8 h-9 w-full" // Ensure w-full for flex-grow
             value={searchTerm}
             onChange={handleSearchChange}
           />
@@ -76,6 +78,7 @@ export function Header() {
           )}
         </form>
 
+        {/* Action Buttons - Right Aligned */}
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" onClick={handleOpenNewTaskModal}>
             <PlusCircle className="mr-2 h-4 w-4" />
