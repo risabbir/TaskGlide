@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock, Play, Pause } from "lucide-react";
 import { useKanban } from "@/lib/store";
-import { format, isPast, isToday, formatDistanceToNow } from "date-fns";
+import { format, isPast, isToday, formatDistanceToNow, parseISO } from "date-fns";
 import { cn, formatTime } from "@/lib/utils";
 import { SubtaskItem } from "../task/subtask-item";
 
@@ -65,7 +65,8 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const completedSubtasks = task.subtasks.filter(st => st.completed).length;
   const totalSubtasks = task.subtasks.length;
 
-  const isOverdue = task.dueDate && isPast(task.dueDate) && !isToday(task.dueDate) && task.columnId !== "done";
+  const parsedDueDate = task.dueDate ? (task.dueDate instanceof Date ? task.dueDate : parseISO(task.dueDate as any)) : null;
+  const isOverdue = parsedDueDate && isPast(parsedDueDate) && !isToday(parsedDueDate) && task.columnId !== "done";
 
   const handleMoveTask = (newColumnId: string) => {
     dispatch({ type: "MOVE_TASK", payload: { taskId: task.id, newColumnId } });
@@ -102,7 +103,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
      if (e) {
         const target = e.target as HTMLElement;
         // Check if the click originated from an element that should not trigger expansion
-        if (target.closest('.no-expand, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="dialog"], [role="alertdialog"], button, a, input[type="checkbox"], label')) {
+        if (target.closest('.no-expand, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="dialog"], [role="alertdialog"], button, a, input[type="checkbox"], label, [data-radix-collection-item]')) {
             return;
         }
     }
@@ -175,39 +176,36 @@ export function TaskCard({ task, columns }: TaskCardProps) {
               </DropdownMenu>
             </div>
           </div>
-           {!isExpanded && task.description && (
-             <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
-               {task.description}
-             </p>
-           )}
         </CardHeader>
 
         <CardContent className={cn("p-3 pt-0", !isExpanded ? "pb-2.5" : "pb-3")}>
           {!isExpanded && (
-            <div className="space-y-1.5 text-xs">
+            <div className="space-y-2 text-xs"> {/* Changed space-y-1.5 to space-y-2 for a bit more breathing room */}
+              {/* Row 1: Priority & Key Date */}
               <div className="flex items-center justify-between text-muted-foreground">
                 <div className="flex items-center gap-1" title={`Priority: ${PRIORITY_STYLES[task.priority].label}`}>
                   <PriorityIcon className={cn("h-3.5 w-3.5", priorityColor)} />
                   <span className={cn(priorityColor, "font-medium")}>{PRIORITY_STYLES[task.priority].label}</span>
                 </div>
-                <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{format(task.createdAt, "MMM d")}</span>
-                </div>
+                {parsedDueDate ? (
+                    <div className="flex items-center gap-1" title={`Due: ${format(parsedDueDate, "PPP")}`}>
+                        <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
+                        <span className={cn(isOverdue && "text-destructive font-semibold", "font-medium")}>
+                            Due {format(parsedDueDate, "MMM d")}
+                        </span>
+                        {isOverdue && <Badge variant="destructive" className="text-xs ml-1 py-0 px-1 h-auto">Overdue</Badge>}
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>Created: {format(task.createdAt, "MMM d")}</span>
+                    </div>
+                )}
               </div>
 
-              {task.dueDate && (
-                   <div className="flex items-center gap-1 text-muted-foreground" title={`Due: ${format(task.dueDate, "PPP")}`}>
-                      <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
-                      <span className={cn(isOverdue && "text-destructive font-semibold", "font-medium")}>
-                          Due {format(task.dueDate, "MMM d")}
-                      </span>
-                       {isOverdue && <Badge variant="destructive" className="text-xs ml-1 py-0 px-1 h-auto">Overdue</Badge>}
-                  </div>
-              )}
-
+              {/* Row 2: Tags (conditional) */}
               {task.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-0.5">
+                <div className="flex flex-wrap gap-1">
                   {task.tags.slice(0, 2).map(tag => (
                     <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5 font-normal">{tag}</Badge>
                   ))}
@@ -215,9 +213,10 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
 
+              {/* Row 3: Subtasks (conditional) */}
               {totalSubtasks > 0 && (
-                <div className="pt-0.5">
-                  <div className="flex justify-between text-muted-foreground mb-0.5 text-[0.7rem]">
+                <div>
+                  <div className="flex justify-between text-muted-foreground mb-0.5 text-xs">
                     <span>Subtasks</span>
                     <span>{completedSubtasks}/{totalSubtasks}</span>
                   </div>
@@ -225,8 +224,9 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
               
+              {/* Row 4: Timer (conditional) */}
               {task.columnId !== 'done' && (
-                <div className="flex items-center justify-between pt-1.5">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{formatTime(displayTime)}</span>
@@ -277,11 +277,11 @@ export function TaskCard({ task, columns }: TaskCardProps) {
               )}
 
 
-              {task.dueDate && (
-                  <div className="flex items-center gap-1.5 text-sm" title={`Due: ${format(task.dueDate, "PPP")}`}>
+              {parsedDueDate && (
+                  <div className="flex items-center gap-1.5 text-sm" title={`Due: ${format(parsedDueDate, "PPP")}`}>
                       <CalendarDays className={cn("h-4 w-4", isOverdue ? "text-destructive" : "text-muted-foreground")} />
                       <span className={cn("font-medium", isOverdue ? "text-destructive" : "text-foreground")}>
-                          Due {format(task.dueDate, "PPP")}
+                          Due {format(parsedDueDate, "PPP")}
                       </span>
                       {isOverdue && <Badge variant="destructive" className="text-xs ml-1">Overdue</Badge>}
                   </div>
