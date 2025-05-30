@@ -23,8 +23,8 @@
     --muted: 220 30% 90%; /* For less prominent elements */
     --muted-foreground: 220 10% 45%;
 
-    --accent: 170 70% 45%; /* Vibrant Teal */
-    --accent-foreground: 170 100% 10%; /* Dark Teal for text on accent */
+    --accent: 145 65% 45%; /* Vibrant Green */
+    --accent-foreground: 145 100% 10%; /* Dark Green for text on accent */
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 98%;
@@ -36,7 +36,7 @@
     --radius: 0.5rem;
 
     --chart-1: 215 65% 55%; /* Primary Blue */
-    --chart-2: 170 70% 45%; /* Accent Teal */
+    --chart-2: 145 65% 45%; /* Accent Green */
     --chart-3: 40 70% 60%;  /* Complementary Muted Orange/Yellow */
     --chart-4: 270 50% 65%; /* Muted Purple */
     --chart-5: 0 60% 65%;   /* Muted Coral/Red */
@@ -70,8 +70,8 @@
     --muted: 220 15% 22%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 170 70% 55%; /* Lighter Teal for dark mode */
-    --accent-foreground: 170 30% 95%; /* Light Teal/White for text on accent */
+    --accent: 145 65% 55%; /* Lighter Green for dark mode */
+    --accent-foreground: 145 30% 95%; /* Light Green/White for text on accent */
 
     --destructive: 0 65% 50%; /* Adjusted destructive for dark */
     --destructive-foreground: 0 0% 98%;
@@ -81,7 +81,7 @@
     --ring: 215 65% 65%;
 
     --chart-1: 215 65% 65%; /* Primary Blue Dark */
-    --chart-2: 170 70% 55%; /* Accent Teal Dark */
+    --chart-2: 145 65% 55%; /* Accent Green Dark */
     --chart-3: 40 70% 65%;  /* Muted Orange/Yellow Dark */
     --chart-4: 270 50% 70%; /* Muted Purple Dark */
     --chart-5: 0 60% 70%;   /* Muted Coral/Red Dark */
@@ -109,16 +109,17 @@
 
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px; /* Made scrollbar slightly wider for visibility */
+  height: 12px;
 }
 ::-webkit-scrollbar-track {
   background: hsl(var(--secondary));
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.7);
+  background: hsl(var(--primary) / 0.6); /* Slightly less opaque primary */
   border-radius: 10px;
+  border: 3px solid hsl(var(--secondary)); /* Creates a border effect around thumb */
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
@@ -127,7 +128,8 @@
   background: hsl(var(--secondary));
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.7);
+  background: hsl(var(--primary) / 0.6);
+  border: 3px solid hsl(var(--secondary));
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
@@ -135,8 +137,8 @@
 
 /* More subtle custom scrollbar for specific areas like modal subtask list */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px; /* Kept this one a bit thinner */
+  height: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: hsl(var(--muted) / 0.5); /* Softer track */
@@ -145,6 +147,7 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.5); /* Softer thumb */
   border-radius: 10px;
+  border: 2px solid hsl(var(--muted) / 0.5);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
