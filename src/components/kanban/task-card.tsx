@@ -97,8 +97,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     return depTask && depTask.columnId !== 'done';
   });
 
-  // Check if the task is in a column where prerequisites should cause a warning
-  // For example, 'inprogress' or 'review'. Adjust columns as needed.
   const isInWorkingColumn = task.columnId === 'inprogress' || task.columnId === 'review';
 
 
@@ -124,7 +122,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   };
 
   const handleTimerToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card expansion
+    e.stopPropagation(); 
     if (task.timerActive) {
       dispatch({ type: "STOP_TIMER", payload: task.id });
     } else {
@@ -147,12 +145,10 @@ export function TaskCard({ task, columns }: TaskCardProps) {
       >
         <CardHeader className="p-3 pb-2">
           <div className="flex justify-between items-start gap-2">
-             {/* Task Title - takes available space */}
-            <div className={cn("text-base font-semibold leading-tight pr-1 flex-grow break-words overflow-hidden", !isExpanded ? "line-clamp-2" : "")} title={task.title}>
+            <div className={cn("text-base font-semibold leading-tight pr-1 flex-grow break-words", !isExpanded ? "line-clamp-2" : "")} title={task.title}>
               {task.title}
             </div>
             
-            {/* Action buttons - shrink to fit content */}
             <div className="flex items-center shrink-0 no-expand">
               <Button variant="ghost" size="icon" className="h-7 w-7 mr-0.5 no-expand" onClick={toggleExpand} aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -169,7 +165,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                   <AlertDialogTrigger asChild>
                      <DropdownMenuItem 
                         className="text-destructive focus:text-destructive focus:bg-destructive/10 no-expand"
-                        onClick={(e) => { e.stopPropagation(); openDeleteDialog(e); /* Explicitly open, trigger handles rest */}}
+                        onClick={(e) => { e.stopPropagation(); openDeleteDialog(e);}}
                       >
                       <Trash2 className="mr-2 h-4 w-4" /> Delete Task
                     </DropdownMenuItem>
@@ -205,7 +201,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 )}
               </div>
 
-              {/* Row 2: Tags (conditional) */}
               {task.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {task.tags.slice(0, 2).map(tag => (
@@ -215,7 +210,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
 
-              {/* Row 3: Subtasks (conditional) */}
               {totalSubtasks > 0 && (
                 <div>
                   <div className="flex justify-between text-muted-foreground mb-0.5 text-xs">
@@ -226,7 +220,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
               
-              {/* Row 4: Timer (conditional - only if task.columnId is 'inprogress') */}
               {task.columnId === 'inprogress' && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
@@ -256,7 +249,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
               
-              {/* Timer section in expanded view - only if task.columnId is 'inprogress' */}
               {task.columnId === 'inprogress' && (
                 <div className="flex items-center justify-between pt-2 pb-1 border-b border-dashed">
                   <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
