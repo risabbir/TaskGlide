@@ -38,7 +38,7 @@ export function QuickAddTask() {
   };
 
   return (
-    // Removed max-w-xl, kept w-full so it takes full width of its parent in QuickActionsBar
+    // Ensures it takes full width of its parent in QuickActionsBar
     <form onSubmit={handleSubmit} className="flex gap-2 bg-muted/50 rounded-lg shadow p-3 sm:p-4 w-full"> 
       <Input
         type="text"

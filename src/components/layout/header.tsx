@@ -5,9 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface HeaderProps {
   children?: ReactNode; // To accept the SheetTrigger for mobile filter
@@ -16,28 +24,51 @@ interface HeaderProps {
 export function Header({ children }: HeaderProps) {
   const { dispatch, state } = useKanban();
   const filters = state.filters;
-  const [searchTerm, setSearchTerm] = useState(filters?.searchTerm ?? "");
+  
+  // State for desktop inline search
+  const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters?.searchTerm ?? "");
+  
+  // State for mobile modal search
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [modalSearchTerm, setModalSearchTerm] = useState("");
 
   useEffect(() => {
-    if (filters?.searchTerm !== searchTerm) {
-      setSearchTerm(filters?.searchTerm ?? "");
+    // Sync desktop search if global filters change (e.g. from modal search)
+    if (filters?.searchTerm !== desktopSearchTerm) {
+      setDesktopSearchTerm(filters?.searchTerm ?? "");
     }
-  }, [filters?.searchTerm, searchTerm]);
+    // If modal is closed and its term differs, it was likely set by desktop search.
+    // Or, if modal is opened, initialize it with current global search term.
+    if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
+      setModalSearchTerm(filters?.searchTerm ?? "");
+    }
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+  }, [filters?.searchTerm, isSearchModalOpen]);
+
+  const handleDesktopSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDesktopSearchTerm(event.target.value);
   };
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleDesktopSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    dispatch({ type: "SET_FILTERS", payload: { searchTerm } });
+    dispatch({ type: "SET_FILTERS", payload: { searchTerm: desktopSearchTerm } });
   };
 
-  const clearSearch = () => {
-    setSearchTerm("");
+  const clearDesktopSearch = () => {
+    setDesktopSearchTerm("");
     dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
   };
 
+  const handleModalSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setModalSearchTerm(event.target.value);
+  };
+
+  const handleModalSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
+    setIsSearchModalOpen(false);
+  };
+  
   const handleOpenNewTaskModal = () => {
     dispatch({ type: "OPEN_TASK_MODAL", payload: null });
   };
@@ -47,58 +78,112 @@ export function Header({ children }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between gap-1 sm:gap-2">
-        {/* Logo & Name - Left Aligned */}
-        <div className="flex items-center gap-2">
-          <a href="/" className="flex items-center space-x-2">
-            <LayoutDashboard className="h-6 w-6 text-primary" />
-            <span className="hidden sm:inline-block font-bold text-lg">{APP_NAME}</span>
-          </a>
-        </div>
+    <>
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between gap-1 sm:gap-2">
+          {/* Logo & Name - Left Aligned */}
+          <div className="flex items-center gap-2">
+            <a href="/" className="flex items-center space-x-2">
+              <LayoutDashboard className="h-6 w-6 text-primary" />
+              <span className="hidden sm:inline-block font-bold text-lg">{APP_NAME}</span>
+            </a>
+          </div>
 
-        {/* Search Input - Center, Flexible Width */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-grow max-w-[200px] sm:max-w-xs md:max-w-sm lg:max-w-md">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search tasks..."
-            className="pl-8 pr-8 h-9 w-full" // Ensure input is full width of its parent form
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          {searchTerm && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
-              onClick={clearSearch}
-            >
-              <XCircle className="h-4 w-4" />
-              <span className="sr-only">Clear search</span>
+          {/* Desktop Search Input - Center, Flexible Width */}
+          <form onSubmit={handleDesktopSearchSubmit} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search tasks..."
+              className="pl-8 pr-8 h-9 w-full"
+              value={desktopSearchTerm}
+              onChange={handleDesktopSearchChange}
+            />
+            {desktopSearchTerm && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                onClick={clearDesktopSearch}
+              >
+                <XCircle className="h-4 w-4" />
+                <span className="sr-only">Clear search</span>
+              </Button>
+            )}
+          </form>
+
+          {/* Action Buttons - Right Aligned */}
+          <div className="flex items-center space-x-1">
+            {/* Mobile Search Trigger */}
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden" onClick={() => setIsSearchModalOpen(true)}>
+              <Search className="h-4 w-4" />
+              <span className="sr-only">Search</span>
             </Button>
-          )}
-        </form>
 
-        {/* Action Buttons - Right Aligned */}
-        <div className="flex items-center space-x-1">
-          <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3">
-            <PlusCircle className="h-4 w-4 sm:mr-1.5" />
-            <span className="hidden sm:inline">New Task</span>
-          </Button>
-          
-          {/* Desktop Filter Trigger */}
-          <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="sr-only">Filters & Sort</span>
-          </Button>
-          {/* Mobile Filter Trigger (passed as child from page.tsx) */}
-          {children} 
-          
-          <ThemeToggle />
+            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3">
+              <PlusCircle className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">New Task</span>
+            </Button>
+            
+            {/* Desktop Filter Trigger */}
+            <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="sr-only">Filters & Sort</span>
+            </Button>
+            {/* Mobile Filter Trigger (passed as child from page.tsx) */}
+            {children} 
+            
+            <ThemeToggle />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Mobile Search Modal */}
+      <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Search Tasks</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleModalSearchSubmit} className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by title, description, tags..."
+                className="pl-8 h-10 w-full"
+                value={modalSearchTerm}
+                onChange={handleModalSearchChange}
+                autoFocus
+              />
+              {modalSearchTerm && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                  onClick={() => {
+                    setModalSearchTerm(""); 
+                    // Optionally dispatch clear immediately or wait for explicit search
+                    // dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }); 
+                  }}
+                >
+                  <XCircle className="h-4 w-4" />
+                  <span className="sr-only">Clear search</span>
+                </Button>
+              )}
+            </div>
+            <DialogFooter className="sm:justify-end">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit">Search</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
