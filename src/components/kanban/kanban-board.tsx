@@ -4,7 +4,7 @@
 import { useKanban } from "@/lib/store";
 import type { Task, Column as ColumnType, FilterState, SortState } from "@/lib/types";
 import { KanbanColumn } from "./kanban-column";
-import { QuickAddTask } from "./quick-add-task";
+// import { QuickAddTask } from "./quick-add-task"; // Removed this import
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills";
@@ -92,7 +92,7 @@ export function KanbanBoard() {
   if (tasks.length === 0 && !filters.searchTerm) {
     return (
       <div className="flex flex-col flex-grow p-4 space-y-4 items-center justify-center text-center">
-        <QuickAddTask />
+        {/* QuickAddTask was here - Removed */}
         <div className="flex flex-col items-center justify-center flex-grow w-full bg-muted/30 rounded-lg p-8 mt-4">
           <ClipboardList className="h-24 w-24 text-muted-foreground mb-6" data-ai-hint="clipboard list" />
           <h3 className="text-xl font-semibold mb-2 text-foreground">Your Task Board is Empty!</h3>
@@ -114,7 +114,7 @@ export function KanbanBoard() {
 
   return (
     <div className="flex flex-col flex-grow p-4 space-y-4 overflow-hidden">
-      <QuickAddTask />
+      {/* <QuickAddTask />  // Removed this instance */}
       <ActiveFilterPills />
       <ScrollArea className="flex-grow w-full">
         <div className="flex flex-col md:flex-row md:whitespace-nowrap gap-4 h-full pb-4">
