@@ -43,29 +43,40 @@ const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
 // Helper function to filter tasks
 const filterTasks = (tasks: Task[], filters: FilterState): Task[] => {
   return tasks.filter(task => {
+    // Status filter
     if (filters.status.length > 0 && !filters.status.includes(task.columnId)) {
-      if (filters.searchTerm) {
-         // continue to other checks if search term exists
-      } else {
-        return false; 
+      return false;
+    }
+
+    // Priority filter
+    if (filters.priority && task.priority !== filters.priority) {
+      return false;
+    }
+
+    // Due date filter
+    if (filters.dueDate) {
+      if (!task.dueDate) { // Task has no due date
+        if (filters.dueDate !== "none") return false;
+      } else { // Task has a due date
+        if (filters.dueDate === "none") return false; // If filtering for "none" but task has a due date
+        const dueDate = task.dueDate instanceof Date ? task.dueDate : parseISO(task.dueDate as unknown as string);
+        if (filters.dueDate === "overdue" && !(isPast(dueDate) && !isToday(dueDate))) return false;
+        if (filters.dueDate === "today" && !isToday(dueDate)) return false;
+        if (filters.dueDate === "thisWeek" && !isThisISOWeek(dueDate)) return false;
       }
     }
-    if (filters.priority && task.priority !== filters.priority) return false;
-    if (filters.dueDate) {
-      if (!task.dueDate) return filters.dueDate === "none";
-      const dueDate = task.dueDate instanceof Date ? task.dueDate : parseISO(task.dueDate as unknown as string);
-      if (filters.dueDate === "overdue" && !(isPast(dueDate) && !isToday(dueDate))) return false;
-      if (filters.dueDate === "today" && !isToday(dueDate)) return false;
-      if (filters.dueDate === "thisWeek" && !isThisISOWeek(dueDate)) return false;
-    }
+
+    // Search term filter (applies to title, description, and tags)
     if (filters.searchTerm) {
       const searchTermLower = filters.searchTerm.toLowerCase();
       const inTitle = task.title.toLowerCase().includes(searchTermLower);
       const inDescription = task.description?.toLowerCase().includes(searchTermLower) || false;
       const inTags = task.tags.some(tag => tag.toLowerCase().includes(searchTermLower));
-      if (!(inTitle || inDescription || inTags)) return false;
+      if (!(inTitle || inDescription || inTags)) {
+        return false;
+      }
     }
-    return true;
+    return true; // Task passes all active filters
   });
 };
 

@@ -38,7 +38,7 @@ export function QuickAddTask() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 bg-muted/50 rounded-lg shadow">
+    <form onSubmit={handleSubmit} className="flex gap-2 p-4 bg-muted/50 rounded-lg shadow max-w-xl mx-auto w-full">
       <Input
         type="text"
         placeholder="Add a new task and press Enter..."
