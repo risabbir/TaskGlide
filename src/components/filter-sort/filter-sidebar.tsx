@@ -7,14 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { DEFAULT_COLUMNS, PRIORITIES, PRIORITY_STYLES } from "@/lib/constants";
 import type { Priority, SortCriteria, SortDirection } from "@/lib/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CalendarIcon, XCircle } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export function FilterSidebar() {
   const { state, dispatch } = useKanban();
-  const { filters, sort, columns } = state; // Added columns to get titles if needed
+  const { filters, sort } = state;
 
   const handleStatusChange = (columnId: string, checked: boolean) => {
     const currentStatusFilters = filters.status || [];
@@ -24,13 +29,11 @@ export function FilterSidebar() {
     } else {
       newStatusFilters = currentStatusFilters.filter(id => id !== columnId);
     }
-    // If removing the last status filter, reset to all columns
     dispatch({ type: "SET_FILTERS", payload: { status: newStatusFilters.length > 0 ? newStatusFilters : DEFAULT_COLUMNS.map(c => c.id) } });
   };
   
   const handleSelectAllStatuses = (checked: boolean) => {
     const allColumnIds = DEFAULT_COLUMNS.map(col => col.id);
-    // If unchecking "Select All", reset to all columns selected, otherwise select all specified.
     dispatch({ type: "SET_FILTERS", payload: { status: checked ? allColumnIds : DEFAULT_COLUMNS.map(c => c.id) } });
   };
 
@@ -38,8 +41,12 @@ export function FilterSidebar() {
     dispatch({ type: "SET_FILTERS", payload: { priority } });
   };
 
-  const handleDueDateChange = (dueDate?: "overdue" | "today" | "thisWeek" | "none") => {
-    dispatch({ type: "SET_FILTERS", payload: { dueDate } });
+  const handlePredefinedDueDateChange = (dueDateValue?: "overdue" | "today" | "thisWeek" | "none") => {
+    dispatch({ type: "SET_FILTERS", payload: { dueDate: dueDateValue, dueDateStart: undefined, dueDateEnd: undefined } });
+  };
+
+  const handleSpecificDateChange = (field: "dueDateStart" | "dueDateEnd", date?: Date) => {
+    dispatch({ type: "SET_FILTERS", payload: { [field]: date, dueDate: undefined } });
   };
 
   const handleSortChange = (criteria: SortCriteria, direction: SortDirection) => {
@@ -50,9 +57,7 @@ export function FilterSidebar() {
     dispatch({ type: "CLEAR_FILTERS" });
   };
 
-  // Determine if all statuses are selected by comparing filtered length with default columns length
   const areAllStatusesSelected = (filters.status || []).length === DEFAULT_COLUMNS.length;
-
 
   return (
     <>
@@ -123,11 +128,11 @@ export function FilterSidebar() {
             <Label className="text-base font-semibold">Due Date</Label>
             <RadioGroup
               value={filters.dueDate || ""} 
-              onValueChange={(value) => handleDueDateChange(value === "" ? undefined : value as any)}
+              onValueChange={(value) => handlePredefinedDueDateChange(value === "" ? undefined : value as any)}
               className="mt-2 space-y-1"
             >
               {[
-                { value: undefined, label: "Any" },
+                { value: undefined, label: "Any (All Dates)" },
                 { value: "overdue", label: "Overdue" },
                 { value: "today", label: "Due Today" },
                 { value: "thisWeek", label: "Due This Week" },
@@ -139,6 +144,56 @@ export function FilterSidebar() {
                 </div>
               ))}
             </RadioGroup>
+
+            <div className="mt-4 space-y-3">
+              <Label className="text-sm font-medium text-muted-foreground">Or pick a specific date range:</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="dueDateStart" className="text-xs">Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn("w-full justify-start text-left font-normal h-9", !filters.dueDateStart && "text-muted-foreground")}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filters.dueDateStart ? format(filters.dueDateStart, "PPP") : <span>Pick start date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar mode="single" selected={filters.dueDateStart} onSelect={(date) => handleSpecificDateChange("dueDateStart", date)} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                   {filters.dueDateStart && (
+                    <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive mt-1" onClick={() => handleSpecificDateChange("dueDateStart", undefined)}>
+                        <XCircle className="mr-1 h-3 w-3" /> Clear Start Date
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="dueDateEnd" className="text-xs">End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                       <Button
+                        variant="outline"
+                        className={cn("w-full justify-start text-left font-normal h-9", !filters.dueDateEnd && "text-muted-foreground")}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {filters.dueDateEnd ? format(filters.dueDateEnd, "PPP") : <span>Pick end date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar mode="single" selected={filters.dueDateEnd} onSelect={(date) => handleSpecificDateChange("dueDateEnd", date)} initialFocus disabled={(date) => filters.dueDateStart && date < filters.dueDateStart } />
+                    </PopoverContent>
+                  </Popover>
+                   {filters.dueDateEnd && (
+                    <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-destructive mt-1" onClick={() => handleSpecificDateChange("dueDateEnd", undefined)}>
+                       <XCircle className="mr-1 h-3 w-3" /> Clear End Date
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           
           <Separator />

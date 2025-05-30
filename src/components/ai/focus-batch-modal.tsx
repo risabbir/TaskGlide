@@ -11,15 +11,14 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Loader2, AlertTriangle, Lightbulb } from "lucide-react";
+import { Sparkles, Loader2, AlertTriangle, Lightbulb, CalendarDays } from "lucide-react";
 import { useKanban } from "@/lib/store";
-import type { Task, Priority } from "@/lib/types";
+import type { Task } from "@/lib/types";
 import { suggestFocusBatch, type SuggestFocusBatchInput, type SuggestFocusBatchOutput, type FocusTaskSuggestion } from "@/ai/flows/suggest-focus-batch";
 import { PRIORITY_STYLES } from "@/lib/constants";
-import { formatDistanceToNowStrict, parseISO } from "date-fns";
+import { formatDistanceToNowStrict, parseISO, format } from "date-fns";
 
 interface FocusBatchModalContentProps {
   onClose: () => void;
@@ -49,7 +48,6 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
           priority: task.priority,
           columnId: task.columnId,
           description: task.description || "",
-          // Ensure dueDate is a string if it exists, or undefined
           dueDate: task.dueDate ? (task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate) : undefined,
         }));
 
@@ -75,8 +73,8 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
   };
 
   return (
-    <DialogContent className="sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[80vh] flex flex-col">
-      <DialogHeader className="flex-shrink-0">
+    <DialogContent className="sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[80vh] flex flex-col p-0">
+      <DialogHeader className="p-6 pb-4 border-b flex-shrink-0">
         <DialogTitle className="flex items-center">
           <Sparkles className="mr-2 h-5 w-5 text-primary" />
           AI Suggested Focus Batch
@@ -86,8 +84,8 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </DialogDescription>
       </DialogHeader>
       
-      <ScrollArea className="flex-grow min-h-0 pr-3">
-        <div className="py-4 space-y-4">
+      <ScrollArea className="flex-grow min-h-0 custom-scrollbar">
+        <div className="p-6 space-y-4">
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-10">
               <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -113,29 +111,30 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
               {suggestions.map(suggestion => {
                 const task = getTaskDetails(suggestion.taskId);
                 if (!task) return null;
+                
                 const PriorityIcon = PRIORITY_STYLES[task.priority].icon;
+                const priorityColor = PRIORITY_STYLES[task.priority].colorClass;
+                const parsedDueDate = task.dueDate ? (task.dueDate instanceof Date ? task.dueDate : parseISO(task.dueDate as any)) : null;
                 
                 return (
                   <li key={suggestion.taskId}>
                     <Card className="shadow-sm hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-lg">{suggestion.title}</CardTitle>
-                         <CardDescription className="text-xs text-muted-foreground pt-0.5">
-                           {PRIORITY_STYLES[task.priority].label} Priority
-                           {task.dueDate && 
-                            <span> &bull; Due {
-                                task.dueDate instanceof Date 
-                                ? formatDistanceToNowStrict(task.dueDate, { addSuffix: true }) 
-                                : formatDistanceToNowStrict(parseISO(task.dueDate as any), { addSuffix: true })
-                            }</span>}
-                         </CardDescription>
+                         <div className="text-xs text-muted-foreground pt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className={`flex items-center font-medium ${priorityColor}`}>
+                                <PriorityIcon className={`mr-1 h-3.5 w-3.5`} />
+                                {PRIORITY_STYLES[task.priority].label} Priority
+                            </span>
+                           {parsedDueDate && 
+                            <span className="flex items-center">
+                                <CalendarDays className="mr-1 h-3.5 w-3.5" />
+                                Due {format(parsedDueDate, "MMM d, yyyy")} ({formatDistanceToNowStrict(parsedDueDate, { addSuffix: true })})
+                            </span>}
+                         </div>
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground leading-relaxed">{suggestion.reason}</p>
-                         {/* Optionally show a few more details from the task if needed */}
-                         {/* <div className="mt-2 text-xs">
-                           <Badge variant="outline">{task.columnId}</Badge>
-                         </div> */}
                       </CardContent>
                     </Card>
                   </li>
@@ -146,7 +145,7 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </div>
       </ScrollArea>
 
-      <DialogFooter className="mt-auto pt-4 border-t flex-shrink-0">
+      <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
         <DialogClose asChild>
           <Button type="button" variant="outline" onClick={onClose}>
             Close

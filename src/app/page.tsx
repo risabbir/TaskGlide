@@ -28,8 +28,8 @@ function QuickActionsBar() {
       <Dialog open={isFocusBatchModalOpen} onOpenChange={setIsFocusBatchModalOpen}>
         <DialogTrigger asChild>
           <Button 
-            size="lg" // Made button larger
-            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center gap-2"
+            size="lg"
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center gap-2"
           >
             <Sparkles className="h-5 w-5" />
             Suggest Focus Batch
@@ -46,8 +46,13 @@ function PageContent() {
   const { state, dispatch } = useKanban();
   const { isFilterSidebarOpen } = state;
 
+  const toggleFilterSidebar = () => {
+    dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
+  };
+
+
   return (
-    <Sheet open={isFilterSidebarOpen} onOpenChange={() => dispatch({ type: "TOGGLE_FILTER_SIDEBAR" })}>
+    <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
       <div className="flex flex-col min-h-screen">
         <Header />
         <QuickActionsBar /> 

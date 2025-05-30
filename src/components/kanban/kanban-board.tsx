@@ -4,13 +4,13 @@
 import { useKanban } from "@/lib/store";
 import type { Task, Column as ColumnType, FilterState, SortState } from "@/lib/types";
 import { KanbanColumn } from "./kanban-column";
-// import { QuickAddTask } from "./quick-add-task"; // Removed this import
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills";
-import { isPast, isToday, isThisISOWeek, parseISO } from "date-fns";
+import { isPast, isToday, isThisISOWeek, parseISO, startOfDay, endOfDay, isWithinInterval, isSameDay, isAfter, isBefore } from "date-fns";
 import React from "react";
 import { ClipboardList, PlusCircle, SearchX } from "lucide-react";
+import { DEFAULT_COLUMNS } from "@/lib/constants"; // Added import
 
 // Helper function to sort tasks
 const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
@@ -54,17 +54,32 @@ const filterTasks = (tasks: Task[], filters: FilterState): Task[] => {
     }
 
     // Due date filter
-    if (filters.dueDate) {
-      if (!task.dueDate) { // Task has no due date
+    const taskDueDate = task.dueDate ? (task.dueDate instanceof Date ? task.dueDate : parseISO(task.dueDate as unknown as string)) : null;
+
+    if (filters.dueDate) { // Predefined range filter
+      if (!taskDueDate) {
         if (filters.dueDate !== "none") return false;
-      } else { // Task has a due date
-        if (filters.dueDate === "none") return false; // If filtering for "none" but task has a due date
-        const dueDate = task.dueDate instanceof Date ? task.dueDate : parseISO(task.dueDate as unknown as string);
-        if (filters.dueDate === "overdue" && !(isPast(dueDate) && !isToday(dueDate))) return false;
-        if (filters.dueDate === "today" && !isToday(dueDate)) return false;
-        if (filters.dueDate === "thisWeek" && !isThisISOWeek(dueDate)) return false;
+      } else {
+        if (filters.dueDate === "none") return false;
+        if (filters.dueDate === "overdue" && !(isPast(taskDueDate) && !isToday(taskDueDate))) return false;
+        if (filters.dueDate === "today" && !isToday(taskDueDate)) return false;
+        if (filters.dueDate === "thisWeek" && !isThisISOWeek(taskDueDate)) return false;
+      }
+    } else if (filters.dueDateStart || filters.dueDateEnd) { // Specific date range filter
+      if (!taskDueDate) return false; // Tasks without due dates don't match specific ranges
+
+      const startDate = filters.dueDateStart ? startOfDay(filters.dueDateStart) : null;
+      const endDate = filters.dueDateEnd ? endOfDay(filters.dueDateEnd) : null;
+      
+      if (startDate && endDate) {
+        if (!isWithinInterval(taskDueDate, { start: startDate, end: endDate })) return false;
+      } else if (startDate) {
+        if (!(isAfter(taskDueDate, startDate) || isSameDay(taskDueDate, startDate))) return false;
+      } else if (endDate) {
+        if (!(isBefore(taskDueDate, endDate) || isSameDay(taskDueDate, endDate))) return false;
       }
     }
+
 
     // Search term filter (applies to title, description, and tags)
     if (filters.searchTerm) {
@@ -89,10 +104,12 @@ export function KanbanBoard() {
     dispatch({ type: "OPEN_TASK_MODAL", payload: null });
   };
 
-  if (tasks.length === 0 && !filters.searchTerm) {
+  const filteredAndSortedTasks = filterTasks(tasks, filters);
+  const visibleColumns = columns.filter(col => filters.status.includes(col.id));
+
+  if (tasks.length === 0 && !filters.searchTerm && !filters.dueDateStart && !filters.dueDateEnd && !filters.dueDate && !filters.priority && filters.status.length === DEFAULT_COLUMNS.length) {
     return (
       <div className="flex flex-col flex-grow p-4 space-y-4 items-center justify-center text-center">
-        {/* QuickAddTask was here - Removed */}
         <div className="flex flex-col items-center justify-center flex-grow w-full bg-muted/30 rounded-lg p-8 mt-4">
           <ClipboardList className="h-24 w-24 text-muted-foreground mb-6" data-ai-hint="clipboard list" />
           <h3 className="text-xl font-semibold mb-2 text-foreground">Your Task Board is Empty!</h3>
@@ -108,13 +125,9 @@ export function KanbanBoard() {
     );
   }
 
-  const filteredAndSortedTasks = filterTasks(tasks, filters);
-  const visibleColumns = columns.filter(col => filters.status.includes(col.id));
-
 
   return (
     <div className="flex flex-col flex-grow p-4 space-y-4 overflow-hidden">
-      {/* <QuickAddTask />  // Removed this instance */}
       <ActiveFilterPills />
       <ScrollArea className="flex-grow w-full">
         <div className="flex flex-col md:flex-row md:whitespace-nowrap gap-4 h-full pb-4">
@@ -130,7 +143,7 @@ export function KanbanBoard() {
               />
             );
           })}
-           {visibleColumns.length === 0 && tasks.length > 0 && (
+           {visibleColumns.length === 0 && (filteredAndSortedTasks.length === 0 && tasks.length > 0) && (
             <div className="flex flex-col items-center justify-center h-full w-full text-muted-foreground p-8 text-center flex-grow bg-muted/30 rounded-lg">
               <SearchX className="h-16 w-16 text-muted-foreground mb-4" data-ai-hint="search magnifying glass" />
               <p className="text-lg font-medium text-foreground">No tasks match your current filters.</p>

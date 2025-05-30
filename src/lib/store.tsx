@@ -49,8 +49,8 @@ type KanbanAction =
   | { type: "TOGGLE_SUBTASK"; payload: { taskId: string; subtaskId: string } }
   | { type: "UPDATE_SUBTASK"; payload: { taskId: string; subtask: Subtask } }
   | { type: "DELETE_SUBTASK"; payload: { taskId: string; subtaskId: string } }
-  | { type: "START_TIMER"; payload: string } // taskId
-  | { type: "STOP_TIMER"; payload: string }; // taskId
+  | { type: "START_TIMER"; payload: string } 
+  | { type: "STOP_TIMER"; payload: string }; 
 
 
 function getNextDueDate(currentDueDate: Date, rule: RecurrenceRule): Date {
@@ -126,7 +126,6 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       let finalTimerActive = taskToMove.timerActive;
       let finalTimerStartTime = taskToMove.timerStartTime;
 
-      // Auto-stop timer if task is moved to "done"
       if (taskToMove.timerActive && newColumnId === 'done' && taskToMove.timerStartTime) {
         const elapsed = Math.floor((Date.now() - taskToMove.timerStartTime) / 1000);
         finalTimeSpentSeconds += elapsed;
@@ -175,7 +174,6 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
           subtasks: taskToMove.subtasks.map(st => ({ ...st, completed: false })),
           createdAt: new Date(),
           updatedAt: new Date(),
-          // Reset timer for new recurring task
           timeSpentSeconds: 0,
           timerActive: false,
           timerStartTime: null,
@@ -316,7 +314,20 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   const parseTaskDate = (dateString?: string | Date): Date | undefined => {
     if (!dateString) return undefined;
     if (dateString instanceof Date) return dateString;
-    return dateFnsParseISO(dateString);
+    try {
+      // Attempt to parse ISO string or other common date formats
+      const parsed = dateFnsParseISO(dateString);
+      if (!isNaN(parsed.getTime())) { // Check if parsed date is valid
+        return parsed;
+      }
+    } catch (e) {
+      // If parsing fails, try to construct from number (timestamp) or return undefined
+    }
+    if (typeof dateString === 'number' || !isNaN(Number(dateString))) {
+        const numDate = new Date(Number(dateString));
+        if(!isNaN(numDate.getTime())) return numDate;
+    }
+    return undefined; // Fallback if parsing fails
   };
   
   const parseTask = (task: any): Task => ({
@@ -327,7 +338,6 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     subtasks: task.subtasks || [],
     dependencies: task.dependencies || [],
     tags: task.tags || [],
-    // Initialize timer fields if not present in stored data
     timerActive: task.timerActive === undefined ? false : task.timerActive,
     timeSpentSeconds: task.timeSpentSeconds === undefined ? 0 : task.timeSpentSeconds,
     timerStartTime: task.timerStartTime === undefined ? null : task.timerStartTime,
@@ -335,7 +345,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
 
   const generateMockData = React.useCallback(() => {
-    if (sessionStorage.getItem(MOCK_TASKS_KEY)) {
+    if (typeof window !== 'undefined' && sessionStorage.getItem(MOCK_TASKS_KEY)) {
         const tasksRaw = localStorage.getItem("protasker_tasks");
         const columnsStateRaw = localStorage.getItem("protasker_columns"); 
 
@@ -368,7 +378,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           { id: "sub-1-3", title: "Buy bread", completed: false },
         ],
         dependencies: [], createdAt: new Date(Date.now() - 86400000 * 3), updatedAt: new Date(), dueDate: addDays(new Date(), 2),
-        timerActive: false, timeSpentSeconds: 3665, timerStartTime: null, // Example: 1h 1m 5s
+        timerActive: false, timeSpentSeconds: 3665, timerStartTime: null,
       },
       {
         id: "task-2", title: "Project Alpha Design Review", description: "Finalize UI mockups for Project Alpha. Collect feedback from the team and prepare for the client presentation. Ensure all components are responsive.", columnId: "inprogress",
@@ -379,7 +389,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         ],
         dependencies: [], createdAt: new Date(Date.now() - 86400000 * 2), updatedAt: new Date(), dueDate: addDays(new Date(), 5),
         recurrenceRule: { type: "weekly" },
-        timerActive: true, timeSpentSeconds: 1200, timerStartTime: Date.now() - 300000, // Example: 20m, started 5 mins ago
+        timerActive: true, timeSpentSeconds: 1200, timerStartTime: Date.now() - 300000, 
       },
       {
         id: "task-3", title: "Write Q3 Report", description: "Draft the quarterly report highlighting key achievements and challenges. Include financial summaries and projections.", columnId: "todo",
@@ -391,13 +401,13 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         id: "task-4", title: "Client Meeting - Project Beta", description: "Prepare slides and agenda for Tuesday's client meeting on Project Beta. Focus on timeline and budget.", columnId: "review",
         priority: "high", tags: ["work", "client", "project-beta"], subtasks: [], dependencies: [],
         createdAt: new Date(Date.now() - 86400000 * 4), updatedAt: new Date(), dueDate: addDays(new Date(), -1),
-        timerActive: false, timeSpentSeconds: 7200, timerStartTime: null, // Example: 2h
+        timerActive: false, timeSpentSeconds: 7200, timerStartTime: null,
       },
       {
         id: "task-5", title: "Pay Utility Bills", description: "Pay electricity, water, and internet bills for the month.", columnId: "done",
         priority: "medium", tags: ["personal", "finance", "bills"], subtasks: [], dependencies: [],
         createdAt: new Date(Date.now() - 86400000 * 5), updatedAt: new Date(), dueDate: addDays(new Date(), -7),
-        timerActive: false, timeSpentSeconds: 300, timerStartTime: null, // Example: 5m
+        timerActive: false, timeSpentSeconds: 300, timerStartTime: null, 
       },
        {
         id: "task-6", title: "Plan Weekend Trip", description: "Research destinations and book accommodation for the upcoming weekend trip.", columnId: "todo",
@@ -408,17 +418,19 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         ], dependencies: [], createdAt: new Date(), updatedAt: new Date(),
         timerActive: false, timeSpentSeconds: 0, timerStartTime: null,
       },
-    ].map(parseTask); // Ensure mock data is parsed with timer defaults
+    ].map(parseTask);
     const initialColumns = DEFAULT_COLUMNS.map(col => ({
       ...col, 
       taskIds: mockTasks.filter(task => task.columnId === col.id).map(task => task.id)
     }));
     
     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: mockTasks, columns: initialColumns } });
-    sessionStorage.setItem(MOCK_TASKS_KEY, "true");
+    if (typeof window !== 'undefined') sessionStorage.setItem(MOCK_TASKS_KEY, "true");
   }, []); 
 
   useEffect(() => {
+    if (typeof window === 'undefined') return; // Don't run on server
+
     const storedTasks = localStorage.getItem("protasker_tasks"); 
     const storedColumnsState = localStorage.getItem("protasker_columns"); 
     
@@ -445,6 +457,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   }, [generateMockData]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return; // Don't run on server
+    
     if (state.tasks.length > 0 || localStorage.getItem("protasker_tasks")) { 
         try {
             const tasksToSave = state.tasks.map(task => ({
@@ -452,7 +466,6 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                 dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
                 createdAt: formatISO(task.createdAt),
                 updatedAt: formatISO(task.updatedAt),
-                // timerStartTime is already a number or null, no need to format
             }));
             localStorage.setItem("protasker_tasks", JSON.stringify(tasksToSave)); 
 

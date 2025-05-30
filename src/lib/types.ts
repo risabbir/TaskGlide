@@ -44,6 +44,8 @@ export interface FilterState {
   status: string[]; // array of column IDs
   priority?: Priority;
   dueDate?: "overdue" | "today" | "thisWeek" | "none";
+  dueDateStart?: Date;
+  dueDateEnd?: Date;
   searchTerm: string;
 }
 

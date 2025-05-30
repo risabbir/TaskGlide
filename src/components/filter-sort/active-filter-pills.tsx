@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { DEFAULT_COLUMNS, PRIORITY_STYLES } from "@/lib/constants";
+import { format } from "date-fns";
 
 export function ActiveFilterPills() {
   const { state, dispatch } = useKanban();
@@ -15,8 +16,6 @@ export function ActiveFilterPills() {
 
   // Status pills (selected columns)
   const allColumnsSelected = filters.status.length === DEFAULT_COLUMNS.length;
-  const noColumnsExplicitlySelected = filters.status.length === 0; // Should not happen if unchecking last resets to all
-
   if (!allColumnsSelected && filters.status.length > 0) {
     if (filters.status.length === 1) {
       const column = columns.find(c => c.id === filters.status[0]);
@@ -29,7 +28,7 @@ export function ActiveFilterPills() {
           }
         });
       }
-    } else { // Multiple (but not all) columns selected
+    } else { 
       activePills.push({
         id: `status-multiple`,
         label: `Status: ${filters.status.length} selected`,
@@ -40,7 +39,6 @@ export function ActiveFilterPills() {
     }
   }
 
-
   if (filters.priority) {
     activePills.push({
       id: "priority",
@@ -49,6 +47,7 @@ export function ActiveFilterPills() {
     });
   }
 
+  // Predefined Due Date Filter
   if (filters.dueDate) {
     let dueDateLabel = "";
     switch (filters.dueDate) {
@@ -58,26 +57,35 @@ export function ActiveFilterPills() {
       case "none": dueDateLabel = "No Due Date"; break;
     }
     activePills.push({
-      id: "dueDate",
+      id: "predefinedDueDate",
       label: `Due: ${dueDateLabel}`,
       onDismiss: () => dispatch({ type: "SET_FILTERS", payload: { dueDate: undefined } }),
     });
   }
 
-  // Search term is handled by the search input's clear button
-  // if (filters.searchTerm) {
-  //   activePills.push({
-  //     id: "search",
-  //     label: `Search: "${filters.searchTerm}"`,
-  //     onDismiss: () => dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }),
-  //   });
-  // }
+  // Specific Due Date Start Filter
+  if (filters.dueDateStart) {
+    activePills.push({
+      id: "dueDateStart",
+      label: `Due After: ${format(filters.dueDateStart, "PP")}`,
+      onDismiss: () => dispatch({ type: "SET_FILTERS", payload: { dueDateStart: undefined } }),
+    });
+  }
 
-  if (activePills.length === 0 && !filters.searchTerm) { // Only return null if no pills AND no search term
+  // Specific Due Date End Filter
+  if (filters.dueDateEnd) {
+    activePills.push({
+      id: "dueDateEnd",
+      label: `Due Before: ${format(filters.dueDateEnd, "PP")}`,
+      onDismiss: () => dispatch({ type: "SET_FILTERS", payload: { dueDateEnd: undefined } }),
+    });
+  }
+  
+  if (activePills.length === 0 && !filters.searchTerm) {
     return null;
   }
   
-  if (activePills.length === 0 && filters.searchTerm) { // Only search term is active
+  if (activePills.length === 0 && filters.searchTerm) {
      return (
         <div className="flex flex-wrap gap-2 items-center mb-4 px-1">
             <span className="text-sm font-medium text-muted-foreground">Searching for: "{filters.searchTerm}"</span>
@@ -87,7 +95,6 @@ export function ActiveFilterPills() {
         </div>
      );
   }
-
 
   return (
     <div className="flex flex-wrap gap-2 items-center mb-4 px-1">
@@ -106,7 +113,6 @@ export function ActiveFilterPills() {
           </Button>
         </Badge>
       ))}
-      {/* Show Clear All if there's any pill OR if there's a search term but no other pills */}
       {(activePills.length > 0 || filters.searchTerm) && (
         <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
           Clear All

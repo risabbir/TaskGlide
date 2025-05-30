@@ -1,5 +1,5 @@
 
-import type { Column, Priority } from "@/lib/types";
+import type { Column, Priority, FilterState, SortState } from "@/lib/types";
 import { ListTodo, Flame, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
 export const APP_NAME = "ProTasker"; // Changed from KanvasAI
@@ -24,16 +24,18 @@ export const PRIORITY_STYLES: Record<Priority, { icon: React.ElementType; colorC
 export const RECURRENCE_ICON = Repeat;
 export const DEPENDENCY_ICON = LinkIcon;
 
-export const DEFAULT_SORT_STATE = {
-  criteria: "creationDate" as const,
-  direction: "desc" as const,
+export const DEFAULT_SORT_STATE: SortState = {
+  criteria: "creationDate",
+  direction: "desc",
 };
 
-export const DEFAULT_FILTER_STATE = {
+export const DEFAULT_FILTER_STATE: FilterState = {
   status: DEFAULT_COLUMNS.map(col => col.id),
   priority: undefined,
   dueDate: undefined,
+  dueDateStart: undefined,
+  dueDateEnd: undefined,
   searchTerm: "",
 };
 
-export const MOCK_TASKS_KEY = "protasker_mock_tasks_generated"; // Updated key to reflect new app name
+export const MOCK_TASKS_KEY = "protasker_mock_tasks_generated";
