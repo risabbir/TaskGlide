@@ -76,7 +76,7 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
 
   return (
     <DialogContent className="sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[80vh] flex flex-col">
-      <DialogHeader>
+      <DialogHeader className="flex-shrink-0">
         <DialogTitle className="flex items-center">
           <Sparkles className="mr-2 h-5 w-5 text-primary" />
           AI Suggested Focus Batch
@@ -146,7 +146,7 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </div>
       </ScrollArea>
 
-      <DialogFooter className="mt-auto pt-4 border-t">
+      <DialogFooter className="mt-auto pt-4 border-t flex-shrink-0">
         <DialogClose asChild>
           <Button type="button" variant="outline" onClick={onClose}>
             Close
