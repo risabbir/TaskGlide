@@ -244,8 +244,8 @@ export function TaskModal() {
             {activeTaskModal ? "Update the details of your task." : "Fill in the details for your new task."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow min-h-0"> {/* Ensured flex-grow and min-h-0 for proper scrolling */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-3"> {/* Added pr-3 for scrollbar space */}
+        <ScrollArea className="flex-grow min-h-0">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-4"> {/* Changed pr-3 to pr-4 */}
             {/* Title */}
             <div>
               <Label htmlFor="title">Title</Label>
@@ -475,3 +475,4 @@ export function TaskModal() {
     </Dialog>
   );
 }
+
