@@ -49,6 +49,8 @@ const taskSchema = z.object({
 type TaskFormData = z.infer<typeof taskSchema>;
 
 const NO_RECURRENCE_VALUE = "no_recurrence";
+const NO_DEPENDENCIES_PLACEHOLDER = "no_options_dependencies_placeholder_value";
+
 
 export function TaskModal() {
   const { state, dispatch } = useKanban();
@@ -134,7 +136,7 @@ export function TaskModal() {
 
   const closeModal = () => {
     dispatch({ type: "CLOSE_TASK_MODAL" });
-    reset();
+    reset(); // Reset form fields
     setIsAiDescriptionLoading(false);
     setIsAiTagsLoading(false);
     setIsAiSubtasksLoading(false);
@@ -237,15 +239,15 @@ export function TaskModal() {
 
   return (
     <Dialog open={isTaskModalOpen} onOpenChange={(open) => !open && closeModal()}>
-      <DialogContent className="sm:max-w-[600px] md:max-w-[750px] lg:max-w-[900px] max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[750px] lg:max-w-[900px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b">
           <DialogTitle>{activeTaskModal ? "Edit Task" : "Add New Task"}</DialogTitle>
           <DialogDescription>
             {activeTaskModal ? "Update the details of your task." : "Fill in the details for your new task."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow min-h-0">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 pl-1 pr-4"> {/* Changed pr-3 to pr-4 */}
+        <ScrollArea className="flex-grow min-h-0"> {/* This ScrollArea handles the scrolling of its child (the form) */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-6">
             {/* Title */}
             <div>
               <Label htmlFor="title">Title</Label>
@@ -415,7 +417,7 @@ export function TaskModal() {
                             <Select
                                 onValueChange={(value) => {
                                     const currentDeps = field.value || [];
-                                    if (value && !currentDeps.includes(value)) {
+                                    if (value && value !== NO_DEPENDENCIES_PLACEHOLDER && !currentDeps.includes(value)) {
                                         field.onChange([...currentDeps, value]);
                                     }
                                 }}
@@ -432,7 +434,7 @@ export function TaskModal() {
                                             </SelectItem>
                                         ))}
                                     {allTasks.filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id)).length === 0 && (
-                                        <SelectItem value="no_options_dependencies_placeholder_value" disabled>No available tasks to select</SelectItem>
+                                        <SelectItem value={NO_DEPENDENCIES_PLACEHOLDER} disabled>No available tasks to select</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
@@ -463,9 +465,9 @@ export function TaskModal() {
             </div>
           </form>
         </ScrollArea>
-        <DialogFooter className="pt-4 border-t flex-shrink-0">
+        <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
           <DialogClose asChild>
-            <Button type="button" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
           </DialogClose>
           <Button type="submit" onClick={handleSubmit(onSubmit)}>
             {activeTaskModal ? "Save Changes" : "Create Task"}
