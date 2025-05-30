@@ -41,7 +41,7 @@ const taskSchema = z.object({
     title: z.string().min(1, "Subtask title cannot be empty"),
     completed: z.boolean(),
   })).optional(),
-  dependencies: z.array(z.string()).optional(), 
+  dependencies: z.array(z.string()).optional(),
   recurrenceType: z.enum(["", "daily", "weekly", "monthly"]).optional(),
   // Timer fields are managed by the store, not directly editable in form for now
 });
@@ -120,8 +120,8 @@ export function TaskModal() {
     };
 
     if (activeTaskModal) {
-      dispatch({ type: "UPDATE_TASK", payload: { 
-        ...activeTaskModal, 
+      dispatch({ type: "UPDATE_TASK", payload: {
+        ...activeTaskModal,
         ...baseTaskData,
         // Preserve existing timer state
         timerActive: activeTaskModal.timerActive,
@@ -330,10 +330,14 @@ export function TaskModal() {
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <div className="flex items-center">
-                          {field.value && React.createElement(PRIORITY_STYLES[field.value as Priority].icon, { className: `mr-2 h-4 w-4 ${PRIORITY_STYLES[field.value as Priority].colorClass}` })}
+                        {field.value ? (
+                          <div className="flex items-center">
+                            {React.createElement(PRIORITY_STYLES[field.value as Priority].icon, { className: `mr-2 h-4 w-4 ${PRIORITY_STYLES[field.value as Priority].colorClass}` })}
+                            <span>{PRIORITY_STYLES[field.value as Priority].label}</span>
+                          </div>
+                        ) : (
                           <SelectValue placeholder="Select priority" />
-                        </div>
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         {PRIORITIES.map(p => (

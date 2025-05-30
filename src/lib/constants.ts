@@ -16,7 +16,7 @@ export const DEFAULT_COLUMNS: Column[] = [
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];
 
 export const PRIORITY_STYLES: Record<Priority, { icon: React.ElementType; colorClass: string; label: string }> = {
-  low: { icon: ArrowDown, colorClass: "text-green-500", label: "Low" },
+  low: { icon: ArrowDown, colorClass: "text-slate-500", label: "Low" }, // Changed from text-green-500
   medium: { icon: Minus, colorClass: "text-yellow-500", label: "Medium" },
   high: { icon: ArrowUp, colorClass: "text-red-500", label: "High" },
 };
