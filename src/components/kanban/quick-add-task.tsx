@@ -42,7 +42,7 @@ export function QuickAddTask() {
     <form onSubmit={handleSubmit} className="flex gap-2 bg-muted/50 rounded-lg shadow p-3 sm:p-4 w-full"> 
       <Input
         type="text"
-        placeholder="Add a new task and press Enter..."
+        placeholder="Enter a title for your new task & press Enter..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="flex-grow h-10 sm:h-11 text-base" // Slightly larger input
