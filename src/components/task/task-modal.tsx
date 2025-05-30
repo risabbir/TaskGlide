@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// ScrollArea removed, will use native scroll on a div
 import { useKanban } from "@/lib/store";
 import type { Task, Priority, RecurrenceRule, RecurrenceType, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, DEFAULT_COLUMNS } from "@/lib/constants";
@@ -196,9 +196,9 @@ export function TaskModal() {
             result.subtasks.forEach(subtaskTitle => {
                 appendSubtask({ id: crypto.randomUUID(), title: subtaskTitle, completed: false });
             });
-            toast({ title: "Subtasks Suggested", description: "AI has suggested subtasks for your task." });
+            toast({ title: "Subtasks Suggested", description: "AI has suggested subtasks." });
         } else {
-            toast({ title: "No Subtasks Suggested", description: "AI could not suggest any subtasks for this task." });
+            toast({ title: "No Subtasks Suggested", description: "AI found no subtasks for this." });
         }
     } catch (error) {
         console.error("Error suggesting subtasks:", error);
@@ -246,7 +246,7 @@ export function TaskModal() {
             {activeTaskModal ? "Update the details of your task." : "Fill in the details for your new task."}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow min-h-0"> {/* This ScrollArea handles the scrolling of its child (the form) */}
+        <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-6">
             {/* Title */}
             <div>
@@ -464,7 +464,7 @@ export function TaskModal() {
                 />
             </div>
           </form>
-        </ScrollArea>
+        </div>
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t">
           <DialogClose asChild>
             <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
@@ -478,3 +478,4 @@ export function TaskModal() {
   );
 }
 
+    

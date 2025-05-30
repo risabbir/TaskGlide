@@ -7,7 +7,7 @@ import {
   Dialog, 
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SheetTrigger } from "@/components/ui/sheet";
+import { SheetTrigger } from "@/components/ui/sheet"; // Keep SheetTrigger for FilterSidebar
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Search, SlidersHorizontal, LayoutDashboard, XCircle, Sparkles, PlusCircle } from "lucide-react";
 import { useKanban } from "@/lib/store";
@@ -80,14 +80,14 @@ export function Header() {
 
         {/* Action Buttons - Right Aligned */}
         <div className="flex items-center space-x-2">
-          <Button size="sm" onClick={handleOpenNewTaskModal}> {/* Removed variant="outline" */}
+          <Button size="sm" onClick={handleOpenNewTaskModal}> {/* Default (filled) style */}
             <PlusCircle className="mr-2 h-4 w-4" />
             New Task
           </Button>
           
           <Dialog open={isFocusBatchModalOpen} onOpenChange={setIsFocusBatchModalOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="hidden md:inline-flex">
+              <Button variant="outline" size="sm" className="sm:inline-flex"> {/* Changed from hidden md:inline-flex */}
                 <Sparkles className="mr-2 h-4 w-4" />
                 Focus Batch
               </Button>
@@ -107,3 +107,5 @@ export function Header() {
     </header>
   );
 }
+
+    
