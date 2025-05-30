@@ -51,7 +51,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); 
-    // TODO: Add confirmation dialog here
+    // Consider adding a confirmation dialog here for better UX
     dispatch({ type: "DELETE_TASK", payload: task.id });
   };
   
@@ -65,7 +65,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const toggleExpand = (e?: React.MouseEvent) => {
      if (e) {
         const target = e.target as HTMLElement;
-        // Prevent toggle if clicking on dropdown trigger or any button inside the card
         if (target.closest('[data-radix-dropdown-menu-trigger], button, a, input[type="checkbox"]')) {
             return;
         }
@@ -96,12 +95,15 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     >
       <CardHeader className="p-3 pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle 
-            className={cn("text-base font-semibold leading-tight pr-2 flex-grow break-words", isExpanded && "cursor-pointer")} 
+          <div 
+            className={cn("text-base font-semibold leading-tight pr-2 flex-grow break-words", 
+                         !isExpanded ? "line-clamp-2" : "",
+                         isExpanded && "cursor-pointer")} 
             onClick={isExpanded ? toggleExpand : undefined}
+            title={task.title} // Show full title on hover if clamped
           >
             {task.title}
-          </CardTitle>
+          </div>
           <div className="flex items-center shrink-0">
             <Button variant="ghost" size="icon" className="h-7 w-7 mr-1" onClick={toggleExpand} aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

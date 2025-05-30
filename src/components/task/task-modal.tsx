@@ -15,18 +15,20 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { Checkbox } from "@/components/ui/checkbox"; // Checkbox for dependencies might be complex for now
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useKanban } from "@/lib/store";
 import type { Task, Priority, RecurrenceRule, RecurrenceType, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, DEFAULT_COLUMNS } from "@/lib/constants";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react"; // Removed Sparkles, Loader2
+import { CalendarIcon, PlusCircle, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
-// import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description"; // AI feature removed
-// import { suggestTaskTags } from "@/ai/flows/suggest-task-tags"; // AI feature removed
+import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description";
+import { suggestTaskTags } from "@/ai/flows/suggest-task-tags";
+// import { suggestTaskSubtasks } from "@/ai/flows/suggest-task-subtasks"; // Placeholder for future AI flow
 import { SubtaskItem } from "./subtask-item";
+import { useToast } from "@/hooks/use-toast";
+
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -51,10 +53,11 @@ const NO_RECURRENCE_VALUE = "no_recurrence";
 export function TaskModal() {
   const { state, dispatch } = useKanban();
   const { isTaskModalOpen, activeTaskModal, columns, tasks: allTasks } = state;
+  const { toast } = useToast();
 
-  // const [isAiDescriptionLoading, setIsAiDescriptionLoading] = useState(false); // AI feature removed
-  // const [isAiTagsLoading, setIsAiTagsLoading] = useState(false); // AI feature removed
-  // const [isAiSubtasksLoading, setIsAiSubtasksLoading] = useState(false); // AI feature removed
+  const [isAiDescriptionLoading, setIsAiDescriptionLoading] = useState(false);
+  const [isAiTagsLoading, setIsAiTagsLoading] = useState(false);
+  const [isAiSubtasksLoading, setIsAiSubtasksLoading] = useState(false);
 
 
   const { control, register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TaskFormData>({
@@ -76,8 +79,8 @@ export function TaskModal() {
     name: "subtasks",
   });
   
-  // const watchedTitle = watch("title"); // Not needed without AI
-  // const watchedDescription = watch("description"); // Not needed without AI
+  const watchedTitle = watch("title");
+  const watchedDescription = watch("description");
 
   useEffect(() => {
     if (activeTaskModal) {
@@ -116,6 +119,7 @@ export function TaskModal() {
 
     if (activeTaskModal) {
       dispatch({ type: "UPDATE_TASK", payload: { ...activeTaskModal, ...taskData } as Task });
+      toast({ title: "Task Updated", description: `Task "${data.title}" has been updated.` });
     } else {
       dispatch({ type: "ADD_TASK", payload: {
           ...taskData,
@@ -123,6 +127,7 @@ export function TaskModal() {
           createdAt: new Date(),
         } as Task,
       });
+      toast({ title: "Task Created", description: `New task "${data.title}" has been added.` });
     }
     closeModal();
   };
@@ -130,9 +135,68 @@ export function TaskModal() {
   const closeModal = () => {
     dispatch({ type: "CLOSE_TASK_MODAL" });
     reset(); 
+    setIsAiDescriptionLoading(false);
+    setIsAiTagsLoading(false);
+    setIsAiSubtasksLoading(false);
+  };
+  
+  const handleEnhanceDescription = async () => {
+    if (!watchedTitle) {
+        toast({ title: "Title Needed", description: "Please provide a title to enhance the description.", variant: "destructive" });
+        return;
+    }
+    setIsAiDescriptionLoading(true);
+    try {
+        const result = await enhanceTaskDescription({ title: watchedTitle, existingDescription: watchedDescription || "" });
+        if (result.enhancedDescription) {
+            setValue("description", result.enhancedDescription);
+            toast({ title: "Description Enhanced", description: "AI has enhanced the task description." });
+        }
+    } catch (error) {
+        console.error("Error enhancing description:", error);
+        toast({ title: "Error", description: "Could not enhance description.", variant: "destructive" });
+    } finally {
+        setIsAiDescriptionLoading(false);
+    }
   };
 
-  // Removed handleEnhanceDescription, handleSuggestTags, handleSuggestSubtasks (AI features)
+  const handleSuggestTags = async () => {
+    if (!watchedTitle) {
+        toast({ title: "Title Needed", description: "Please provide a title to suggest tags.", variant: "destructive" });
+        return;
+    }
+    setIsAiTagsLoading(true);
+    try {
+        const result = await suggestTaskTags({ title: watchedTitle, description: watchedDescription || "" });
+        if (result.tags && result.tags.length > 0) {
+            setValue("tags", result.tags.join(", "));
+            toast({ title: "Tags Suggested", description: "AI has suggested tags for your task." });
+        } else {
+            toast({ title: "No Tags Suggested", description: "AI could not suggest any tags for this task." });
+        }
+    } catch (error) {
+        console.error("Error suggesting tags:", error);
+        toast({ title: "Error", description: "Could not suggest tags.", variant: "destructive" });
+    } finally {
+        setIsAiTagsLoading(false);
+    }
+  };
+
+  const handleSuggestSubtasks = async () => {
+    // This is a placeholder for now.
+    // In a real implementation, this would call an AI flow.
+    if (!watchedTitle) {
+        toast({ title: "Title Needed", description: "Please provide a title to suggest subtasks.", variant: "destructive" });
+        return;
+    }
+    setIsAiSubtasksLoading(true);
+    console.log("Suggesting subtasks for:", watchedTitle, watchedDescription);
+    // Example: const result = await suggestTaskSubtasks({ title: watchedTitle, description: watchedDescription || "" });
+    // if (result.subtasks) { result.subtasks.forEach(st => appendSubtask({id: crypto.randomUUID(), title: st.title, completed: false})) }
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    toast({ title: "AI Subtask Suggestion (Demo)", description: "This feature is not fully implemented yet." });
+    setIsAiSubtasksLoading(false);
+  };
   
   const handleAddSubtask = () => {
     appendSubtask({ id: crypto.randomUUID(), title: "", completed: false });
@@ -185,7 +249,10 @@ export function TaskModal() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <Label htmlFor="description">Description</Label>
-                {/* AI Enhance button removed */}
+                <Button type="button" variant="outline" size="sm" onClick={handleEnhanceDescription} disabled={isAiDescriptionLoading || !watchedTitle}>
+                  {isAiDescriptionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Enhance with AI
+                </Button>
               </div>
               <Textarea id="description" {...register("description")} placeholder="Add more details about the task..." rows={4} />
             </div>
@@ -290,7 +357,10 @@ export function TaskModal() {
             <div>
               <div className="flex justify-between items-center mb-1">
                 <Label htmlFor="tags">Tags (comma-separated)</Label>
-                 {/* AI Suggest Tags button removed */}
+                <Button type="button" variant="outline" size="sm" onClick={handleSuggestTags} disabled={isAiTagsLoading || !watchedTitle}>
+                  {isAiTagsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Suggest Tags
+                </Button>
               </div>
               <Input id="tags" {...register("tags")} placeholder="E.g., project-alpha, urgent, bug" />
               {watch("tags") && <div className="mt-2 flex flex-wrap gap-1">
@@ -303,7 +373,10 @@ export function TaskModal() {
               <div className="flex justify-between items-center mb-2">
                 <Label className="text-base font-semibold">Subtasks</Label>
                 <div className="flex gap-2">
-                    {/* AI Suggest Subtasks button removed */}
+                    <Button type="button" variant="outline" size="sm" onClick={handleSuggestSubtasks} disabled={isAiSubtasksLoading || !watchedTitle}>
+                        {isAiSubtasksLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        AI Suggest
+                    </Button>
                     <Button type="button" variant="outline" size="sm" onClick={handleAddSubtask}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Subtask
                     </Button>
@@ -351,7 +424,7 @@ export function TaskModal() {
                                             </SelectItem>
                                         ))}
                                     {allTasks.filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id)).length === 0 && (
-                                        <SelectItem value="no_options" disabled>No available tasks to select</SelectItem>
+                                        <SelectItem value="no_options_dependencies" disabled>No available tasks to select</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
