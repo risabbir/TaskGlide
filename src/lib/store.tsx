@@ -234,51 +234,40 @@ const KanbanContext = createContext<{ state: KanbanState; dispatch: React.Dispat
 export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
 
-  useEffect(() => {
-    // Load initial data from localStorage or a mock generator
-    const storedTasks = localStorage.getItem("kanvasai_tasks");
-    const storedColumns = localStorage.getItem("kanvasai_columns");
-    
-    if (storedTasks && storedColumns) {
-      try {
-        const tasks: Task[] = JSON.parse(storedTasks).map((t: Task) => ({
-          ...t,
-          dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
-          createdAt: new Date(t.createdAt),
-          updatedAt: new Date(t.updatedAt),
-        }));
-        const columns: Column[] = JSON.parse(storedColumns);
-        dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns } });
-      } catch (e) {
-        console.error("Failed to parse stored data, generating mock data.", e);
-        generateMockData();
-      }
-    } else {
-      generateMockData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
-
-  const generateMockData = () => {
+  const generateMockData = React.useCallback(() => {
     // Check if mock data was already generated in this session to avoid re-generating on HMR
     if (sessionStorage.getItem(MOCK_TASKS_KEY)) {
         const tasksRaw = localStorage.getItem("kanvasai_tasks");
-        const columnsRaw = localStorage.getItem("kanvasai_columns");
-        if (tasksRaw && columnsRaw) {
+        const columnsStateRaw = localStorage.getItem("kanvasai_columns"); // Stored state (id, taskIds)
+
+        if (tasksRaw && columnsStateRaw) {
             try {
-                const tasks: Task[] = JSON.parse(tasksRaw).map((t: Task) => ({
+                const tasks: Task[] = JSON.parse(tasksRaw).map((t: any) => ({
                     ...t,
                     dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
                     createdAt: new Date(t.createdAt),
                     updatedAt: new Date(t.updatedAt),
                 }));
-                const columns: Column[] = JSON.parse(columnsRaw);
-                dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns } });
-                return;
-            } catch (e) { /* ignore, proceed to generate */ }
+
+                const parsedStoredColumns: Array<{ id: string; taskIds: string[] }> = JSON.parse(columnsStateRaw);
+                const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
+                    const storedColData = parsedStoredColumns.find(sc => sc.id === defaultCol.id);
+                    return {
+                        ...defaultCol, // Includes .icon, .title from constants
+                        taskIds: storedColData ? storedColData.taskIds : defaultCol.taskIds,
+                    };
+                });
+
+                dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
+                return; // Successfully rehydrated from localStorage
+            } catch (e) {
+                console.warn("Failed to rehydrate mock data from localStorage during generateMockData, re-generating.", e);
+                 // Fall through to generate fresh mock data
+            }
         }
     }
 
+    // Generate fresh mock data
     const mockTasks: Task[] = [
       {
         id: "task-1", title: "Grocery Shopping", description: "Buy milk, eggs, bread, and cheese.", columnId: "todo",
@@ -315,13 +304,47 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       },
     ];
     const initialColumns = DEFAULT_COLUMNS.map(col => ({
-      ...col,
+      ...col, // This directly uses DEFAULT_COLUMNS, so icons are correct
       taskIds: mockTasks.filter(task => task.columnId === col.id).map(task => task.id)
     }));
     
     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: mockTasks, columns: initialColumns } });
     sessionStorage.setItem(MOCK_TASKS_KEY, "true");
-  };
+  }, []); // useCallback dependency array is empty as it doesn't depend on props/state from KanbanProvider scope
+
+  useEffect(() => {
+    // Load initial data from localStorage or a mock generator
+    const storedTasks = localStorage.getItem("kanvasai_tasks");
+    const storedColumnsState = localStorage.getItem("kanvasai_columns"); // Stored state (id, taskIds)
+    
+    if (storedTasks && storedColumnsState) {
+      try {
+        const tasks: Task[] = JSON.parse(storedTasks).map((t: any) => ({
+          ...t,
+          dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
+          createdAt: new Date(t.createdAt),
+          updatedAt: new Date(t.updatedAt),
+        }));
+        
+        const parsedStoredColumns: Array<{ id: string; taskIds: string[] }> = JSON.parse(storedColumnsState);
+
+        const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
+          const storedColData = parsedStoredColumns.find(sc => sc.id === defaultCol.id);
+          return {
+            ...defaultCol, // This brings in .icon, .title from constants
+            taskIds: storedColData ? storedColData.taskIds : defaultCol.taskIds, 
+          };
+        });
+
+        dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
+      } catch (e) {
+        console.error("Failed to parse stored data, generating mock data.", e);
+        generateMockData();
+      }
+    } else {
+      generateMockData();
+    }
+  }, [generateMockData]); // Add generateMockData to dependency array
 
   useEffect(() => {
     // Persist state to localStorage whenever tasks or columns change
@@ -330,14 +353,21 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         try {
             const tasksToSave = state.tasks.map(task => ({
                 ...task,
+                // Convert dates to ISO strings for storage
                 dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
                 createdAt: formatISO(task.createdAt),
                 updatedAt: formatISO(task.updatedAt),
             }));
             localStorage.setItem("kanvasai_tasks", JSON.stringify(tasksToSave));
-            localStorage.setItem("kanvasai_columns", JSON.stringify(state.columns));
+
+            // Only store id and taskIds for columns to avoid serializing functions (icons)
+            const columnsStateToSave = state.columns.map(col => ({
+                id: col.id,
+                taskIds: col.taskIds,
+            }));
+            localStorage.setItem("kanvasai_columns", JSON.stringify(columnsStateToSave));
         } catch(e) {
-            console.error("Failed to save tasks to local storage", e);
+            console.error("Failed to save state to local storage", e);
         }
     }
   }, [state.tasks, state.columns]);
@@ -353,3 +383,4 @@ export function useKanban() {
   }
   return context;
 }
+
