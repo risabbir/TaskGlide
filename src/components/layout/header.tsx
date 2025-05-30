@@ -25,25 +25,20 @@ export function Header({ children }: HeaderProps) {
   const { dispatch, state } = useKanban();
   const filters = state.filters;
   
-  // State for desktop inline search
   const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters?.searchTerm ?? "");
   
-  // State for mobile modal search
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [modalSearchTerm, setModalSearchTerm] = useState("");
 
   useEffect(() => {
-    // Sync desktop search if global filters change (e.g. from modal search)
     if (filters?.searchTerm !== desktopSearchTerm) {
       setDesktopSearchTerm(filters?.searchTerm ?? "");
     }
-    // If modal is closed and its term differs, it was likely set by desktop search.
-    // Or, if modal is opened, initialize it with current global search term.
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
       setModalSearchTerm(filters?.searchTerm ?? "");
     }
 
-  }, [filters?.searchTerm, isSearchModalOpen]);
+  }, [filters?.searchTerm, isSearchModalOpen, desktopSearchTerm, modalSearchTerm]);
 
   const handleDesktopSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setDesktopSearchTerm(event.target.value);
@@ -80,7 +75,7 @@ export function Header({ children }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between gap-1 sm:gap-2">
+        <div className="container px-4 flex h-16 items-center justify-between gap-1 sm:gap-2"> {/* Added px-4 here */}
           {/* Logo & Name - Left Aligned */}
           <div className="flex items-center gap-2">
             <a href="/" className="flex items-center space-x-2">
@@ -164,8 +159,6 @@ export function Header({ children }: HeaderProps) {
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                   onClick={() => {
                     setModalSearchTerm(""); 
-                    // Optionally dispatch clear immediately or wait for explicit search
-                    // dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }); 
                   }}
                 >
                   <XCircle className="h-4 w-4" />
