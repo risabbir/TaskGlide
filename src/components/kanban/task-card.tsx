@@ -85,7 +85,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   return (
     <Card 
       className={cn(
-        "mb-3 shadow-md hover:shadow-lg transition-shadow duration-200 group/task-card rounded-lg", // slightly less margin bottom
+        "mb-3 shadow-md hover:shadow-lg transition-shadow duration-200 group/task-card rounded-lg",
         !isExpanded && "cursor-pointer", 
         isOverdue && "border-destructive border-2 ring-1 ring-destructive/30",
         hasIncompletePrerequisites && isInWorkingColumn && "border-yellow-500 border-2 ring-1 ring-yellow-300",
