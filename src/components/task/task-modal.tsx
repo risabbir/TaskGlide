@@ -113,7 +113,7 @@ export function TaskModal() {
       tags: data.tags ? data.tags.split(",").map(tag => tag.trim()).filter(tag => tag) : [],
       subtasks: data.subtasks || [],
       dependencies: data.dependencies || [],
-      recurrenceRule: data.recurrenceType ? { type: data.recurrenceType as RecurrenceType } : undefined,
+      recurrenceRule: data.recurrenceType && data.recurrenceType !== NO_RECURRENCE_VALUE ? { type: data.recurrenceType as RecurrenceType } : undefined,
       updatedAt: new Date(),
     };
 
@@ -183,18 +183,19 @@ export function TaskModal() {
   };
 
   const handleSuggestSubtasks = async () => {
-    // This is a placeholder for now.
-    // In a real implementation, this would call an AI flow.
     if (!watchedTitle) {
         toast({ title: "Title Needed", description: "Please provide a title to suggest subtasks.", variant: "destructive" });
         return;
     }
     setIsAiSubtasksLoading(true);
-    console.log("Suggesting subtasks for:", watchedTitle, watchedDescription);
+    // This is a placeholder for AI subtask suggestion.
+    // In a real implementation, this would call an AI flow.
     // Example: const result = await suggestTaskSubtasks({ title: watchedTitle, description: watchedDescription || "" });
     // if (result.subtasks) { result.subtasks.forEach(st => appendSubtask({id: crypto.randomUUID(), title: st.title, completed: false})) }
+    console.log("Placeholder: AI Suggesting subtasks for:", watchedTitle, watchedDescription);
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    toast({ title: "AI Subtask Suggestion (Demo)", description: "This feature is not fully implemented yet." });
+    // Example: appendSubtask({ id: crypto.randomUUID(), title: "AI Suggested Subtask 1", completed: false });
+    toast({ title: "AI Subtask Suggestion (Demo)", description: "This feature is a placeholder. AI would suggest subtasks here." });
     setIsAiSubtasksLoading(false);
   };
   
@@ -467,3 +468,5 @@ export function TaskModal() {
     </Dialog>
   );
 }
+
+    

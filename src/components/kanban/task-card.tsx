@@ -51,7 +51,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); 
-    // Consider adding a confirmation dialog here for better UX
     dispatch({ type: "DELETE_TASK", payload: task.id });
   };
   
@@ -97,10 +96,10 @@ export function TaskCard({ task, columns }: TaskCardProps) {
         <div className="flex justify-between items-start">
           <div 
             className={cn("text-base font-semibold leading-tight pr-2 flex-grow break-words", 
-                         !isExpanded ? "line-clamp-2" : "",
+                         !isExpanded ? "line-clamp-2" : "", // Title is already line-clamped
                          isExpanded && "cursor-pointer")} 
             onClick={isExpanded ? toggleExpand : undefined}
-            title={task.title} // Show full title on hover if clamped
+            title={task.title}
           >
             {task.title}
           </div>
@@ -129,42 +128,46 @@ export function TaskCard({ task, columns }: TaskCardProps) {
       </CardHeader>
 
       <CardContent className="p-3 pt-0">
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-          <div className="flex items-center gap-1" title={`Priority: ${PRIORITY_STYLES[task.priority].label}`}>
-            <PriorityIcon className={cn("h-4 w-4", priorityColor)} />
-            <span className={priorityColor}>{PRIORITY_STYLES[task.priority].label}</span>
-          </div>
-          <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
-              <Clock className="h-3.5 w-3.5" />
-              <span>{format(task.createdAt, "MMM d")}</span>
-          </div>
-        </div>
-        
-        {task.dueDate && !isExpanded && (
-             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2" title={`Due: ${format(task.dueDate, "PPP")}`}>
-                <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
-                <span className={cn(isOverdue && "text-destructive font-semibold")}>
-                    Due {format(task.dueDate, "MMM d")}
-                </span>
+        {!isExpanded && (
+          <div className="space-y-1.5 text-xs"> {/* Wrapper for collapsed items with consistent spacing */}
+            <div className="flex items-center justify-between text-muted-foreground">
+              <div className="flex items-center gap-1" title={`Priority: ${PRIORITY_STYLES[task.priority].label}`}>
+                <PriorityIcon className={cn("h-3.5 w-3.5", priorityColor)} />
+                <span className={cn(priorityColor, "font-medium")}>{PRIORITY_STYLES[task.priority].label}</span>
+              </div>
+              <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
+                  <Clock className="h-3 w-3" />
+                  <span>{format(task.createdAt, "MMM d")}</span>
+              </div>
             </div>
-        )}
+            
+            {task.dueDate && ( /* No !isExpanded needed, this whole block is under !isExpanded */
+                 <div className="flex items-center gap-1 text-muted-foreground" title={`Due: ${format(task.dueDate, "PPP")}`}>
+                    <CalendarDays className={cn("h-3 w-3", isOverdue && "text-destructive")} />
+                    <span className={cn(isOverdue && "text-destructive font-semibold")}>
+                        Due {format(task.dueDate, "MMM d")}
+                    </span>
+                </div>
+            )}
 
-        {!isExpanded && task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {task.tags.slice(0, 3).map(tag => ( 
-              <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
-            ))}
-            {task.tags.length > 3 && <Badge variant="secondary" className="text-xs px-1.5 py-0.5">+{task.tags.length - 3}</Badge>}
-          </div>
-        )}
-        
-        {!isExpanded && totalSubtasks > 0 && (
-          <div className="mb-2">
-            <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
-              <span>Subtasks</span>
-              <span>{completedSubtasks}/{totalSubtasks}</span>
-            </div>
-            <Progress value={(completedSubtasks / totalSubtasks) * 100} className="h-1.5" />
+            {task.tags.length > 0 && ( /* No !isExpanded needed */
+              <div className="flex flex-wrap gap-1">
+                {task.tags.slice(0, 3).map(tag => ( 
+                  <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
+                ))}
+                {task.tags.length > 3 && <Badge variant="secondary" className="text-xs px-1.5 py-0.5">+{task.tags.length - 3}</Badge>}
+              </div>
+            )}
+            
+            {totalSubtasks > 0 && ( /* No !isExpanded needed */
+              <div>
+                <div className="flex justify-between text-muted-foreground mb-0.5">
+                  <span>Subtasks</span>
+                  <span>{completedSubtasks}/{totalSubtasks}</span>
+                </div>
+                <Progress value={(completedSubtasks / totalSubtasks) * 100} className="h-1.5" />
+              </div>
+            )}
           </div>
         )}
 
@@ -210,7 +213,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                       onToggle={() => dispatch({type: "TOGGLE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
                       onUpdate={(updatedSubtask) => dispatch({type: "UPDATE_SUBTASK", payload: {taskId: task.id, subtask: updatedSubtask}})}
                       onDelete={() => dispatch({type: "DELETE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
-                      isEditing={false} // Subtasks in expanded card are view-only
+                      isEditing={false} 
                       className="py-0.5 text-xs"
                     />
                   ))}
@@ -281,3 +284,5 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </Card>
   );
 }
+
+    
