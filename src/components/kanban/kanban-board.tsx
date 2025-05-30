@@ -10,7 +10,7 @@ import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills"
 import { isPast, isToday, isThisISOWeek, parseISO, startOfDay, endOfDay, isWithinInterval, isSameDay, isAfter, isBefore } from "date-fns";
 import React from "react";
 import { ClipboardList, PlusCircle, SearchX } from "lucide-react";
-import { DEFAULT_COLUMNS } from "@/lib/constants";
+import { DEFAULT_COLUMNS } from "@/lib/constants"; // Added import
 
 // Helper function to sort tasks
 const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
@@ -43,8 +43,9 @@ const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
 // Helper function to filter tasks
 const filterTasks = (tasks: Task[], filters: FilterState): Task[] => {
   return tasks.filter(task => {
-    // Status filter
-    if (!filters.status.includes(task.columnId)) {
+    // Status filter: If no status filters are selected, it defaults to showing all.
+    // But if some are selected, the task's columnId must be in the selected list.
+    if (filters.status && filters.status.length > 0 && !filters.status.includes(task.columnId)) {
       return false;
     }
 
@@ -158,3 +159,4 @@ export function KanbanBoard() {
     </div>
   );
 }
+
