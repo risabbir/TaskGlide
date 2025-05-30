@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from "react"; // Added useState
+import React, { useState } from "react";
 import type { Task, Column, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, RECURRENCE_ICON, DEPENDENCY_ICON } from "@/lib/constants";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -13,11 +13,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import { format, isPast, isToday, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { SubtaskItem } from "../task/subtask-item"; // For displaying subtasks in expanded view
+import { SubtaskItem } from "../task/subtask-item";
 
 interface TaskCardProps {
   task: Task;
@@ -45,12 +45,12 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   };
 
   const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card expansion
+    e.stopPropagation(); 
     dispatch({ type: "OPEN_TASK_MODAL", payload: task });
   };
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card expansion
+    e.stopPropagation(); 
     // TODO: Add confirmation dialog here
     dispatch({ type: "DELETE_TASK", payload: task.id });
   };
@@ -63,11 +63,9 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const isInWorkingColumn = task.columnId === 'inprogress' || task.columnId === 'review';
 
   const toggleExpand = (e?: React.MouseEvent) => {
-    // Allow expansion only if not clicking on interactive elements like dropdown triggers
      if (e) {
         const target = e.target as HTMLElement;
-        if (target.closest('[data-radix-dropdown-menu-trigger], button')) {
-             // If the click is on a dropdown trigger or any button, don't toggle expansion
+        if (target.closest('[data-radix-dropdown-menu-trigger], button, a')) {
             return;
         }
     }
@@ -87,16 +85,17 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   return (
     <Card 
       className={cn(
-        "mb-4 shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer",
+        "mb-4 shadow-md hover:shadow-lg transition-shadow duration-200",
+        !isExpanded && "cursor-pointer", // Only apply cursor-pointer when not expanded
         isOverdue && "border-destructive border-2",
         hasIncompletePrerequisites && isInWorkingColumn && "border-yellow-500 border-2 ring-2 ring-yellow-300",
-        isExpanded && "shadow-xl"
+        isExpanded && "shadow-xl ring-1 ring-primary/30"
       )}
-      onClick={toggleExpand}
+      onClick={!isExpanded ? toggleExpand : undefined} // Only allow expand click when collapsed
     >
       <CardHeader className="p-3 pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-semibold leading-tight pr-2 flex-grow">{task.title}</CardTitle>
+          <CardTitle className="text-base font-semibold leading-tight pr-2 flex-grow" onClick={isExpanded ? toggleExpand : undefined} style={isExpanded ? {cursor: 'pointer'} : {}}>{task.title}</CardTitle>
           <div className="flex items-center shrink-0">
             <Button variant="ghost" size="icon" className="h-7 w-7 mr-1" onClick={toggleExpand} aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -122,28 +121,33 @@ export function TaskCard({ task, columns }: TaskCardProps) {
       </CardHeader>
 
       <CardContent className="p-3 pt-0">
-        {/* Basic Info - Always Visible */}
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
           <div className="flex items-center gap-1" title={`Priority: ${PRIORITY_STYLES[task.priority].label}`}>
             <PriorityIcon className={cn("h-4 w-4", priorityColor)} />
             <span className={priorityColor}>{PRIORITY_STYLES[task.priority].label}</span>
           </div>
-          {task.dueDate && (
-            <div className="flex items-center gap-1" title={`Due: ${format(task.dueDate, "PPP")}`}>
+          <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
+              <Clock className="h-3.5 w-3.5" />
+              <span>{format(task.createdAt, "MMM d")}</span>
+          </div>
+        </div>
+        
+        {task.dueDate && !isExpanded && (
+             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2" title={`Due: ${format(task.dueDate, "PPP")}`}>
                 <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
                 <span className={cn(isOverdue && "text-destructive font-semibold")}>
-                    {format(task.dueDate, "MMM d")}
+                    Due {format(task.dueDate, "MMM d")}
                 </span>
             </div>
-          )}
-        </div>
+        )}
+
 
         {!isExpanded && task.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
-            {task.tags.slice(0, 2).map(tag => ( // Show fewer tags in collapsed view
+            {task.tags.slice(0, 3).map(tag => ( 
               <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
             ))}
-            {task.tags.length > 2 && <Badge variant="secondary" className="text-xs px-1.5 py-0.5">+{task.tags.length - 2}</Badge>}
+            {task.tags.length > 3 && <Badge variant="secondary" className="text-xs px-1.5 py-0.5">+{task.tags.length - 3}</Badge>}
           </div>
         )}
         
@@ -153,19 +157,29 @@ export function TaskCard({ task, columns }: TaskCardProps) {
               <span>Subtasks</span>
               <span>{completedSubtasks}/{totalSubtasks}</span>
             </div>
-            <Progress value={(completedSubtasks / totalSubtasks) * 100} className="h-1" />
+            <Progress value={(completedSubtasks / totalSubtasks) * 100} className="h-1.5" />
           </div>
         )}
 
-        {/* Expanded Content */}
         {isExpanded && (
           <div className="mt-2 space-y-3 text-sm">
             {task.description && (
               <div>
-                <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                <h4 className="text-xs font-semibold text-muted-foreground mb-0.5">DESCRIPTION</h4>
+                <p className="text-muted-foreground whitespace-pre-wrap text-sm">{task.description}</p>
               </div>
             )}
             
+            {task.dueDate && (
+                <div className="flex items-center gap-1.5 text-sm" title={`Due: ${format(task.dueDate, "PPP")}`}>
+                    <CalendarDays className={cn("h-4 w-4", isOverdue ? "text-destructive" : "text-muted-foreground")} />
+                    <span className={cn("font-medium", isOverdue ? "text-destructive" : "text-foreground")}>
+                        Due {format(task.dueDate, "PPP")}
+                    </span>
+                    {isOverdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
+                </div>
+            )}
+
             {task.tags.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground mb-1">TAGS</h4>
@@ -180,7 +194,8 @@ export function TaskCard({ task, columns }: TaskCardProps) {
             {task.subtasks.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground mb-1">SUBTASKS ({completedSubtasks}/{totalSubtasks})</h4>
-                <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                 {totalSubtasks > 0 && <Progress value={(completedSubtasks / totalSubtasks) * 100} className="h-1.5 mb-1.5" />}
+                <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
                   {task.subtasks.map(subtask => (
                     <SubtaskItem 
                       key={subtask.id} 
@@ -188,7 +203,8 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                       onToggle={() => dispatch({type: "TOGGLE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
                       onUpdate={(updatedSubtask) => dispatch({type: "UPDATE_SUBTASK", payload: {taskId: task.id, subtask: updatedSubtask}})}
                       onDelete={() => dispatch({type: "DELETE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
-                      isEditing={false} // View only in expanded card, edit in modal
+                      isEditing={false} 
+                      className="py-0.5 text-xs"
                     />
                   ))}
                 </div>
@@ -198,59 +214,63 @@ export function TaskCard({ task, columns }: TaskCardProps) {
             {task.dependencies.length > 0 && (
                 <div>
                     <h4 className="text-xs font-semibold text-muted-foreground mb-1">DEPENDENCIES (Prerequisites)</h4>
-                    <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
+                    <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5 pl-1">
                         {task.dependencies.map(depId => {
                             const depTask = allTasks.find(t => t.id === depId);
-                            return <li key={depId}>{depTask ? depTask.title : `Task ID: ${depId}`} {depTask && depTask.columnId === 'done' ? '(Done)' : ''}</li>;
+                            return (
+                                <li key={depId} className={cn(depTask && depTask.columnId === 'done' && "line-through")}>
+                                    {depTask ? depTask.title : `Task ID: ${depId}`} {depTask && depTask.columnId === 'done' ? '(Done)' : ''}
+                                </li>
+                            );
                         })}
                     </ul>
                 </div>
             )}
             
-            <div className="text-xs text-muted-foreground space-y-1">
+            <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-dashed mt-3">
                 {task.recurrenceRule && (
                     <div className="flex items-center gap-1.5">
                         <RECURRENCE_ICON className="h-3.5 w-3.5" />
                         <span>{getRecurrenceText(task.recurrenceRule)}</span>
                     </div>
                 )}
-                <div className="flex items-center gap-1.5" title={`Created: ${format(task.createdAt, "PPP p")}`}>
+                 <div className="flex items-center gap-1.5" title={`Created: ${format(task.createdAt, "PPP 'at' p")}`}>
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Created: {formatDistanceToNow(task.createdAt, { addSuffix: true })} ({format(task.createdAt, "MMM d, yyyy")})</span>
+                </div>
+                <div className="flex items-center gap-1.5" title={`Last updated: ${format(task.updatedAt, "PPP 'at' p")}`}>
                     <Info className="h-3.5 w-3.5" />
-                    <span>Created {formatDistanceToNow(task.createdAt, { addSuffix: true })}</span>
+                    <span>Updated: {formatDistanceToNow(task.updatedAt, { addSuffix: true })}</span>
                 </div>
             </div>
-
-
           </div>
         )}
 
-        <div className="flex items-center gap-2 text-muted-foreground mt-2">
-            {hasIncompletePrerequisites && isInWorkingColumn && (
-              <Badge variant="destructive" className="text-xs">Blocked by Prerequisite</Badge>
-            )}
-        </div>
-
+        {hasIncompletePrerequisites && isInWorkingColumn && (
+          <Badge variant="destructive" className="text-xs mt-2 w-full justify-center py-1">
+            <DEPENDENCY_ICON className="mr-1.5 h-3 w-3"/> Blocked by Prerequisite
+          </Badge>
+        )}
       </CardContent>
-      {!isExpanded && (
-        <CardFooter className="p-3 pt-1">
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={(e) => e.stopPropagation()}>
-                <ChevronsUpDown className="mr-1.5 h-3.5 w-3.5" /> Move to
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-[--radix-dropdown-menu-trigger-width)]" onClick={(e) => e.stopPropagation()}>
-                {columns.filter(col => col.id !== task.columnId).map(column => (
-                <DropdownMenuItem key={column.id} onClick={() => handleMoveTask(column.id)}>
-                    {column.icon && React.createElement(column.icon, { className: "mr-2 h-4 w-4"})}
-                    {column.title}
-                </DropdownMenuItem>
-                ))}
-                {columns.length === 1 && task.columnId === columns[0].id && <DropdownMenuItem disabled>No other columns</DropdownMenuItem>}
-            </DropdownMenuContent>
-            </DropdownMenu>
-        </CardFooter>
-      )}
+
+      <CardFooter className="p-3 pt-2">
+          <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+              <ChevronsUpDown className="mr-1.5 h-3.5 w-3.5" /> Move to
+              </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="w-[--radix-dropdown-menu-trigger-width)]" onClick={(e) => e.stopPropagation()}>
+              {columns.filter(col => col.id !== task.columnId).map(column => (
+              <DropdownMenuItem key={column.id} onClick={() => handleMoveTask(column.id)}>
+                  {column.icon && React.createElement(column.icon, { className: "mr-2 h-4 w-4"})}
+                  {column.title}
+              </DropdownMenuItem>
+              ))}
+              {columns.length === 1 && task.columnId === columns[0].id && <DropdownMenuItem disabled>No other columns</DropdownMenuItem>}
+          </DropdownMenuContent>
+          </DropdownMenu>
+      </CardFooter>
     </Card>
   );
 }

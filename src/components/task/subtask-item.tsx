@@ -15,9 +15,10 @@ interface SubtaskItemProps {
   onUpdate: (subtask: Subtask) => void;
   onDelete: (subtaskId: string) => void;
   isEditing?: boolean;
+  className?: string; // Added className prop
 }
 
-export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing = true }: SubtaskItemProps) {
+export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing = true, className }: SubtaskItemProps) {
   const [title, setTitle] = useState(subtask.title);
 
   useEffect(() => {
@@ -29,9 +30,9 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
   };
 
   const handleTitleBlur = () => {
-    if (title.trim() !== subtask.title && title.trim() !== "") { // Prevent saving empty title
+    if (title.trim() !== subtask.title && title.trim() !== "") { 
       onUpdate({ ...subtask, title: title.trim() });
-    } else if (title.trim() === "" && subtask.title !== "") { // Revert if cleared
+    } else if (title.trim() === "" && subtask.title !== "") { 
         setTitle(subtask.title);
     }
   };
@@ -45,13 +46,13 @@ export function SubtaskItem({ subtask, onToggle, onUpdate, onDelete, isEditing =
 
 
   return (
-    <div className="flex items-center gap-2 py-1 group">
+    <div className={cn("flex items-center gap-2 group", className)}>
       <Checkbox
-        id={`subtask-${subtask.id}`}
+        id={`subtask-${subtask.id}-${isEditing ? 'edit' : 'view'}`} // Ensure unique ID for view/edit modes if rendered simultaneously
         checked={subtask.completed}
         onCheckedChange={() => onToggle(subtask.id)}
         aria-label={`Mark subtask ${subtask.title} as ${subtask.completed ? 'incomplete' : 'complete'}`}
-        disabled={!isEditing} // Disable checkbox if not in editing mode
+        disabled={!isEditing} 
       />
       {isEditing ? (
         <Input

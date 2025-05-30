@@ -19,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`} suppressHydrationWarning={true}>
-        {children}
+        <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow">
+          {children}
+        </div>
       </body>
     </html>
   );
