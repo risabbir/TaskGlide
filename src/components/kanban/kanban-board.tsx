@@ -87,8 +87,8 @@ export function KanbanBoard() {
     <div className="flex flex-col flex-grow p-4 space-y-4 overflow-hidden">
       <QuickAddTask />
       <ActiveFilterPills />
-      <ScrollArea className="flex-grow w-full whitespace-nowrap">
-        <div className="flex flex-col md:flex-row gap-4 h-full pb-4">
+      <ScrollArea className="flex-grow w-full">
+        <div className="flex flex-col md:flex-row md:whitespace-nowrap gap-4 h-full pb-4">
           {visibleColumns.map((column) => {
             const columnTasks = filteredAndSortedTasks.filter((task) => task.columnId === column.id);
             const sortedColumnTasks = sortTasks(columnTasks, sort);

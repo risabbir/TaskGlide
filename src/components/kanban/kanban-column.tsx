@@ -26,13 +26,15 @@ export function KanbanColumn({ column, tasks, allColumns }: KanbanColumnProps) {
           {tasks.length}
         </span>
       </div>
-      <ScrollArea className="flex-grow p-2 md:p-3 overflow-y-auto h-[calc(100vh-210px)] md:h-[calc(100vh-250px)]">
-        {tasks.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8 px-2">No tasks in this column.</p>
-        )}
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} columns={allColumns} />
-        ))}
+      <ScrollArea className="flex-grow">
+        <div className="p-2 md:p-3">
+          {tasks.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8 px-2">No tasks in this column.</p>
+          )}
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} columns={allColumns} />
+          ))}
+        </div>
       </ScrollArea>
     </div>
   );
