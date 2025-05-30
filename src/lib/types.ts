@@ -27,6 +27,10 @@ export interface Task {
   recurrenceRule?: RecurrenceRule;
   createdAt: Date;
   updatedAt: Date;
+  // Timer-related fields
+  timerActive: boolean;
+  timeSpentSeconds: number;
+  timerStartTime: number | null;
 }
 
 export interface Column {

@@ -16,7 +16,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-// ScrollArea removed, will use native scroll on a div
 import { useKanban } from "@/lib/store";
 import type { Task, Priority, RecurrenceRule, RecurrenceType, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, DEFAULT_COLUMNS } from "@/lib/constants";
@@ -44,6 +43,7 @@ const taskSchema = z.object({
   })).optional(),
   dependencies: z.array(z.string()).optional(), 
   recurrenceType: z.enum(["", "daily", "weekly", "monthly"]).optional(),
+  // Timer fields are managed by the store, not directly editable in form for now
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -106,7 +106,7 @@ export function TaskModal() {
   }, [activeTaskModal, reset]);
 
   const onSubmit = (data: TaskFormData) => {
-    const taskData: Partial<Task> = {
+    const baseTaskData: Partial<Task> = {
       title: data.title,
       description: data.description,
       columnId: data.columnId,
@@ -120,13 +120,24 @@ export function TaskModal() {
     };
 
     if (activeTaskModal) {
-      dispatch({ type: "UPDATE_TASK", payload: { ...activeTaskModal, ...taskData } as Task });
+      dispatch({ type: "UPDATE_TASK", payload: { 
+        ...activeTaskModal, 
+        ...baseTaskData,
+        // Preserve existing timer state
+        timerActive: activeTaskModal.timerActive,
+        timeSpentSeconds: activeTaskModal.timeSpentSeconds,
+        timerStartTime: activeTaskModal.timerStartTime,
+      } as Task });
       toast({ title: "Task Updated", description: `Task "${data.title}" has been updated.` });
     } else {
       dispatch({ type: "ADD_TASK", payload: {
-          ...taskData,
+          ...baseTaskData,
           id: crypto.randomUUID(),
           createdAt: new Date(),
+          // Initialize timer state for new task
+          timerActive: false,
+          timeSpentSeconds: 0,
+          timerStartTime: null,
         } as Task,
       });
       toast({ title: "Task Created", description: `New task "${data.title}" has been added.` });
@@ -136,7 +147,7 @@ export function TaskModal() {
 
   const closeModal = () => {
     dispatch({ type: "CLOSE_TASK_MODAL" });
-    reset(); // Reset form fields
+    reset();
     setIsAiDescriptionLoading(false);
     setIsAiTagsLoading(false);
     setIsAiSubtasksLoading(false);
@@ -434,7 +445,7 @@ export function TaskModal() {
                                             </SelectItem>
                                         ))}
                                     {allTasks.filter(t => t.id !== activeTaskModal?.id && !(field.value || []).includes(t.id)).length === 0 && (
-                                        <SelectItem value={NO_DEPENDENCIES_PLACEHOLDER} disabled>No available tasks to select</SelectItem>
+                                        <SelectItem value={NO_DEPENDENCIES_PLACEHOLDER} disabled>{NO_DEPENDENCIES_PLACEHOLDER === "no_options_dependencies_placeholder_value" ? "No available tasks to select" : NO_DEPENDENCIES_PLACEHOLDER}</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
@@ -477,5 +488,3 @@ export function TaskModal() {
     </Dialog>
   );
 }
-
-    

@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { Task, Column, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, RECURRENCE_ICON, DEPENDENCY_ICON } from "@/lib/constants";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -24,10 +24,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock, Play, Pause } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import { format, isPast, isToday, formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 import { SubtaskItem } from "../task/subtask-item";
 
 interface TaskCardProps {
@@ -39,6 +39,25 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const { dispatch, state: { tasks: allTasks } } = useKanban();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [displayTime, setDisplayTime] = useState(task.timeSpentSeconds);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | undefined;
+    if (task.timerActive && typeof task.timerStartTime === 'number') {
+      const updateDisplayedTime = () => {
+        const elapsed = Math.floor((Date.now() - (task.timerStartTime as number)) / 1000);
+        setDisplayTime(task.timeSpentSeconds + elapsed);
+      };
+      updateDisplayedTime(); // Initial update
+      intervalId = setInterval(updateDisplayedTime, 1000);
+    } else {
+      setDisplayTime(task.timeSpentSeconds);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [task.timerActive, task.timerStartTime, task.timeSpentSeconds]);
+
 
   const PriorityIcon = PRIORITY_STYLES[task.priority].icon;
   const priorityColor = PRIORITY_STYLES[task.priority].colorClass;
@@ -99,6 +118,15 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     }
   };
 
+  const handleTimerToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card expansion
+    if (task.timerActive) {
+      dispatch({ type: "STOP_TIMER", payload: task.id });
+    } else {
+      dispatch({ type: "START_TIMER", payload: task.id });
+    }
+  };
+
 
   return (
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -146,12 +174,11 @@ export function TaskCard({ task, columns }: TaskCardProps) {
               </DropdownMenu>
             </div>
           </div>
-           {/* Description preview removed from collapsed header to save space */}
         </CardHeader>
 
         <CardContent className={cn("p-3 pt-0", !isExpanded ? "pb-2.5" : "pb-3")}>
           {!isExpanded && (
-            <div className="space-y-1.5 text-xs"> {/* Wrapper for all collapsed content items */}
+            <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between text-muted-foreground">
                 <div className="flex items-center gap-1" title={`Priority: ${PRIORITY_STYLES[task.priority].label}`}>
                   <PriorityIcon className={cn("h-3.5 w-3.5", priorityColor)} />
@@ -191,6 +218,24 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                   <Progress value={(completedSubtasks / totalSubtasks) * 100} className="h-1.5" />
                 </div>
               )}
+              
+              {/* Timer display and controls for collapsed view */}
+              <div className="flex items-center justify-between pt-1.5">
+                <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{formatTime(displayTime)}</span>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 no-expand" 
+                  onClick={handleTimerToggle}
+                  aria-label={task.timerActive ? "Stop timer" : "Start timer"}
+                >
+                  {task.timerActive ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4 text-primary" />}
+                </Button>
+              </div>
+
             </div>
           )}
 
@@ -202,6 +247,28 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                   <p className="text-muted-foreground whitespace-pre-wrap text-sm break-words">{task.description}</p>
                 </div>
               )}
+              
+              {/* Timer display and controls for expanded view */}
+              <div className="flex items-center justify-between pt-2 pb-1 border-b border-dashed">
+                 <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
+                 <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium text-foreground">{formatTime(displayTime)}</span>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 no-expand" 
+                      onClick={handleTimerToggle}
+                      aria-label={task.timerActive ? "Stop timer" : "Start timer"}
+                    >
+                      {task.timerActive ? <Pause className="mr-1.5 h-4 w-4" /> : <Play className="mr-1.5 h-4 w-4" />}
+                      {task.timerActive ? "Stop" : "Start"}
+                    </Button>
+                 </div>
+              </div>
+
 
               {task.dueDate && (
                   <div className="flex items-center gap-1.5 text-sm" title={`Due: ${format(task.dueDate, "PPP")}`}>
@@ -314,8 +381,8 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={(e) => {e.stopPropagation(); setIsDeleteDialogOpen(false);}}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogCancel onClick={(e) => {e.stopPropagation(); setIsDeleteDialogOpen(false);}} className="no-expand">Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 no-expand">
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -323,4 +390,3 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </AlertDialog>
   );
 }
-

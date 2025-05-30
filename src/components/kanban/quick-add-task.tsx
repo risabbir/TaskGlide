@@ -27,6 +27,10 @@ export function QuickAddTask() {
       dependencies: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      // Timer defaults
+      timerActive: false,
+      timeSpentSeconds: 0,
+      timerStartTime: null,
     };
 
     dispatch({ type: "ADD_TASK", payload: newTask });

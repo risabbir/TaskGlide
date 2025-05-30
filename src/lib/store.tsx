@@ -1,10 +1,10 @@
 
 "use client";
 
-import type { Task, Column, FilterState, SortState, Priority, RecurrenceRule, Subtask } from "@/lib/types";
+import type { Task, Column, FilterState, SortState, RecurrenceRule, Subtask } from "@/lib/types";
 import { DEFAULT_COLUMNS, MOCK_TASKS_KEY, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE } from "@/lib/constants";
 import React, { createContext, useReducer, useContext, useEffect, ReactNode } from "react";
-import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns"; // Renamed to avoid conflict
+import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns";
 
 interface KanbanState {
   tasks: Task[];
@@ -48,7 +48,9 @@ type KanbanAction =
   | { type: "ADD_SUBTASK"; payload: { taskId: string; subtask: Subtask } }
   | { type: "TOGGLE_SUBTASK"; payload: { taskId: string; subtaskId: string } }
   | { type: "UPDATE_SUBTASK"; payload: { taskId: string; subtask: Subtask } }
-  | { type: "DELETE_SUBTASK"; payload: { taskId: string; subtaskId: string } };
+  | { type: "DELETE_SUBTASK"; payload: { taskId: string; subtaskId: string } }
+  | { type: "START_TIMER"; payload: string } // taskId
+  | { type: "STOP_TIMER"; payload: string }; // taskId
 
 
 function getNextDueDate(currentDueDate: Date, rule: RecurrenceRule): Date {
@@ -89,17 +91,16 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       const updatedTasks = state.tasks.map(task =>
         task.id === action.payload.id ? action.payload : task
       );
-      // If columnId changed, update columns as well
       const taskBeingUpdated = action.payload;
       const oldTask = state.tasks.find(t => t.id === taskBeingUpdated.id);
       let newColumns = state.columns;
 
       if (oldTask && oldTask.columnId !== taskBeingUpdated.columnId) {
         newColumns = state.columns.map(col => {
-          if (col.id === oldTask.columnId) { // Remove from old
+          if (col.id === oldTask.columnId) { 
             return { ...col, taskIds: col.taskIds.filter(id => id !== taskBeingUpdated.id) };
           }
-          if (col.id === taskBeingUpdated.columnId) { // Add to new
+          if (col.id === taskBeingUpdated.columnId) { 
             return { ...col, taskIds: [...col.taskIds, taskBeingUpdated.id] };
           }
           return col;
@@ -121,7 +122,27 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       let taskToMove = state.tasks.find(t => t.id === taskId);
       if (!taskToMove) return state;
 
-      const updatedTask = { ...taskToMove, columnId: newColumnId, updatedAt: new Date() };
+      let finalTimeSpentSeconds = taskToMove.timeSpentSeconds;
+      let finalTimerActive = taskToMove.timerActive;
+      let finalTimerStartTime = taskToMove.timerStartTime;
+
+      // Auto-stop timer if task is moved to "done"
+      if (taskToMove.timerActive && newColumnId === 'done' && taskToMove.timerStartTime) {
+        const elapsed = Math.floor((Date.now() - taskToMove.timerStartTime) / 1000);
+        finalTimeSpentSeconds += elapsed;
+        finalTimerActive = false;
+        finalTimerStartTime = null;
+      }
+
+      const updatedTask = { 
+        ...taskToMove, 
+        columnId: newColumnId, 
+        updatedAt: new Date(),
+        timeSpentSeconds: finalTimeSpentSeconds,
+        timerActive: finalTimerActive,
+        timerStartTime: finalTimerStartTime,
+      };
+      
       let newTasks = state.tasks.map(t => t.id === taskId ? updatedTask : t);
       
       let newColumns = state.columns.map(column => {
@@ -154,6 +175,10 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
           subtasks: taskToMove.subtasks.map(st => ({ ...st, completed: false })),
           createdAt: new Date(),
           updatedAt: new Date(),
+          // Reset timer for new recurring task
+          timeSpentSeconds: 0,
+          timerActive: false,
+          timerStartTime: null,
         };
         newTasks.push(newTask);
         newColumns = newColumns.map(column => {
@@ -189,10 +214,6 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       const newTasks = state.tasks.map(task => {
         if (task.id === taskId) {
           const updatedTask = { ...task, subtasks: [...task.subtasks, subtask] };
-          if (state.activeTaskModal && state.activeTaskModal.id === taskId) {
-            // If the currently open modal is for this task, update it too
-            return { ...updatedTask };
-          }
           return updatedTask;
         }
         return task;
@@ -210,10 +231,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
             st.id === subtaskId ? { ...st, completed: !st.completed } : st
           );
           const updatedTask = { ...task, subtasks: updatedSubtasks };
-           if (state.activeTaskModal && state.activeTaskModal.id === taskId) {
-             return { ...updatedTask };
-           }
-          return updatedTask;
+           return updatedTask;
         }
         return task;
       });
@@ -232,9 +250,6 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
                         st.id === updatedSubtask.id ? updatedSubtask : st
                     ),
                 };
-                if (state.activeTaskModal && state.activeTaskModal.id === taskId) {
-                    return { ...updatedTask };
-                }
                 return updatedTask;
             }
             return task;
@@ -252,9 +267,6 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
                     ...task,
                     subtasks: task.subtasks.filter(st => st.id !== subtaskId),
                 };
-                if (state.activeTaskModal && state.activeTaskModal.id === taskId) {
-                    return { ...updatedTask };
-                }
                 return updatedTask;
             }
             return task;
@@ -263,6 +275,33 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
                              ? newTasks.find(t => t.id === taskId) || null
                              : state.activeTaskModal;
         return { ...state, tasks: newTasks, activeTaskModal: newActiveModal };
+    }
+    case "START_TIMER": {
+      return {
+        ...state,
+        tasks: state.tasks.map(task =>
+          task.id === action.payload
+            ? { ...task, timerActive: true, timerStartTime: Date.now() }
+            : task
+        ),
+      };
+    }
+    case "STOP_TIMER": {
+      return {
+        ...state,
+        tasks: state.tasks.map(task => {
+          if (task.id === action.payload && task.timerActive && task.timerStartTime) {
+            const elapsed = Math.floor((Date.now() - task.timerStartTime) / 1000);
+            return {
+              ...task,
+              timerActive: false,
+              timeSpentSeconds: task.timeSpentSeconds + elapsed,
+              timerStartTime: null,
+            };
+          }
+          return task;
+        }),
+      };
     }
     default:
       return state;
@@ -283,18 +322,22 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   const parseTask = (task: any): Task => ({
     ...task,
     dueDate: parseTaskDate(task.dueDate),
-    createdAt: parseTaskDate(task.createdAt) || new Date(), // Fallback for safety
-    updatedAt: parseTaskDate(task.updatedAt) || new Date(), // Fallback for safety
+    createdAt: parseTaskDate(task.createdAt) || new Date(), 
+    updatedAt: parseTaskDate(task.updatedAt) || new Date(), 
     subtasks: task.subtasks || [],
     dependencies: task.dependencies || [],
     tags: task.tags || [],
+    // Initialize timer fields if not present in stored data
+    timerActive: task.timerActive === undefined ? false : task.timerActive,
+    timeSpentSeconds: task.timeSpentSeconds === undefined ? 0 : task.timeSpentSeconds,
+    timerStartTime: task.timerStartTime === undefined ? null : task.timerStartTime,
   });
 
 
   const generateMockData = React.useCallback(() => {
     if (sessionStorage.getItem(MOCK_TASKS_KEY)) {
-        const tasksRaw = localStorage.getItem("protasker_tasks"); // Updated key
-        const columnsStateRaw = localStorage.getItem("protasker_columns"); // Updated key
+        const tasksRaw = localStorage.getItem("protasker_tasks");
+        const columnsStateRaw = localStorage.getItem("protasker_columns"); 
 
         if (tasksRaw && columnsStateRaw) {
             try {
@@ -324,7 +367,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           { id: "sub-1-2", title: "Buy eggs", completed: true },
           { id: "sub-1-3", title: "Buy bread", completed: false },
         ],
-        dependencies: [], createdAt: new Date(Date.now() - 86400000 * 3), updatedAt: new Date(), dueDate: addDays(new Date(), 2)
+        dependencies: [], createdAt: new Date(Date.now() - 86400000 * 3), updatedAt: new Date(), dueDate: addDays(new Date(), 2),
+        timerActive: false, timeSpentSeconds: 3665, timerStartTime: null, // Example: 1h 1m 5s
       },
       {
         id: "task-2", title: "Project Alpha Design Review", description: "Finalize UI mockups for Project Alpha. Collect feedback from the team and prepare for the client presentation. Ensure all components are responsive.", columnId: "inprogress",
@@ -334,22 +378,26 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           { id: "sub-2-3", title: "Settings page finalization", completed: false },
         ],
         dependencies: [], createdAt: new Date(Date.now() - 86400000 * 2), updatedAt: new Date(), dueDate: addDays(new Date(), 5),
-        recurrenceRule: { type: "weekly" }
+        recurrenceRule: { type: "weekly" },
+        timerActive: true, timeSpentSeconds: 1200, timerStartTime: Date.now() - 300000, // Example: 20m, started 5 mins ago
       },
       {
         id: "task-3", title: "Write Q3 Report", description: "Draft the quarterly report highlighting key achievements and challenges. Include financial summaries and projections.", columnId: "todo",
-        priority: "high", tags: ["work", "reporting", "finance"], subtasks: [], dependencies: ["task-2"], // Example dependency
+        priority: "high", tags: ["work", "reporting", "finance"], subtasks: [], dependencies: ["task-2"], 
         createdAt: new Date(Date.now() - 86400000 * 1), updatedAt: new Date(),
+        timerActive: false, timeSpentSeconds: 0, timerStartTime: null,
       },
       {
         id: "task-4", title: "Client Meeting - Project Beta", description: "Prepare slides and agenda for Tuesday's client meeting on Project Beta. Focus on timeline and budget.", columnId: "review",
         priority: "high", tags: ["work", "client", "project-beta"], subtasks: [], dependencies: [],
-        createdAt: new Date(Date.now() - 86400000 * 4), updatedAt: new Date(), dueDate: addDays(new Date(), -1) 
+        createdAt: new Date(Date.now() - 86400000 * 4), updatedAt: new Date(), dueDate: addDays(new Date(), -1),
+        timerActive: false, timeSpentSeconds: 7200, timerStartTime: null, // Example: 2h
       },
       {
         id: "task-5", title: "Pay Utility Bills", description: "Pay electricity, water, and internet bills for the month.", columnId: "done",
         priority: "medium", tags: ["personal", "finance", "bills"], subtasks: [], dependencies: [],
-        createdAt: new Date(Date.now() - 86400000 * 5), updatedAt: new Date(), dueDate: addDays(new Date(), -7)
+        createdAt: new Date(Date.now() - 86400000 * 5), updatedAt: new Date(), dueDate: addDays(new Date(), -7),
+        timerActive: false, timeSpentSeconds: 300, timerStartTime: null, // Example: 5m
       },
        {
         id: "task-6", title: "Plan Weekend Trip", description: "Research destinations and book accommodation for the upcoming weekend trip.", columnId: "todo",
@@ -358,8 +406,9 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             { id: "sub-6-2", title: "Book hotel", completed: false },
             { id: "sub-6-3", title: "Pack bags", completed: false },
         ], dependencies: [], createdAt: new Date(), updatedAt: new Date(),
+        timerActive: false, timeSpentSeconds: 0, timerStartTime: null,
       },
-    ].map(parseTask);
+    ].map(parseTask); // Ensure mock data is parsed with timer defaults
     const initialColumns = DEFAULT_COLUMNS.map(col => ({
       ...col, 
       taskIds: mockTasks.filter(task => task.columnId === col.id).map(task => task.id)
@@ -370,8 +419,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   }, []); 
 
   useEffect(() => {
-    const storedTasks = localStorage.getItem("protasker_tasks"); // Updated key
-    const storedColumnsState = localStorage.getItem("protasker_columns"); // Updated key
+    const storedTasks = localStorage.getItem("protasker_tasks"); 
+    const storedColumnsState = localStorage.getItem("protasker_columns"); 
     
     if (storedTasks && storedColumnsState) {
       try {
@@ -396,22 +445,23 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   }, [generateMockData]);
 
   useEffect(() => {
-    if (state.tasks.length > 0 || localStorage.getItem("protasker_tasks")) { // Updated key
+    if (state.tasks.length > 0 || localStorage.getItem("protasker_tasks")) { 
         try {
             const tasksToSave = state.tasks.map(task => ({
                 ...task,
                 dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
                 createdAt: formatISO(task.createdAt),
                 updatedAt: formatISO(task.updatedAt),
+                // timerStartTime is already a number or null, no need to format
             }));
-            localStorage.setItem("protasker_tasks", JSON.stringify(tasksToSave)); // Updated key
+            localStorage.setItem("protasker_tasks", JSON.stringify(tasksToSave)); 
 
             const columnsStateToSave = state.columns.map(col => ({
                 id: col.id,
-                title: col.title, // Keep title for potential future use, though icon is not saved
+                title: col.title, 
                 taskIds: col.taskIds,
             }));
-            localStorage.setItem("protasker_columns", JSON.stringify(columnsStateToSave)); // Updated key
+            localStorage.setItem("protasker_columns", JSON.stringify(columnsStateToSave)); 
         } catch(e) {
             console.error("Failed to save state to local storage", e);
         }
