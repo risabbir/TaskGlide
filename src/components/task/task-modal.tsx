@@ -46,6 +46,8 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>;
 
+const NO_RECURRENCE_VALUE = "no_recurrence";
+
 export function TaskModal() {
   const { state, dispatch } = useKanban();
   const { isTaskModalOpen, activeTaskModal, columns, tasks: allTasks } = state;
@@ -321,10 +323,13 @@ export function TaskModal() {
                   name="recurrenceType"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <Select
+                      onValueChange={(value) => field.onChange(value === NO_RECURRENCE_VALUE ? "" : value)}
+                      value={field.value === "" || field.value === undefined ? NO_RECURRENCE_VALUE : field.value}
+                    >
                       <SelectTrigger><SelectValue placeholder="Set recurrence" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value={NO_RECURRENCE_VALUE}>None</SelectItem>
                         <SelectItem value="daily">Daily</SelectItem>
                         <SelectItem value="weekly">Weekly</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
