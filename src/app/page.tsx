@@ -10,6 +10,37 @@ import { FilterSidebar } from "@/components/filter-sort/filter-sidebar";
 import { Confetti } from "@/components/ui/confetti";
 import { Toaster } from "@/components/ui/toaster";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { QuickAddTask } from "@/components/kanban/quick-add-task";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
+import { FocusBatchModalContent } from "@/components/ai/focus-batch-modal";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import React, { useState } from "react";
+
+
+function QuickActionsBar() {
+  const [isFocusBatchModalOpen, setIsFocusBatchModalOpen] = useState(false);
+  return (
+    <div className="container mx-auto px-4 py-3 flex flex-col sm:flex-row items-center gap-3 justify-between">
+      <div className="w-full sm:flex-grow">
+        <QuickAddTask />
+      </div>
+      <Dialog open={isFocusBatchModalOpen} onOpenChange={setIsFocusBatchModalOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            size="lg" // Made button larger
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center gap-2"
+          >
+            <Sparkles className="h-5 w-5" />
+            Suggest Focus Batch
+          </Button>
+        </DialogTrigger>
+        <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
+      </Dialog>
+    </div>
+  );
+}
+
 
 function PageContent() {
   const { state, dispatch } = useKanban();
@@ -19,6 +50,7 @@ function PageContent() {
     <Sheet open={isFilterSidebarOpen} onOpenChange={() => dispatch({ type: "TOGGLE_FILTER_SIDEBAR" })}>
       <div className="flex flex-col min-h-screen">
         <Header />
+        <QuickActionsBar /> 
         <main className="flex-grow flex flex-col overflow-hidden">
           <KanbanBoard />
         </main>

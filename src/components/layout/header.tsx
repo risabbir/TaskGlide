@@ -3,22 +3,16 @@
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Dialog, 
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, SlidersHorizontal, LayoutDashboard, XCircle, Sparkles, PlusCircle } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect } from "react";
-import { FocusBatchModalContent } from "@/components/ai/focus-batch-modal"; 
 
 export function Header() {
   const { dispatch, state } = useKanban();
-  const filters = state.filters; // Ensure filters is accessed from state
+  const filters = state.filters;
   const [searchTerm, setSearchTerm] = useState(filters?.searchTerm ?? "");
-  const [isFocusBatchModalOpen, setIsFocusBatchModalOpen] = useState(false);
 
   useEffect(() => {
     if (filters?.searchTerm !== searchTerm) {
@@ -46,7 +40,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4"> {/* Adjusted gap for small screens */}
+      <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4">
         {/* Logo & Name - Left Aligned */}
         <div className="flex items-center gap-2">
           <a href="/" className="flex items-center space-x-2">
@@ -85,16 +79,6 @@ export function Header() {
             <PlusCircle className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">New Task</span>
           </Button>
-          
-          <Dialog open={isFocusBatchModalOpen} onOpenChange={setIsFocusBatchModalOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="sm:inline-flex px-2 sm:px-3">
-                <Sparkles className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Focus Batch</span>
-              </Button>
-            </DialogTrigger>
-            <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
-          </Dialog>
           
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="h-9 w-9">

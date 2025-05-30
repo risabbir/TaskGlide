@@ -38,16 +38,17 @@ export function QuickAddTask() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 bg-muted/50 rounded-lg shadow max-w-xl mx-auto w-full">
+    // Removed max-w-xl, kept w-full so it takes full width of its parent in QuickActionsBar
+    <form onSubmit={handleSubmit} className="flex gap-2 bg-muted/50 rounded-lg shadow p-3 sm:p-4 w-full"> 
       <Input
         type="text"
         placeholder="Add a new task and press Enter..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="flex-grow"
+        className="flex-grow h-10 sm:h-11 text-base" // Slightly larger input
       />
-      <Button type="submit" size="icon" aria-label="Add task">
-        <PlusCircle className="h-5 w-5" />
+      <Button type="submit" size="icon" className="h-10 w-10 sm:h-11 sm:w-11" aria-label="Add task">
+        <PlusCircle className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
     </form>
   );
