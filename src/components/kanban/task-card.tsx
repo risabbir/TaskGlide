@@ -57,9 +57,14 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   };
 
   const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent card click when clicking edit
     dispatch({ type: "OPEN_TASK_MODAL", payload: task });
   };
+
+  const openDeleteDialog = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setIsDeleteDialogOpen(true);
+  }
 
   const confirmDelete = () => {
     dispatch({ type: "DELETE_TASK", payload: task.id });
@@ -76,13 +81,14 @@ export function TaskCard({ task, columns }: TaskCardProps) {
   const toggleExpand = (e?: React.MouseEvent) => {
      if (e) {
         const target = e.target as HTMLElement;
-        if (target.closest('[data-radix-dropdown-menu-trigger], [data-radix-alert-dialog-trigger], button, a, input[type="checkbox"], label')) {
+        // Allow click-through for interactive elements within the card header/content
+        if (target.closest('[data-radix-dropdown-menu-trigger], [data-radix-alert-dialog-trigger], button, a, input[type="checkbox"], label, .no-expand')) {
             return;
         }
     }
     setIsExpanded(!isExpanded);
   };
-
+  
   const getRecurrenceText = (rule?: Task['recurrenceRule']) => {
     if (!rule) return null;
     switch (rule.type) {
@@ -92,6 +98,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
       default: return null;
     }
   };
+
 
   return (
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -103,26 +110,24 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           hasIncompletePrerequisites && isInWorkingColumn && "border-yellow-500 border-2 ring-1 ring-yellow-300",
           isExpanded && "shadow-lg ring-1 ring-primary/30"
         )}
-        onClick={!isExpanded ? toggleExpand : undefined}
+        onClick={toggleExpand}
       >
         <CardHeader className="p-3 pb-2">
           <div className="flex justify-between items-start gap-2">
             <div
               className={cn("text-base font-semibold leading-tight pr-1 flex-grow break-words overflow-hidden",
-                           !isExpanded ? "line-clamp-2" : "",
-                           isExpanded && "cursor-pointer")}
-              onClick={isExpanded ? toggleExpand : undefined}
+                           !isExpanded ? "line-clamp-2" : "")}
               title={task.title}
             >
               {task.title}
             </div>
-            <div className="flex items-center shrink-0">
+            <div className="flex items-center shrink-0 no-expand">
               <Button variant="ghost" size="icon" className="h-7 w-7 mr-0.5" onClick={toggleExpand} aria-label={isExpanded ? "Collapse task" : "Expand task"}>
                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 no-expand" onClick={(e) => e.stopPropagation()}>
                     <MoreVertical className="h-4 w-4" />
                     <span className="sr-only">Task options</span>
                   </Button>
@@ -130,7 +135,10 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenuItem onClick={handleEdit}><Edit2 className="mr-2 h-4 w-4" /> Edit Task</DropdownMenuItem>
                   <AlertDialogTrigger asChild>
-                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                     <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        onClick={(e) => e.stopPropagation()} // Prevent card click, AlertDialogTrigger will handle dialog
+                      >
                       <Trash2 className="mr-2 h-4 w-4" /> Delete Task
                     </DropdownMenuItem>
                   </AlertDialogTrigger>
@@ -138,6 +146,11 @@ export function TaskCard({ task, columns }: TaskCardProps) {
               </DropdownMenu>
             </div>
           </div>
+           {task.description && !isExpanded && (
+            <p className="text-xs text-muted-foreground line-clamp-2 break-words mt-1">
+              {task.description}
+            </p>
+          )}
         </CardHeader>
 
         <CardContent className={cn("p-3 pt-0", !isExpanded ? "pb-2.5" : "pb-3")}>
@@ -160,14 +173,9 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                       <span className={cn(isOverdue && "text-destructive font-semibold", "font-medium")}>
                           Due {format(task.dueDate, "MMM d")}
                       </span>
+                       {isOverdue && !isExpanded && <Badge variant="destructive" className="text-xs ml-1 py-0 px-1 h-auto">Overdue</Badge>}
                   </div>
               )}
-               {task.description && (
-                <p className="text-muted-foreground line-clamp-2 break-words text-[0.78rem] leading-snug">
-                  {task.description}
-                </p>
-              )}
-
 
               {task.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 pt-0.5">
@@ -232,7 +240,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                         onToggle={() => dispatch({type: "TOGGLE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
                         onUpdate={(updatedSubtask) => dispatch({type: "UPDATE_SUBTASK", payload: {taskId: task.id, subtask: updatedSubtask}})}
                         onDelete={() => dispatch({type: "DELETE_SUBTASK", payload: {taskId: task.id, subtaskId: subtask.id}})}
-                        isEditing={false}
+                        isEditing={false} // Subtasks in expanded card view are not directly editable
                         className="py-0.5 text-xs bg-background/30 hover:bg-background/70 rounded px-1"
                       />
                     ))}
@@ -282,10 +290,10 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           )}
         </CardContent>
 
-        <CardFooter className={cn("p-3", isExpanded ? "pt-2" : "pt-1.5")}>
+        <CardFooter className={cn("p-3 no-expand", isExpanded ? "pt-2" : "pt-1.5")}>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                <Button variant="outline" size="sm" className="w-full h-8 text-xs no-expand" onClick={(e) => e.stopPropagation()}>
                 <ChevronsUpDown className="mr-1.5 h-3.5 w-3.5" /> Move to
                 </Button>
             </DropdownMenuTrigger>
@@ -310,7 +318,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Delete
           </AlertDialogAction>

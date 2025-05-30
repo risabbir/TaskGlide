@@ -133,18 +133,19 @@
   background: hsl(var(--primary));
 }
 
+/* More subtle custom scrollbar for specific areas like modal subtask list */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: hsl(var(--muted) / 0.5);
+  background: hsl(var(--muted) / 0.5); /* Softer track */
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.5); /* Softer thumb */
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.8);
+  background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
 }
