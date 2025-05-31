@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -82,6 +81,7 @@ export function TaskModal() {
 
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
+  const watchedPriority = watch("priority");
 
   useEffect(() => {
     if (activeTaskModal) {
@@ -324,23 +324,36 @@ export function TaskModal() {
                 <Controller
                   name="priority"
                   control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRIORITIES.map(p => (
-                          <SelectItem key={p} value={p}>
+                  render={({ field }) => {
+                    const currentPriorityValue = field.value as Priority;
+                    const selectedStyles = PRIORITY_STYLES[currentPriorityValue];
+                    const IconComponent = selectedStyles?.icon;
+
+                    return (
+                      <Select onValueChange={field.onChange} value={currentPriorityValue}>
+                        <SelectTrigger>
+                          {IconComponent && selectedStyles ? (
                             <div className="flex items-center gap-2">
-                              {React.createElement(PRIORITY_STYLES[p].icon, { className: cn("h-4 w-4", PRIORITY_STYLES[p].colorClass) })}
-                              <span>{PRIORITY_STYLES[p].label}</span>
+                              <IconComponent className={cn("h-4 w-4", selectedStyles.colorClass)} />
+                              <span>{selectedStyles.label}</span>
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                          ) : (
+                            <span className="text-muted-foreground">Select priority</span>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRIORITIES.map(p => (
+                            <SelectItem key={p} value={p}>
+                              <div className="flex items-center gap-2">
+                                {React.createElement(PRIORITY_STYLES[p].icon, { className: cn("h-4 w-4", PRIORITY_STYLES[p].colorClass) })}
+                                <span>{PRIORITY_STYLES[p].label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
               </div>
 
@@ -484,6 +497,3 @@ export function TaskModal() {
     </Dialog>
   );
 }
-
-
-    
