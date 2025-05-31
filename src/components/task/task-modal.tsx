@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -81,7 +82,7 @@ export function TaskModal() {
 
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
-  const watchedPriority = watch("priority");
+  // const watchedPriority = watch("priority"); // Not directly needed for trigger with SelectValue asChild logic
 
   useEffect(() => {
     if (activeTaskModal) {
@@ -325,21 +326,26 @@ export function TaskModal() {
                   name="priority"
                   control={control}
                   render={({ field }) => {
-                    const currentPriorityValue = field.value as Priority;
+                    const currentPriorityValue = field.value as Priority; // This should be one of "low", "medium", "high"
                     const selectedStyles = PRIORITY_STYLES[currentPriorityValue];
                     const IconComponent = selectedStyles?.icon;
 
                     return (
-                      <Select onValueChange={field.onChange} value={currentPriorityValue}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
-                          {IconComponent && selectedStyles ? (
-                            <div className="flex items-center gap-2">
-                              <IconComponent className={cn("h-4 w-4", selectedStyles.colorClass)} />
-                              <span>{selectedStyles.label}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">Select priority</span>
-                          )}
+                          <SelectValue asChild placeholder="Select priority">
+                            {/* This content will be rendered by SelectValue when an item is selected */}
+                            {/* It relies on field.value being a valid key in PRIORITY_STYLES */}
+                            {IconComponent && selectedStyles ? (
+                              <div className="flex items-center gap-2">
+                                <IconComponent className={cn("h-4 w-4", selectedStyles.colorClass)} />
+                                <span>{selectedStyles.label}</span>
+                              </div>
+                            ) : (
+                              // Fallback for placeholder or if value is somehow invalid
+                              <span>Select priority</span>
+                            )}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {PRIORITIES.map(p => (
