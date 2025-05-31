@@ -332,7 +332,7 @@ export function TaskModal() {
                     const colorClass = selectedStyleInfo?.colorClass;
 
                     return (
-                      <Select onValueChange={field.onChange} value={field.value || "medium"}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
                           {IconComponent && label && colorClass ? (
                             <div className="flex items-center gap-2">
@@ -340,6 +340,7 @@ export function TaskModal() {
                               <span>{label}</span>
                             </div>
                           ) : (
+                            // This placeholder should ideally not be hit if defaultValues are set correctly
                             <span className="text-muted-foreground">Select priority</span>
                           )}
                         </SelectTrigger>
@@ -502,5 +503,6 @@ export function TaskModal() {
     </Dialog>
   );
 }
+    
 
     
