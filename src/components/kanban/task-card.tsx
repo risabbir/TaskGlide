@@ -248,6 +248,14 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                   <p className="text-muted-foreground whitespace-pre-wrap text-sm break-words">{task.description}</p>
                 </div>
               )}
+
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground mb-0.5 tracking-wide uppercase">Priority</h4>
+                <div className="flex items-center gap-1.5 text-sm">
+                    <PriorityIcon className={cn("h-4 w-4", priorityColor)} />
+                    <span className={cn("font-medium", priorityColor)}>{PRIORITY_STYLES[task.priority].label}</span>
+                </div>
+              </div>
               
               {task.columnId === 'inprogress' && (
                 <div className="flex items-center justify-between pt-2 pb-1 border-b border-dashed">
@@ -392,3 +400,4 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </AlertDialog>
   );
 }
+
