@@ -400,4 +400,3 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </AlertDialog>
   );
 }
-

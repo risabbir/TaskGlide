@@ -14,6 +14,15 @@ export function ActiveFilterPills() {
 
   const activePills = [];
 
+  // Search Term Pill
+  if (filters.searchTerm) {
+    activePills.push({
+      id: "searchTerm",
+      label: `Search: "${filters.searchTerm}"`,
+      onDismiss: () => dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }),
+    });
+  }
+
   // Status pills (selected columns)
   const allColumnsSelected = filters.status.length === DEFAULT_COLUMNS.length;
   if (!allColumnsSelected && filters.status.length > 0) {
@@ -81,19 +90,8 @@ export function ActiveFilterPills() {
     });
   }
   
-  if (activePills.length === 0 && !filters.searchTerm) {
+  if (activePills.length === 0) {
     return null;
-  }
-  
-  if (activePills.length === 0 && filters.searchTerm) {
-     return (
-        <div className="flex flex-wrap gap-2 items-center mb-4 px-1">
-            <span className="text-sm font-medium text-muted-foreground">Searching for: "{filters.searchTerm}"</span>
-            <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
-                Clear All
-            </Button>
-        </div>
-     );
   }
 
   return (
@@ -113,11 +111,9 @@ export function ActiveFilterPills() {
           </Button>
         </Badge>
       ))}
-      {(activePills.length > 0 || filters.searchTerm) && (
-        <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
-          Clear All
-        </Button>
-      )}
+      <Button variant="link" size="sm" className="p-0 h-auto text-primary" onClick={() => dispatch({ type: "CLEAR_FILTERS" })}>
+        Clear All
+      </Button>
     </div>
   );
 }

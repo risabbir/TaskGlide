@@ -10,7 +10,7 @@ import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills"
 import { isPast, isToday, isThisISOWeek, parseISO, startOfDay, endOfDay, isWithinInterval, isSameDay, isAfter, isBefore } from "date-fns";
 import React from "react";
 import { ClipboardList, PlusCircle, SearchX } from "lucide-react";
-import { DEFAULT_COLUMNS } from "@/lib/constants"; // Added import
+import { DEFAULT_COLUMNS } from "@/lib/constants";
 
 // Helper function to sort tasks
 const sortTasks = (tasks: Task[], sortState: SortState): Task[] => {
@@ -159,4 +159,3 @@ export function KanbanBoard() {
     </div>
   );
 }
-
