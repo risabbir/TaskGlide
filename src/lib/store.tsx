@@ -126,7 +126,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       let finalTimerActive = taskToMove.timerActive;
       let finalTimerStartTime = taskToMove.timerStartTime;
 
-      if (taskToMove.timerActive && newColumnId === 'done' && taskToMove.timerStartTime) {
+      if (taskToMove.timerActive && (newColumnId === 'done' || newColumnId === 'review') && taskToMove.timerStartTime) {
         const elapsed = Math.floor((Date.now() - taskToMove.timerStartTime) / 1000);
         finalTimeSpentSeconds += elapsed;
         finalTimerActive = false;
@@ -492,3 +492,4 @@ export function useKanban() {
   }
   return context;
 }
+
