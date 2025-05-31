@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// Removed ScrollArea import
 import { Sparkles, Loader2, AlertTriangle, Lightbulb, CalendarDays } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import type { Task } from "@/lib/types";
@@ -92,7 +92,8 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </DialogDescription>
       </DialogHeader>
       
-      <ScrollArea className="flex-grow min-h-0"> {/* Scrollbar appears here if content overflows */}
+      {/* Replaced ScrollArea with a div using overflow-y: auto and custom-scrollbar class */}
+      <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar">
         <div className="p-6 space-y-4">
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-10">
@@ -151,7 +152,7 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
             </ul>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
         <DialogClose asChild>
