@@ -7,7 +7,7 @@ import { SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle } from "lucide-react";
 import { useKanban } from "@/lib/store";
-import React, { useState, useEffect, type ReactNode } from "react";
+import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,27 +26,67 @@ export function Header({ children }: HeaderProps) {
   const filters = state.filters;
   
   const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters?.searchTerm ?? "");
-  
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [modalSearchTerm, setModalSearchTerm] = useState("");
+  const [modalSearchTerm, setModalSearchTerm] = useState(filters?.searchTerm ?? "");
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync local search terms if global filter changes (e.g., cleared by "Clear All Filters")
   useEffect(() => {
     if (filters?.searchTerm !== desktopSearchTerm) {
       setDesktopSearchTerm(filters?.searchTerm ?? "");
     }
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
-      setModalSearchTerm(filters?.searchTerm ?? "");
+        setModalSearchTerm(filters?.searchTerm ?? "");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters?.searchTerm, isSearchModalOpen]);
 
-  }, [filters?.searchTerm, isSearchModalOpen, desktopSearchTerm, modalSearchTerm]);
+
+  // Debounced search for desktop
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      // Only dispatch if the term has actually changed from the global state
+      if (desktopSearchTerm !== filters.searchTerm) {
+        dispatch({ type: "SET_FILTERS", payload: { searchTerm: desktopSearchTerm } });
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [desktopSearchTerm, dispatch, filters.searchTerm]);
+
+  // Debounced search for mobile modal
+  useEffect(() => {
+    if (!isSearchModalOpen) return; // Only apply when modal is open
+
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    // For modal, we might dispatch more directly on button click or on change if preferred.
+    // Here, we'll also debounce typing in modal. The "Search" button will do an immediate dispatch.
+    debounceTimeoutRef.current = setTimeout(() => {
+       if (modalSearchTerm !== filters.searchTerm) {
+        // This will update filters as user types in modal (debounced)
+        // dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
+       }
+    }, 300);
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [modalSearchTerm, dispatch, filters.searchTerm, isSearchModalOpen]);
+
 
   const handleDesktopSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setDesktopSearchTerm(event.target.value);
-  };
-
-  const handleDesktopSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    dispatch({ type: "SET_FILTERS", payload: { searchTerm: desktopSearchTerm } });
   };
 
   const clearDesktopSearch = () => {
@@ -57,9 +97,13 @@ export function Header({ children }: HeaderProps) {
   const handleModalSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setModalSearchTerm(event.target.value);
   };
-
+  
+  // Mobile modal search button explicitly dispatches and closes
   const handleModalSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
+    if (debounceTimeoutRef.current) { // Clear any pending debounce from typing
+      clearTimeout(debounceTimeoutRef.current);
+    }
     dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
     setIsSearchModalOpen(false);
   };
@@ -85,7 +129,7 @@ export function Header({ children }: HeaderProps) {
           </div>
 
           {/* Desktop Search Input - Center, Flexible Width */}
-          <form onSubmit={handleDesktopSearchSubmit} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
+          <form onSubmit={(e) => e.preventDefault()} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -111,7 +155,10 @@ export function Header({ children }: HeaderProps) {
           {/* Action Buttons - Right Aligned */}
           <div className="flex items-center space-x-1">
             {/* Mobile Search Trigger */}
-            <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden" onClick={() => setIsSearchModalOpen(true)}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden" onClick={() => {
+              setModalSearchTerm(filters.searchTerm ?? ""); // Sync before opening
+              setIsSearchModalOpen(true);
+            }}>
               <Search className="h-4 w-4" />
               <span className="sr-only">Search</span>
             </Button>
@@ -159,6 +206,8 @@ export function Header({ children }: HeaderProps) {
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                   onClick={() => {
                     setModalSearchTerm(""); 
+                    // Optionally dispatch clear immediately for modal
+                    // dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
                   }}
                 >
                   <XCircle className="h-4 w-4" />
