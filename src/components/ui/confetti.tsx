@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface ConfettiParticle {
   id: string;
@@ -37,21 +37,24 @@ export function Confetti() {
   const [particles, setParticles] = useState<ConfettiParticle[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
 
   const triggerConfetti = useCallback(() => {
     setIsVisible(true);
     const newParticles: ConfettiParticle[] = [];
     if (canvasRef.current) {
-      const { width, height } = canvasRef.current.getBoundingClientRect();
+      const { width } = canvasRef.current.getBoundingClientRect();
+      // Ensure width is not 0 if canvas not fully rendered, default to a reasonable value
+      const effectiveWidth = width > 0 ? width : window.innerWidth;
       for (let i = 0; i < 100; i++) { // Number of particles
-        newParticles.push(createParticle(width, height));
+        newParticles.push(createParticle(effectiveWidth, 0)); // y is 0 as they start at top
       }
     }
     setParticles(newParticles);
 
     setTimeout(() => {
       setIsVisible(false);
-      setParticles([]);
+      // No need to clear particles here, effect will stop drawing them
     }, 3000); // Confetti duration
   }, []);
 
@@ -63,59 +66,106 @@ export function Confetti() {
   }, [triggerConfetti]);
   
   useEffect(() => {
-    if (!isVisible || !canvasRef.current) return;
+    if (!isVisible || !canvasRef.current) {
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
+      }
+      // Clear particles when not visible to prevent stale drawing if isVisible becomes true again quickly
+      // setParticles([]); // Optional: Clear particles if desired when not visible
+      return;
+    }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // Ensure canvas dimensions are set correctly
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+         if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+        }
+      }
+    });
+    observer.observe(canvas);
+    
+    // Initial canvas sizing
     const { width, height } = canvas.getBoundingClientRect();
-    canvas.width = width;
-    canvas.height = height;
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+    }
 
-    let animationFrameId: number;
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!canvasRef.current) return; // Guard against canvas being null
+      const currentCanvas = canvasRef.current;
+      const currentCtx = currentCanvas.getContext('2d');
+      if (!currentCtx) return;
 
-      setParticles(prevParticles => 
-        prevParticles.map(p => {
+      currentCtx.clearRect(0, 0, currentCanvas.width, currentCanvas.height);
+
+      setParticles(prevParticles => {
+        const updatedParticles = prevParticles.map(p => {
           const newX = p.x + p.vx;
           const newY = p.y + p.vy;
           const newAngle = p.angle + p.angularVelocity;
-          let newOpacity = p.opacity - 0.01; // fade out
+          let newOpacity = p.opacity - 0.008; // Slower fade out for longer visibility
           
-          if (newY > canvas.height + p.size || newX < -p.size || newX > canvas.width + p.size || newOpacity <= 0) {
-             newOpacity = 0; // Mark for removal if needed, or just stop drawing
+          // Use currentCanvas.height for boundary check
+          if (newY > currentCanvas.height + p.size || newX < -p.size || newX > currentCanvas.width + p.size || newOpacity <= 0) {
+             newOpacity = 0;
           }
-
           return { ...p, x: newX, y: newY, angle: newAngle, opacity: newOpacity };
-        }).filter(p => p.opacity > 0) // Keep only visible particles
-      );
+        }).filter(p => p.opacity > 0);
+        
+        // Draw the newly computed particles immediately
+        updatedParticles.forEach(p => {
+            if (p.opacity <=0) return;
+            currentCtx.save();
+            currentCtx.translate(p.x, p.y);
+            currentCtx.rotate(p.angle * Math.PI / 180);
+            currentCtx.fillStyle = p.color;
+            currentCtx.globalAlpha = p.opacity;
+            currentCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            currentCtx.restore();
+        });
+        
+        // If all particles faded out, stop animation early
+        if (updatedParticles.length === 0 && animationFrameIdRef.current) {
+            cancelAnimationFrame(animationFrameIdRef.current);
+            animationFrameIdRef.current = null;
+            // setIsVisible(false); // Optionally hide canvas immediately
+        }
 
-      particles.forEach(p => {
-        if (p.opacity <=0) return;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle * Math.PI / 180);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.opacity;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-        ctx.restore();
+        return updatedParticles;
       });
-
-      animationFrameId = requestAnimationFrame(draw);
+      
+      if (animationFrameIdRef.current !== null) { // Continue animation if not stopped
+        animationFrameIdRef.current = requestAnimationFrame(draw);
+      }
     };
 
-    draw();
+    // Start the animation if not already running
+    if (animationFrameIdRef.current === null) {
+        animationFrameIdRef.current = requestAnimationFrame(draw);
+    }
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
+      }
+      observer.disconnect();
     };
-  }, [isVisible, particles]);
+  }, [isVisible]); // Only re-run this effect if isVisible changes
 
 
-  if (!isVisible) return null;
+  if (!isVisible && particles.length === 0) return null; // Don't render canvas if not visible and no particles
 
   return (
     <canvas
@@ -128,6 +178,8 @@ export function Confetti() {
         height: '100%',
         pointerEvents: 'none',
         zIndex: 9999,
+        opacity: isVisible ? 1 : 0, // Fade out canvas when not visible
+        transition: 'opacity 0.5s ease-out', // Smooth fade out
       }}
     />
   );
