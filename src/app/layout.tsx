@@ -7,8 +7,8 @@ import { APP_NAME } from '@/lib/constants';
 
 
 export const metadata: Metadata = {
-  title: APP_NAME, // Will now use "ProTasker"
-  description: 'Comprehensive Task Management Tool.', // Simplified description
+  title: APP_NAME,
+  description: 'Comprehensive Task Management Tool.',
 };
 
 export default function RootLayout({
@@ -26,4 +26,3 @@ export default function RootLayout({
     </html>
   );
 }
-
