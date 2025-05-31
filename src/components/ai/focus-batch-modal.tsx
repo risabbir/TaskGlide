@@ -92,8 +92,7 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </DialogDescription>
       </DialogHeader>
       
-      {/* The ScrollArea will enable scrolling if its content overflows */}
-      <ScrollArea className="flex-grow min-h-0"> {/* Removed custom-scrollbar class */}
+      <ScrollArea className="flex-grow min-h-0"> {/* Scrollbar appears here if content overflows */}
         <div className="p-6 space-y-4">
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-10">
