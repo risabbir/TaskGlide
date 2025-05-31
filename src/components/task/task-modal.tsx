@@ -324,30 +324,31 @@ export function TaskModal() {
                 <Controller
                   name="priority"
                   control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        {field.value ? (
-                          <div className="flex items-center">
-                            {React.createElement(PRIORITY_STYLES[field.value as Priority].icon, { className: `mr-2 h-4 w-4 ${PRIORITY_STYLES[field.value as Priority].colorClass}` })}
-                            <span>{PRIORITY_STYLES[field.value as Priority].label}</span>
+                  render={({ field }) => {
+                    const selectedPriority = field.value as Priority;
+                    const IconComponent = PRIORITY_STYLES[selectedPriority]?.icon || null;
+                    const colorClass = PRIORITY_STYLES[selectedPriority]?.colorClass || "";
+                    return (
+                      <Select onValueChange={field.onChange} value={selectedPriority}>
+                        <SelectTrigger>
+                          <div className="flex items-center gap-2">
+                            {IconComponent && <IconComponent className={cn("h-4 w-4", colorClass)} />}
+                            <SelectValue placeholder="Select priority" />
                           </div>
-                        ) : (
-                          <SelectValue placeholder="Select priority" />
-                        )}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRIORITIES.map(p => (
-                          <SelectItem key={p} value={p}>
-                            <div className="flex items-center">
-                              {React.createElement(PRIORITY_STYLES[p].icon, { className: `mr-2 h-4 w-4 ${PRIORITY_STYLES[p].colorClass}` })}
-                              {PRIORITY_STYLES[p].label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PRIORITIES.map(p => (
+                            <SelectItem key={p} value={p}>
+                              <div className="flex items-center">
+                                {React.createElement(PRIORITY_STYLES[p].icon, { className: `mr-2 h-4 w-4 ${PRIORITY_STYLES[p].colorClass}` })}
+                                {PRIORITY_STYLES[p].label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
               </div>
 
