@@ -340,7 +340,6 @@ export function TaskModal() {
                               <span>{label}</span>
                             </div>
                           ) : (
-                            // This placeholder should ideally not be hit if defaultValues are set correctly
                             <span className="text-muted-foreground">Select priority</span>
                           )}
                         </SelectTrigger>
@@ -503,6 +502,8 @@ export function TaskModal() {
     </Dialog>
   );
 }
+    
+
     
 
     
