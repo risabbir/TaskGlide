@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2 } from "lucide-react"; // Changed to UserCircle2
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import Link from "next/link";
@@ -121,13 +121,18 @@ export function Header({ children }: HeaderProps) {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
 
-  const getInitials = (email?: string | null) => {
-    if (!email) return "?";
-    const parts = email.split("@")[0];
-    if (parts) {
-        return parts.substring(0, 2).toUpperCase();
+  const getInitials = (name?: string | null, email?: string | null) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
     }
-    return email.substring(0,1).toUpperCase();
+    if (email) {
+        const parts = email.split("@")[0];
+        if (parts) {
+            return parts.substring(0, 2).toUpperCase();
+        }
+        return email.substring(0,1).toUpperCase();
+    }
+    return "??";
   };
 
   return (
@@ -191,8 +196,8 @@ export function Header({ children }: HeaderProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-8 w-8">
-                       {/* <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} /> */}
-                       <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
+                       <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -206,10 +211,12 @@ export function Header({ children }: HeaderProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {/* <DropdownMenuItem>
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem> */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <UserCircle2 className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={signOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out

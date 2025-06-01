@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"; // Keep if used by other parts, not directly by FormField here
 import {
   Form,
   FormControl,
@@ -43,7 +43,7 @@ export function SignInForm() {
   async function onSubmit(data: SignInFormData) {
     const user = await signIn(data.email, data.password);
     if (user) {
-      router.push("/"); // Redirect to home page after successful sign in
+      router.push("/"); 
     }
   }
 
@@ -74,16 +74,16 @@ export function SignInForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Password</FormLabel>
+                    <Link href="/auth/forgot-password" passHref legacyBehavior>
+                      <a className="text-sm text-primary hover:underline">Forgot password?</a>
+                    </Link>
+                  </div>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
                   <FormMessage />
-                  <FormDescription className="text-right">
-                    {/* <Link href="/auth/forgot-password" passHref legacyBehavior>
-                      <a className="text-sm text-primary hover:underline">Forgot password?</a>
-                    </Link> */}
-                  </FormDescription>
                 </FormItem>
               )}
             />

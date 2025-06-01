@@ -14,10 +14,17 @@ import {
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail, // Added
+  updateProfile as firebaseUpdateProfile // Added
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+
+interface UserProfileUpdate {
+  displayName?: string;
+  photoURL?: string;
+}
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -26,6 +33,8 @@ interface AuthContextType {
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<boolean>; // Added
+  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>; // Added
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -96,7 +105,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [toast]);
 
-  const value = { user, loading, error, signUp, signIn, signOut };
+  const resetPassword = useCallback(async (email: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({ title: "Password Reset Email Sent", description: "Check your inbox for instructions to reset your password." });
+      return true;
+    } catch (e) {
+      const authError = e as AuthError;
+      setError(authError);
+      toast({ title: "Password Reset Error", description: authError.message || "Failed to send password reset email.", variant: "destructive" });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const updateUserProfile = useCallback(async (profileData: UserProfileUpdate): Promise<boolean> => {
+    if (!auth.currentUser) {
+      toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
+      return false;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await firebaseUpdateProfile(auth.currentUser, profileData);
+      // Manually update the user state as onAuthStateChanged might not fire immediately for profile updates
+      setUser(auth.currentUser); 
+      toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
+      return true;
+    } catch (e) {
+      const authError = e as AuthError;
+      setError(authError);
+      toast({ title: "Profile Update Error", description: authError.message || "Failed to update profile.", variant: "destructive" });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const value = { user, loading, error, signUp, signIn, signOut, resetPassword, updateUserProfile };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
