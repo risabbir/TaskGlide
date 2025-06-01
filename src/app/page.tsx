@@ -8,7 +8,7 @@ import { KanbanProvider, useKanban } from "@/lib/store";
 import { TaskModal } from "@/components/task/task-modal";
 import { FilterSidebar } from "@/components/filter-sort/filter-sidebar";
 import { Confetti } from "@/components/ui/confetti";
-import { Toaster } from "@/components/ui/toaster";
+// Toaster moved to RootLayout
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
@@ -57,10 +57,9 @@ function PageContent() {
     <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
       <div className="flex flex-col min-h-screen">
         <Header>
-          {/* Desktop Filter Trigger (conditionally rendered in Header itself) */}
           {/* Mobile Filter Trigger */}
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 md:hidden"> {/* Show only on mobile for filter trigger */}
+            <Button variant="outline" size="icon" className="h-9 w-9 md:hidden">
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Filters & Sort</span>
             </Button>
@@ -76,7 +75,7 @@ function PageContent() {
             <FilterSidebar />
         </SheetContent>
         <Confetti />
-        <Toaster />
+        {/* Toaster is now in RootLayout */}
       </div>
     </Sheet>
   );
