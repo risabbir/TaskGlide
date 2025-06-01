@@ -7,29 +7,36 @@ import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 
 export function ThemeToggle() {
-  // useLocalStorage initializes theme to "light", then its useEffect updates from localStorage if "theme" exists.
+  // 1. `theme` state from localStorage.
+  //    - `useLocalStorage` initially sets `theme` to "light" for SSR and initial client render.
+  //    - Its `useEffect` then loads from localStorage. If "theme" exists, `theme` state updates.
   const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", "light");
 
-  // This useEffect runs once on the client after mount.
-  // It sets the theme based on system preference ONLY if no theme is already stored in localStorage.
+  // 2. Effect to set initial theme based on system preference IF no theme was found in localStorage.
+  //    This runs ONCE on the client after the component mounts.
   React.useEffect(() => {
+    // Check if a theme preference was already loaded from localStorage by the useLocalStorage hook.
+    // We do this by checking localStorage directly, as the `theme` state might still be the initial "light"
+    // if `useLocalStorage`'s effect hasn't run yet OR if localStorage was indeed empty.
     const storedUserPreference = window.localStorage.getItem("theme");
-    if (!storedUserPreference) { // No user preference explicitly stored yet
+
+    if (!storedUserPreference) { // No user preference explicitly stored in localStorage yet
       const systemPrefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
-      // setTheme updates the state, and useLocalStorage persists this derived preference.
+      // `setTheme` (from `useLocalStorage`) updates the `theme` state AND persists
+      // this system-derived preference into localStorage for subsequent loads.
       setTheme(systemPrefersDark ? "dark" : "light");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); // Empty dependency array ensures this runs only once on mount to initialize.
 
-  // This useEffect applies the current theme (from state) to the document.
-  // It runs whenever the 'theme' state changes.
+  // 3. Effect to apply the current theme (from `theme` state) to the document.
+  //    This runs whenever the `theme` state changes (e.g., from toggle, or from initial load).
   React.useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
-    // 'theme' is guaranteed to be "light" or "dark" by useLocalStorage and the logic above.
+    // The `theme` state will be either "light" or "dark" after the above logic.
     root.classList.add(theme);
   }, [theme]);
 
