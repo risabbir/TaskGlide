@@ -4,6 +4,8 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore'; // Now used
 import { getStorage, type FirebaseStorage } from 'firebase/storage'; // Added for storage
 
+// Ensure your .env file has the correct Firebase configuration
+// for your project (e.g., project with ID 'taskglide-app').
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -30,3 +32,4 @@ db = getFirestore(app);
 storage = getStorage(app); // Initialize storage
 
 export { app, auth, db, storage }; // Export storage
+
