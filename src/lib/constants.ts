@@ -2,7 +2,7 @@
 import type { Column, Priority, FilterState, SortState } from "@/lib/types";
 import { ListTodo, Flame, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
-export const APP_NAME = "TaskGlide";
+export const APP_NAME = "KanvasAI"; // Changed from TaskGlide
 export const DEVELOPER_NAME = "R.Sabbir";
 export const DEVELOPER_URL = "https://rsabbir.com";
 
@@ -37,4 +37,3 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   dueDateEnd: undefined,
   searchTerm: "",
 };
-
