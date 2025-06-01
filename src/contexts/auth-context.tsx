@@ -33,15 +33,15 @@ interface UserProfileUpdate {
 
 interface AuthContextType {
   user: FirebaseUser | null;
-  loading: boolean; // This will now primarily be for initial auth check and major auth ops
-  authOpLoading: boolean; // Specific loading for auth operations like signin/signup/password change
+  loading: boolean; 
+  authOpLoading: boolean; 
   error: AuthError | null;
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
-  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>; // Will rely on component's loading state
-  updateUserPhotoURL: (photoFile: File) => Promise<boolean>; // Will rely on component's loading state
+  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
+  updateUserPhotoURL: (photoFile: File) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
@@ -49,14 +49,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true); // For onAuthStateChanged
-  const [authOpLoading, setAuthOpLoading] = useState(false); // For specific auth operations
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [authOpLoading, setAuthOpLoading] = useState(false); 
   const [error, setError] = useState<AuthError | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+      setUser(firebaseUser ? { ...firebaseUser } as FirebaseUser : null); // Ensure new object for re-renders
       setInitialLoading(false); 
     });
     return () => unsubscribe();
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user); 
+      setUser(userCredential.user ? { ...userCredential.user } as FirebaseUser : null); 
       toast({ title: "Account Created", description: `Welcome to ${APP_NAME}! You have successfully signed up.` });
       return userCredential.user;
     } catch (e) {
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user); 
+      setUser(userCredential.user ? { ...userCredential.user } as FirebaseUser : null); 
       toast({ title: "Signed In", description: "Welcome back!" });
       return userCredential.user;
     } catch (e) {
@@ -136,11 +136,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
-    // No setAuthOpLoading(true) here; component will manage its own loading state
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      setUser(auth.currentUser); 
+      // Ensure user state is updated with a new object reference
+      const latestUser = auth.currentUser;
+      setUser(latestUser ? { ...latestUser } as FirebaseUser : null);
       toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
       return true;
     } catch (e) {
@@ -148,8 +149,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(authError);
       toast({ title: "Profile Update Error", description: authError.message || "Failed to update profile.", variant: "destructive" });
       return false;
-    } finally {
-      // No setAuthOpLoading(false) here
     }
   }, [toast]);
 
@@ -158,7 +157,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return false;
     }
-    // No setAuthOpLoading(true) here; component will manage its own loading state
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${photoFile.name}`;
@@ -167,20 +165,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const photoURL = await getDownloadURL(fileRef);
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
-      if (auth.currentUser) {
-         setUser(prevUser => prevUser ? ({ ...prevUser, photoURL } as FirebaseUser) : null);
-      }
+      // Ensure user state is updated with a new object reference
+      const latestUser = auth.currentUser;
+      setUser(latestUser ? { ...latestUser } as FirebaseUser : null);
 
       toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       return true;
     } catch (e) {
-      const err = e as AuthError | Error; // Could be Storage error too
+      const err = e as AuthError | Error; 
       console.error("Photo Update Error:", e);
-      setError(err as AuthError); // Cast for simplicity, consider more specific error handling
+      setError(err as AuthError); 
       toast({ title: "Photo Update Error", description: err.message || "Failed to update profile picture.", variant: "destructive" });
       return false;
-    } finally {
-      // No setAuthOpLoading(false) here
     }
   }, [toast]);
 
@@ -215,8 +211,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { 
     user, 
-    loading: initialLoading, // This is for the main page's "Loading profile..." on initial load
-    authOpLoading, // This is for buttons during sign-in/up/password change etc.
+    loading: initialLoading,
+    authOpLoading, 
     error, 
     signUp, 
     signIn, 
