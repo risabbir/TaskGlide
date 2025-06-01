@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -28,10 +28,11 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function ProfileForm() {
-  const { user, updateUserProfile, updateUserPhotoURL, loading } = useAuth();
+  const { user, updateUserProfile, updateUserPhotoURL, authOpLoading } = useAuth(); // Use authOpLoading for other auth ops
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const [isDisplayNameUpdating, setIsDisplayNameUpdating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -68,22 +69,22 @@ export function ProfileForm() {
 
   async function onDisplayNameSubmit(data: ProfileFormData) {
     if (!user) return;
+    setIsDisplayNameUpdating(true);
     const success = await updateUserProfile({ displayName: data.displayName });
     if (success) {
       form.reset({ displayName: data.displayName }, { keepDirty: false }); 
     }
+    setIsDisplayNameUpdating(false);
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      // Basic file type validation
       const file = event.target.files[0];
       if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
         alert('Invalid file type. Please select an image (JPEG, PNG, GIF, WebP).');
         return;
       }
-      // Basic file size validation (e.g., 5MB)
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
         alert('File is too large. Maximum size is 5MB.');
         return;
       }
@@ -97,6 +98,7 @@ export function ProfileForm() {
     const success = await updateUserPhotoURL(selectedFile);
     if (success) {
       setSelectedFile(null); 
+      // previewURL will be updated by the useEffect watching user.photoURL
     }
     setIsPhotoUploading(false);
   };
@@ -135,7 +137,7 @@ export function ProfileForm() {
     <Card className="w-full shadow-xl overflow-hidden">
       <CardHeader className="items-center text-center bg-card pt-8 pb-6 border-b">
         <div className="relative group mb-3">
-          <Avatar className="h-32 w-32 cursor-pointer ring-4 ring-primary/20 ring-offset-4 ring-offset-card shadow-lg hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar">
+          <Avatar key={previewURL || user?.uid} className="h-32 w-32 cursor-pointer ring-4 ring-primary/20 ring-offset-4 ring-offset-card shadow-lg hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar">
             <AvatarImage src={previewURL || undefined} alt={user.displayName || user.email || "User"} />
             <AvatarFallback className="text-4xl">{getInitials(user.displayName, user.email)}</AvatarFallback>
           </Avatar>
@@ -162,7 +164,7 @@ export function ProfileForm() {
         {selectedFile && (
           <div className="mt-3 flex flex-col items-center gap-2">
             <p className="text-sm text-muted-foreground">New photo: {selectedFile.name}</p>
-            <Button onClick={handlePhotoUpload} disabled={isPhotoUploading || loading} size="sm">
+            <Button onClick={handlePhotoUpload} disabled={isPhotoUploading || authOpLoading} size="sm">
               {isPhotoUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
               Save Photo
             </Button>
@@ -184,7 +186,7 @@ export function ProfileForm() {
                 <FormItem>
                   <FormLabel className="text-base">Display Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your Name" {...field} className="text-base"/>
+                    <Input placeholder="Your Name" {...field} className="text-base" disabled={isDisplayNameUpdating}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -202,8 +204,8 @@ export function ProfileForm() {
             </FormItem>
           </CardContent>
           <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
-            <Button type="submit" className="w-full sm:w-auto" disabled={loading || !form.formState.isDirty || isPhotoUploading}>
-              {(loading && !isPhotoUploading && form.formState.isDirty) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full sm:w-auto" disabled={isDisplayNameUpdating || authOpLoading || !form.formState.isDirty}>
+              {isDisplayNameUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Display Name
             </Button>
           </CardFooter>

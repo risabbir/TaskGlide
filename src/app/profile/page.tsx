@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth(); // 'loading' here is initialLoading from AuthContext
   const router = useRouter();
 
   useEffect(() => {
@@ -23,12 +23,12 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user) { // if initial loading is done and still no user
       router.push('/auth/signin'); 
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading || !user) { // Show loading screen if initial auth check is pending or user is null after check
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
         <LayoutDashboard className="h-12 w-12 text-primary animate-pulse" />

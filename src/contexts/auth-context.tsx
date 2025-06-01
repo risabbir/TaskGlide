@@ -24,6 +24,7 @@ import {
 import { auth, storage } from '@/lib/firebase'; // Import storage
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'; // Storage functions
 import { useToast } from '@/hooks/use-toast';
+import { APP_NAME } from '@/lib/constants';
 
 interface UserProfileUpdate {
   displayName?: string;
@@ -32,14 +33,15 @@ interface UserProfileUpdate {
 
 interface AuthContextType {
   user: FirebaseUser | null;
-  loading: boolean;
+  loading: boolean; // This will now primarily be for initial auth check and major auth ops
+  authOpLoading: boolean; // Specific loading for auth operations like signin/signup/password change
   error: AuthError | null;
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
-  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
-  updateUserPhotoURL: (photoFile: File) => Promise<boolean>; // New function for photo
+  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>; // Will rely on component's loading state
+  updateUserPhotoURL: (photoFile: File) => Promise<boolean>; // Will rely on component's loading state
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
@@ -47,26 +49,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [globalLoading, setGlobalLoading] = useState(false); // Renamed from 'loading' in context value
+  const [initialLoading, setInitialLoading] = useState(true); // For onAuthStateChanged
+  const [authOpLoading, setAuthOpLoading] = useState(false); // For specific auth operations
   const [error, setError] = useState<AuthError | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      setLoading(false); // This is for initial auth state loading
+      setInitialLoading(false); 
     });
     return () => unsubscribe();
   }, []);
 
   const signUp = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
-    setGlobalLoading(true);
+    setAuthOpLoading(true);
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user); // Update local state
-      toast({ title: "Account Created", description: "Welcome! You have successfully signed up." });
+      setUser(userCredential.user); 
+      toast({ title: "Account Created", description: `Welcome to ${APP_NAME}! You have successfully signed up.` });
       return userCredential.user;
     } catch (e) {
       const authError = e as AuthError;
@@ -74,16 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sign Up Error", description: authError.message || "Failed to create account.", variant: "destructive" });
       return null;
     } finally {
-      setGlobalLoading(false);
+      setAuthOpLoading(false);
     }
   }, [toast]);
 
   const signIn = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
-    setGlobalLoading(true);
+    setAuthOpLoading(true);
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user); // Update local state
+      setUser(userCredential.user); 
       toast({ title: "Signed In", description: "Welcome back!" });
       return userCredential.user;
     } catch (e) {
@@ -92,28 +94,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sign In Error", description: authError.message || "Failed to sign in.", variant: "destructive" });
       return null;
     } finally {
-      setGlobalLoading(false);
+      setAuthOpLoading(false);
     }
   }, [toast]);
 
   const signOut = useCallback(async () => {
-    setGlobalLoading(true);
+    setAuthOpLoading(true);
     setError(null);
     try {
       await firebaseSignOut(auth);
-      setUser(null); // Update local state
+      setUser(null); 
       toast({ title: "Signed Out", description: "You have successfully signed out." });
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
       toast({ title: "Sign Out Error", description: authError.message || "Failed to sign out.", variant: "destructive" });
     } finally {
-      setGlobalLoading(false);
+      setAuthOpLoading(false);
     }
   }, [toast]);
 
   const resetPassword = useCallback(async (email: string): Promise<boolean> => {
-    setGlobalLoading(true);
+    setAuthOpLoading(true);
     setError(null);
     try {
       await sendPasswordResetEmail(auth, email);
@@ -125,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Password Reset Error", description: authError.message || "Failed to send password reset email.", variant: "destructive" });
       return false;
     } finally {
-      setGlobalLoading(false);
+      setAuthOpLoading(false);
     }
   }, [toast]);
 
@@ -134,13 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
-    setGlobalLoading(true);
+    // No setAuthOpLoading(true) here; component will manage its own loading state
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      // Firebase onAuthStateChanged will eventually update the user object,
-      // but we can also update it locally for immediate feedback if needed.
-      // For displayName, it's usually quick. For photoURL, it might take a moment for cache to update.
       setUser(auth.currentUser); 
       toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
       return true;
@@ -150,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Profile Update Error", description: authError.message || "Failed to update profile.", variant: "destructive" });
       return false;
     } finally {
-      setGlobalLoading(false);
+      // No setAuthOpLoading(false) here
     }
   }, [toast]);
 
@@ -159,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return false;
     }
-    setGlobalLoading(true);
+    // No setAuthOpLoading(true) here; component will manage its own loading state
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${photoFile.name}`;
@@ -168,22 +167,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const photoURL = await getDownloadURL(fileRef);
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
-      // Update user state locally for immediate reflection
-      // The onAuthStateChanged listener might also pick this up, but this is faster for UI.
-      if (auth.currentUser) { // Check again as it might have changed (unlikely but good practice)
+      if (auth.currentUser) {
          setUser(prevUser => prevUser ? ({ ...prevUser, photoURL } as FirebaseUser) : null);
       }
 
       toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       return true;
     } catch (e) {
-      const authError = e as AuthError; // Could be Storage error too
+      const err = e as AuthError | Error; // Could be Storage error too
       console.error("Photo Update Error:", e);
-      setError(authError);
-      toast({ title: "Photo Update Error", description: authError.message || "Failed to update profile picture.", variant: "destructive" });
+      setError(err as AuthError); // Cast for simplicity, consider more specific error handling
+      toast({ title: "Photo Update Error", description: err.message || "Failed to update profile picture.", variant: "destructive" });
       return false;
     } finally {
-      setGlobalLoading(false);
+      // No setAuthOpLoading(false) here
     }
   }, [toast]);
 
@@ -192,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to change your password.", variant: "destructive" });
       return false;
     }
-    setGlobalLoading(true);
+    setAuthOpLoading(true);
     setError(null);
     try {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
@@ -212,12 +209,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Password Change Error", description: errorMessage, variant: "destructive" });
       return false;
     } finally {
-      setGlobalLoading(false);
+      setAuthOpLoading(false);
     }
   }, [toast]);
 
-  // Use 'globalLoading' for the context's loading state to avoid conflict with 'loading' from useEffect
-  const value = { user, loading: globalLoading || loading, error, signUp, signIn, signOut, resetPassword, updateUserProfile, updateUserPhotoURL, changePassword };
+  const value = { 
+    user, 
+    loading: initialLoading, // This is for the main page's "Loading profile..." on initial load
+    authOpLoading, // This is for buttons during sign-in/up/password change etc.
+    error, 
+    signUp, 
+    signIn, 
+    signOut, 
+    resetPassword, 
+    updateUserProfile, 
+    updateUserPhotoURL, 
+    changePassword 
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
