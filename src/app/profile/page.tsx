@@ -2,8 +2,7 @@
 "use client"; // Required because we use hooks like useAuth
 
 import { ProfileForm } from "@/components/profile/profile-form";
-import { ChangePasswordForm } from "@/components/profile/change-password-form"; // Import new component
-import { Metadata } from "next";
+import { ChangePasswordForm } from "@/components/profile/change-password-form"; 
 import { APP_NAME } from "@/lib/constants";
 import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
@@ -51,8 +50,8 @@ export default function ProfilePage() {
               {APP_NAME}
             </span>
           </Link>
-          <h1 className="text-3xl font-bold">Your Profile</h1>
-          <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Your Profile</h1>
+          <p className="text-muted-foreground mt-1">Manage your account settings and preferences.</p>
         </div>
         
         <ProfileForm />

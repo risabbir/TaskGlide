@@ -51,7 +51,7 @@ export function ChangePasswordForm() {
     <Card className="w-full max-w-lg">
       <CardHeader>
         <CardTitle className="text-xl">Change Password</CardTitle>
-        <CardDescription>Update your account password.</CardDescription>
+        <CardDescription>Update your account password. For security, you will be asked for your current password.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

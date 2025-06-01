@@ -47,7 +47,7 @@ export function ProfileForm() {
         displayName: user.displayName || "",
       });
       if (user.photoURL) {
-        setPreviewURL(user.photoURL); // Initialize preview with existing photoURL
+        setPreviewURL(user.photoURL); 
       } else {
         setPreviewURL(null);
       }
@@ -56,13 +56,12 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (!selectedFile) {
-      // If no file selected, revert preview to user's current photoURL or null
       setPreviewURL(user?.photoURL || null);
       return;
     }
     const objectUrl = URL.createObjectURL(selectedFile);
     setPreviewURL(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl); // Clean up
+    return () => URL.revokeObjectURL(objectUrl); 
   }, [selectedFile, user?.photoURL]);
 
 
@@ -85,8 +84,7 @@ export function ProfileForm() {
     setIsPhotoUploading(true);
     const success = await updateUserPhotoURL(selectedFile);
     if (success) {
-      setSelectedFile(null); // Clear selection after successful upload
-      // Preview will be updated by useEffect watching user.photoURL
+      setSelectedFile(null); 
     }
     setIsPhotoUploading(false);
   };
@@ -125,9 +123,9 @@ export function ProfileForm() {
     <Card className="w-full max-w-lg">
       <CardHeader className="items-center text-center">
         <div className="relative group">
-          <Avatar className="h-28 w-28 mb-2 cursor-pointer" onClick={triggerFileSelect}>
+          <Avatar className="h-28 w-28 mb-2 cursor-pointer shadow-md" onClick={triggerFileSelect} data-ai-hint="user avatar">
             <AvatarImage src={previewURL || undefined} alt={user.displayName || user.email || "User"} />
-            <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
+            <AvatarFallback className="text-3xl">{getInitials(user.displayName, user.email)}</AvatarFallback>
           </Avatar>
           <div 
             className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
@@ -144,7 +142,7 @@ export function ProfileForm() {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif"
             className="hidden"
             id="profile-picture-input"
         />
@@ -154,15 +152,15 @@ export function ProfileForm() {
             Save Photo
           </Button>
         )}
-        <CardTitle className="text-xl mt-2">Account Information</CardTitle>
+        <CardTitle className="text-xl mt-3">Account Information</CardTitle>
         <CardDescription>Manage your display name, email, and profile picture.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onDisplayNameSubmit)}>
           <CardContent className="space-y-6">
             <FormItem>
-              <FormLabel>Email</FormLabel>
-              <Input type="email" value={user.email || ""} disabled className="bg-muted/50"/>
+              <FormLabel>Email Address</FormLabel>
+              <Input type="email" value={user.email || ""} disabled className="bg-muted/50 cursor-not-allowed"/>
               <FormMessage />
             </FormItem>
             
@@ -182,7 +180,7 @@ export function ProfileForm() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={loading || !form.formState.isDirty}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {(loading && !isPhotoUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Display Name
             </Button>
           </CardFooter>
