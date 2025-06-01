@@ -2,7 +2,7 @@
 "use client";
 
 import type { Task, Column, FilterState, SortState, RecurrenceRule, Subtask } from "@/lib/types";
-import { DEFAULT_COLUMNS, MOCK_TASKS_KEY, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE } from "@/lib/constants";
+import { DEFAULT_COLUMNS, MOCK_TASKS_KEY, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE, APP_NAME } from "@/lib/constants";
 import React, { createContext, useReducer, useContext, useEffect, ReactNode } from "react";
 import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns";
 
@@ -308,6 +308,11 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
 
 const KanbanContext = createContext<{ state: KanbanState; dispatch: React.Dispatch<KanbanAction> } | undefined>(undefined);
 
+// Define localStorage keys based on the APP_NAME for better isolation
+const getTasksStorageKey = () => `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_tasks`;
+const getColumnsStorageKey = () => `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_columns`;
+
+
 export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
 
@@ -346,8 +351,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
   const generateMockData = React.useCallback(() => {
     if (typeof window !== 'undefined' && sessionStorage.getItem(MOCK_TASKS_KEY)) {
-        const tasksRaw = localStorage.getItem("protasker_tasks");
-        const columnsStateRaw = localStorage.getItem("protasker_columns"); 
+        const tasksRaw = localStorage.getItem(getTasksStorageKey());
+        const columnsStateRaw = localStorage.getItem(getColumnsStorageKey()); 
 
         if (tasksRaw && columnsStateRaw) {
             try {
@@ -431,8 +436,11 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return; // Don't run on server
 
-    const storedTasks = localStorage.getItem("protasker_tasks"); 
-    const storedColumnsState = localStorage.getItem("protasker_columns"); 
+    const tasksStorageKey = getTasksStorageKey();
+    const columnsStorageKey = getColumnsStorageKey();
+    
+    const storedTasks = localStorage.getItem(tasksStorageKey); 
+    const storedColumnsState = localStorage.getItem(columnsStorageKey); 
     
     if (storedTasks && storedColumnsState) {
       try {
@@ -459,7 +467,10 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return; // Don't run on server
     
-    if (state.tasks.length > 0 || localStorage.getItem("protasker_tasks")) { 
+    const tasksStorageKey = getTasksStorageKey();
+    const columnsStorageKey = getColumnsStorageKey();
+
+    if (state.tasks.length > 0 || localStorage.getItem(tasksStorageKey)) { 
         try {
             const tasksToSave = state.tasks.map(task => ({
                 ...task,
@@ -467,14 +478,14 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                 createdAt: formatISO(task.createdAt),
                 updatedAt: formatISO(task.updatedAt),
             }));
-            localStorage.setItem("protasker_tasks", JSON.stringify(tasksToSave)); 
+            localStorage.setItem(tasksStorageKey, JSON.stringify(tasksToSave)); 
 
             const columnsStateToSave = state.columns.map(col => ({
                 id: col.id,
                 title: col.title, 
                 taskIds: col.taskIds,
             }));
-            localStorage.setItem("protasker_columns", JSON.stringify(columnsStateToSave)); 
+            localStorage.setItem(columnsStorageKey, JSON.stringify(columnsStateToSave)); 
         } catch(e) {
             console.error("Failed to save state to local storage", e);
         }
@@ -492,4 +503,3 @@ export function useKanban() {
   }
   return context;
 }
-
