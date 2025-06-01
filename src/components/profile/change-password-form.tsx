@@ -31,7 +31,7 @@ const changePasswordSchema = z.object({
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export function ChangePasswordForm() {
-  const { changePassword, loading } = useAuth();
+  const { changePassword, authOpLoading } = useAuth(); // Use authOpLoading for password change
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
@@ -156,8 +156,8 @@ export function ChangePasswordForm() {
             />
           </CardContent>
           <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
-            <Button type="submit" className="w-full sm:w-auto" disabled={loading || !form.formState.isDirty}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full sm:w-auto" disabled={authOpLoading || !form.formState.isDirty}>
+              {authOpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Password
             </Button>
           </CardFooter>

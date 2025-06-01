@@ -21,8 +21,8 @@ import {
   reauthenticateWithCredential,
   updatePassword as firebaseUpdatePassword
 } from 'firebase/auth';
-import { auth, storage } from '@/lib/firebase'; // Import storage
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'; // Storage functions
+import { auth, storage } from '@/lib/firebase'; 
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import { useToast } from '@/hooks/use-toast';
 import { APP_NAME } from '@/lib/constants';
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser ? { ...firebaseUser } as FirebaseUser : null); // Ensure new object for re-renders
+      setUser(firebaseUser ? { ...firebaseUser } as FirebaseUser : null); 
       setInitialLoading(false); 
     });
     return () => unsubscribe();
@@ -68,12 +68,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       setUser(userCredential.user ? { ...userCredential.user } as FirebaseUser : null); 
-      toast({ title: "Account Created", description: `Welcome to ${APP_NAME}! You have successfully signed up.` });
+      toast({ title: "Account Created!", description: `Welcome to ${APP_NAME}! You're all set.` });
       return userCredential.user;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
-      toast({ title: "Sign Up Error", description: authError.message || "Failed to create account.", variant: "destructive" });
+      let message = authError.message || "Failed to create account. Please try again.";
+      if (authError.code === 'auth/email-already-in-use') {
+        message = `This email is already registered. Try signing in, or use a different email.`;
+      } else if (authError.code === 'auth/weak-password') {
+        message = "The password is too weak. Please choose a stronger password (at least 6 characters)."
+      }
+      toast({ title: "Sign Up Error", description: message, variant: "destructive" });
       return null;
     } finally {
       setAuthOpLoading(false);
@@ -86,12 +92,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
       setUser(userCredential.user ? { ...userCredential.user } as FirebaseUser : null); 
-      toast({ title: "Signed In", description: "Welcome back!" });
+      toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
       return userCredential.user;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
-      toast({ title: "Sign In Error", description: authError.message || "Failed to sign in.", variant: "destructive" });
+      let message = authError.message || "Failed to sign in. Please check your credentials.";
+      if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
+        message = "Incorrect email or password. Please check your details or sign up if you're new.";
+      }
+      toast({ title: "Sign In Error", description: message, variant: "destructive" });
       return null;
     } finally {
       setAuthOpLoading(false);
@@ -104,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
       setUser(null); 
-      toast({ title: "Signed Out", description: "You have successfully signed out." });
+      toast({ title: "Signed Out", description: "You have successfully signed out. Come back soon!" });
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
@@ -119,12 +129,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await sendPasswordResetEmail(auth, email);
-      toast({ title: "Password Reset Email Sent", description: "Check your inbox for instructions to reset your password." });
+      toast({ title: "Password Reset Email Sent", description: "If an account exists for this email, a reset link has been sent. Check your inbox (and spam folder!)." });
       return true;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
-      toast({ title: "Password Reset Error", description: authError.message || "Failed to send password reset email.", variant: "destructive" });
+      // Avoid confirming if an email exists or not for security.
+      toast({ title: "Password Reset Request", description: "If an account exists for this email, a reset link has been sent. If you don't receive it, please check your email address and try again.", variant: "destructive" });
       return false;
     } finally {
       setAuthOpLoading(false);
@@ -136,10 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
+    // No setAuthOpLoading here, handled by ProfileForm's local state
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      // Ensure user state is updated with a new object reference
       const latestUser = auth.currentUser;
       setUser(latestUser ? { ...latestUser } as FirebaseUser : null);
       toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
@@ -157,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return false;
     }
+    // No setAuthOpLoading here, handled by ProfileForm's local state
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${photoFile.name}`;
@@ -165,7 +177,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const photoURL = await getDownloadURL(fileRef);
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
-      // Ensure user state is updated with a new object reference
       const latestUser = auth.currentUser;
       setUser(latestUser ? { ...latestUser } as FirebaseUser : null);
 
@@ -191,16 +202,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
       await reauthenticateWithCredential(auth.currentUser, credential);
       await firebaseUpdatePassword(auth.currentUser, newPassword);
-      toast({ title: "Password Changed", description: "Your password has been successfully updated." });
+      toast({ title: "Password Changed Successfully", description: "Your password has been updated." });
       return true;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
       let errorMessage = authError.message || "Failed to change password.";
-      if (authError.code === 'auth/wrong-password') {
+      if (authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-credential') {
         errorMessage = "Incorrect current password. Please try again.";
       } else if (authError.code === 'auth/weak-password') {
-        errorMessage = "The new password is too weak. Please choose a stronger password.";
+        errorMessage = "The new password is too weak. Please choose a stronger one (at least 6 characters).";
       }
       toast({ title: "Password Change Error", description: errorMessage, variant: "destructive" });
       return false;

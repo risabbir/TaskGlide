@@ -31,7 +31,6 @@ export function ProfileForm() {
   const { user, updateUserProfile, updateUserPhotoURL } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
-  // Initialize previewURL based on the initial user prop or null.
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState(Date.now()); 
 
@@ -46,58 +45,42 @@ export function ProfileForm() {
     },
   });
 
-  // Effect 1: Initialize and update previewURL from user.photoURL (when no local file is selected)
-  useEffect(() => {
-    if (!selectedFile) { // If not previewing a local file
-      const currentPhotoURL = user?.photoURL || null;
-      if (previewURL !== currentPhotoURL) { // Only update if it's actually different
-        setPreviewURL(currentPhotoURL);
-        setAvatarKey(Date.now()); // Force re-render of Avatar as source changed
-      }
-    }
-    // Dependencies: user.photoURL (to react to changes from context)
-    // and selectedFile (to know when to *stop* reacting to user.photoURL based on context).
-    // `previewURL` is NOT a dependency here to prevent loops.
-  }, [user?.photoURL, selectedFile]);
-
-  // Effect 2: Handle local file selection and preview
+  // Effect 1: Handle local file selection and preview
   useEffect(() => {
     let objectUrl: string | undefined;
     if (selectedFile) {
       objectUrl = URL.createObjectURL(selectedFile);
-      setPreviewURL(objectUrl); // Show local preview
-      setAvatarKey(Date.now());   // Force re-render of Avatar for local preview
-    } else {
-      // If selectedFile is cleared (e.g., after upload or cancellation),
-      // Effect 1 (dependent on user.photoURL and selectedFile being null)
-      // will handle reverting previewURL to user.photoURL.
+      setPreviewURL(objectUrl); 
+      setAvatarKey(Date.now());   
     }
-
+    // No 'else' here, Effect 2 handles reverting to user.photoURL when selectedFile is cleared.
     return () => {
       if (objectUrl) {
-        URL.revokeObjectURL(objectUrl); // Clean up
+        URL.revokeObjectURL(objectUrl); 
       }
     };
-    // Dependency: selectedFile (to react to new selections or clearing)
   }, [selectedFile]);
 
-  // Effect 3: Reset form display name when user context changes (e.g., login/logout)
-  // Also sets initial previewURL and avatarKey based on user context when component mounts or user changes.
+  // Effect 2: Initialize and update previewURL from user.photoURL (when no local file is selected)
+  // Also resets form display name when user context changes.
   useEffect(() => {
     if (user) {
       form.reset({ displayName: user.displayName || "" });
-      if (!selectedFile) { // If not already previewing a local file
-        setPreviewURL(user.photoURL || null);
-        setAvatarKey(Date.now());
+      if (!selectedFile) { // Only update from user.photoURL if not currently previewing a local file
+        const currentPhotoURL = user.photoURL || null;
+        if (previewURL !== currentPhotoURL) { // Only set if different to avoid potential minor re-renders
+          setPreviewURL(currentPhotoURL);
+          setAvatarKey(Date.now()); 
+        }
       }
-    } else { // User logged out or not yet loaded
+    } else { 
       form.reset({ displayName: "" });
-      setSelectedFile(null); // Clear any selected file
-      setPreviewURL(null);   // Clear preview
-      setAvatarKey(Date.now()); // Update key
+      setSelectedFile(null); 
+      setPreviewURL(null);   
+      setAvatarKey(Date.now()); 
     }
-  }, [user, form]); // Effect 3 depends on `user` and `form` instance.
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, form.reset]); // `selectedFile` and `previewURL` are intentionally omitted to prevent loops/race conditions with Effect 1.
 
   async function onDisplayNameSubmit(data: ProfileFormData) {
     if (!user) return;
@@ -129,10 +112,10 @@ export function ProfileForm() {
     setIsPhotoUploading(true);
     const success = await updateUserPhotoURL(selectedFile);
     if (success) {
-      // After successful upload, user.photoURL in context will be updated.
-      // Effect 1 will then pick up this change (because selectedFile becomes null)
-      // and update previewURL and avatarKey accordingly.
       setSelectedFile(null); 
+      // user.photoURL will update via context, and Effect 2 should pick it up.
+      // Forcing avatarKey update here ensures immediate visual refresh if context update is slightly delayed.
+      setAvatarKey(Date.now()); 
     }
     setIsPhotoUploading(false);
   };
@@ -153,7 +136,7 @@ export function ProfileForm() {
     return "??";
   };
 
-  if (!user && !form.formState.isLoading) { // Check form.formState.isLoading if available, or a context loading state
+  if (!user && !form.formState.isLoading) { 
     return (
       <Card className="w-full shadow-xl overflow-hidden">
         <CardHeader className="items-center text-center bg-card pt-8 pb-6 border-b">
@@ -167,7 +150,6 @@ export function ProfileForm() {
   }
   
   const currentDisplayName = form.watch("displayName");
-
 
   return (
     <Card className="w-full shadow-xl overflow-hidden">
