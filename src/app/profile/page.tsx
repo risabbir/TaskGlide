@@ -41,17 +41,17 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center p-4 sm:p-6 md:p-8 bg-background">
-      <div className="w-full max-w-3xl space-y-8">
-        <div className="flex flex-col items-center text-center mb-6">
+    <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-background to-secondary/30 dark:from-background dark:to-card/50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-2xl space-y-10">
+        <div className="flex flex-col items-center text-center mb-8">
           <Link href="/" className="flex items-center space-x-2 group mb-4">
-            <LayoutDashboard className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
-            <span className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+            <LayoutDashboard className="h-9 w-9 text-primary transition-transform group-hover:scale-110" />
+            <span className="text-3xl font-bold text-foreground group-hover:text-primary transition-colors">
               {APP_NAME}
             </span>
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Your Profile</h1>
-          <p className="text-muted-foreground mt-1">Manage your account settings and preferences.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Your Profile</h1>
+          <p className="mt-3 text-lg text-muted-foreground">Manage your account settings, preferences, and security.</p>
         </div>
         
         <ProfileForm />
