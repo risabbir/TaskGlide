@@ -22,7 +22,6 @@ import { useEffect } from "react";
 
 const profileSchema = z.object({
   displayName: z.string().min(1, "Display name is required.").max(50, "Display name is too long."),
-  // email: z.string().email().optional(), // Email will be read-only for now
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -47,8 +46,10 @@ export function ProfileForm() {
 
   async function onSubmit(data: ProfileFormData) {
     if (!user) return;
-    await updateUserProfile({ displayName: data.displayName });
-    // No need to router.push, stay on profile page. Header will update.
+    const success = await updateUserProfile({ displayName: data.displayName });
+    if (success) {
+      form.reset({ displayName: data.displayName }); // Reset form with new values to clear dirty state
+    }
   }
 
   const getInitials = (name?: string | null, email?: string | null) => {
@@ -65,7 +66,7 @@ export function ProfileForm() {
     return "??";
   };
 
-  if (!user) {
+  if (!user) { // Should be handled by page redirect or layout if profile is protected route
     return (
       <Card className="w-full max-w-lg">
         <CardHeader>
@@ -85,8 +86,8 @@ export function ProfileForm() {
           <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
           <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
         </Avatar>
-        <CardTitle className="text-2xl">Your Profile</CardTitle>
-        <CardDescription>Manage your account details.</CardDescription>
+        <CardTitle className="text-xl">Account Information</CardTitle>
+        <CardDescription>Manage your display name and email.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -110,26 +111,11 @@ export function ProfileForm() {
                 </FormItem>
               )}
             />
-            {/* Placeholder for future photo URL update
-            <FormField
-              control={form.control}
-              name="photoURL"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Photo URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/your-photo.jpg" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            */}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={loading || !form.formState.isDirty}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              Save Display Name
             </Button>
           </CardFooter>
         </form>

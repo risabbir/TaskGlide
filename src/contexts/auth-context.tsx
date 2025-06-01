@@ -15,8 +15,11 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut,
-  sendPasswordResetEmail, // Added
-  updateProfile as firebaseUpdateProfile // Added
+  sendPasswordResetEmail,
+  updateProfile as firebaseUpdateProfile,
+  EmailAuthProvider, // Added for re-authentication
+  reauthenticateWithCredential, // Added for re-authentication
+  updatePassword as firebaseUpdatePassword // Added for password change
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -33,8 +36,9 @@ interface AuthContextType {
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<boolean>; // Added
-  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>; // Added
+  resetPassword: (email: string) => Promise<boolean>;
+  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>; // Added
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -131,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      // Manually update the user state as onAuthStateChanged might not fire immediately for profile updates
       setUser(auth.currentUser); 
       toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
       return true;
@@ -145,7 +148,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [toast]);
 
-  const value = { user, loading, error, signUp, signIn, signOut, resetPassword, updateUserProfile };
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      toast({ title: "Not Authenticated", description: "You must be logged in to change your password.", variant: "destructive" });
+      return false;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      
+      // User re-authenticated, now change password
+      await firebaseUpdatePassword(auth.currentUser, newPassword);
+      toast({ title: "Password Changed", description: "Your password has been successfully updated." });
+      return true;
+    } catch (e) {
+      const authError = e as AuthError;
+      setError(authError);
+      let errorMessage = authError.message || "Failed to change password.";
+      if (authError.code === 'auth/wrong-password') {
+        errorMessage = "Incorrect current password. Please try again.";
+      } else if (authError.code === 'auth/weak-password') {
+        errorMessage = "The new password is too weak. Please choose a stronger password.";
+      }
+      toast({ title: "Password Change Error", description: errorMessage, variant: "destructive" });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+
+  const value = { user, loading, error, signUp, signIn, signOut, resetPassword, updateUserProfile, changePassword };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
