@@ -38,7 +38,7 @@ const ScrollBar = React.forwardRef<
     orientation={orientation}
     forceMount={forceMount}
     className={cn(
-      "flex touch-none select-none transition-colors bg-muted/50", // Added bg-muted/50 for the track
+      "flex touch-none select-none transition-colors bg-muted/50", 
       orientation === "vertical" &&
         "h-full w-2.5 border-l border-l-transparent p-[1px]",
       orientation === "horizontal" &&
@@ -47,7 +47,7 @@ const ScrollBar = React.forwardRef<
     )}
     {...props}
   >
-    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-[hsl(var(--primary)/0.7)]" />
+    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-[hsl(var(--primary)/0.5)]" />
   </ScrollAreaPrimitive.ScrollAreaScrollbar>
 ))
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName

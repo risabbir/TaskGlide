@@ -117,7 +117,7 @@
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.7); /* Primary color for thumb */
+  background: hsl(var(--primary) / 0.5); /* Primary color for thumb, lighter */
   border-radius: 10px;
   border: 3px solid hsl(var(--muted)); /* Creates a border effect around thumb, using muted */
 }
@@ -128,7 +128,7 @@
   background: hsl(var(--muted)); /* Changed to muted for dark track */
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.7);
+  background: hsl(var(--primary) / 0.5); /* Primary color for thumb, lighter */
   border: 3px solid hsl(var(--muted)); /* Using muted for dark border */
 }
 .dark ::-webkit-scrollbar-thumb:hover {
@@ -153,4 +153,3 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
 }
-
