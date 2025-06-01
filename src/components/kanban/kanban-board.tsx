@@ -154,7 +154,7 @@ export function KanbanBoard() {
           )}
         </div>
         {/* Horizontal scrollbar only visible on md+ screens */}
-        <ScrollBar orientation="horizontal" className="hidden md:flex" /> 
+        <ScrollBar orientation="horizontal" className="hidden md:flex" forceMount /> 
       </ScrollArea>
     </div>
   );
