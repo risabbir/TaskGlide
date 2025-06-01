@@ -38,4 +38,3 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   searchTerm: "",
 };
 
-export const MOCK_TASKS_KEY = "taskglide_mock_tasks_generated";

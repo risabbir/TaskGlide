@@ -2,7 +2,7 @@
 "use client";
 
 import type { Task, Column, FilterState, SortState, RecurrenceRule, Subtask } from "@/lib/types";
-import { DEFAULT_COLUMNS, MOCK_TASKS_KEY, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE, APP_NAME } from "@/lib/constants";
+import { DEFAULT_COLUMNS, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE, APP_NAME } from "@/lib/constants";
 import React, { createContext, useReducer, useContext, useEffect, ReactNode } from "react";
 import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns";
 
@@ -308,7 +308,6 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
 
 const KanbanContext = createContext<{ state: KanbanState; dispatch: React.Dispatch<KanbanAction> } | undefined>(undefined);
 
-// Define localStorage keys based on the APP_NAME for better isolation
 const getTasksStorageKey = () => `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_tasks`;
 const getColumnsStorageKey = () => `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_columns`;
 
@@ -320,9 +319,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     if (!dateString) return undefined;
     if (dateString instanceof Date) return dateString;
     try {
-      // Attempt to parse ISO string or other common date formats
       const parsed = dateFnsParseISO(dateString);
-      if (!isNaN(parsed.getTime())) { // Check if parsed date is valid
+      if (!isNaN(parsed.getTime())) { 
         return parsed;
       }
     } catch (e) {
@@ -332,7 +330,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         const numDate = new Date(Number(dateString));
         if(!isNaN(numDate.getTime())) return numDate;
     }
-    return undefined; // Fallback if parsing fails
+    return undefined; 
   };
   
   const parseTask = (task: any): Task => ({
@@ -348,93 +346,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     timerStartTime: task.timerStartTime === undefined ? null : task.timerStartTime,
   });
 
-
-  const generateMockData = React.useCallback(() => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem(MOCK_TASKS_KEY)) {
-        const tasksRaw = localStorage.getItem(getTasksStorageKey());
-        const columnsStateRaw = localStorage.getItem(getColumnsStorageKey()); 
-
-        if (tasksRaw && columnsStateRaw) {
-            try {
-                const tasks: Task[] = JSON.parse(tasksRaw).map(parseTask);
-                const parsedStoredColumns: Array<{ id: string; taskIds: string[] }> = JSON.parse(columnsStateRaw);
-                const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
-                    const storedColData = parsedStoredColumns.find(sc => sc.id === defaultCol.id);
-                    return {
-                        ...defaultCol, 
-                        taskIds: storedColData ? storedColData.taskIds : defaultCol.taskIds || [],
-                    };
-                });
-
-                dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
-                return; 
-            } catch (e) {
-                console.warn("Failed to rehydrate mock data from localStorage, re-generating.", e);
-            }
-        }
-    }
-
-    const mockTasks: Task[] = [
-      {
-        id: "task-1", title: "Grocery Shopping", description: "Buy milk, eggs, bread, and cheese. Also, grab some fruits like apples and bananas. Check for any ongoing offers on detergents.", columnId: "todo",
-        priority: "medium", tags: ["personal", "errands", "groceries"], subtasks: [
-          { id: "sub-1-1", title: "Buy milk", completed: false },
-          { id: "sub-1-2", title: "Buy eggs", completed: true },
-          { id: "sub-1-3", title: "Buy bread", completed: false },
-        ],
-        dependencies: [], createdAt: new Date(Date.now() - 86400000 * 3), updatedAt: new Date(), dueDate: addDays(new Date(), 2),
-        timerActive: false, timeSpentSeconds: 3665, timerStartTime: null,
-      },
-      {
-        id: "task-2", title: "Project Alpha Design Review", description: "Finalize UI mockups for Project Alpha. Collect feedback from the team and prepare for the client presentation. Ensure all components are responsive.", columnId: "inprogress",
-        priority: "high", tags: ["work", "project-alpha", "design", "review"], subtasks: [
-          { id: "sub-2-1", title: "Homepage mockup feedback", completed: true },
-          { id: "sub-2-2", title: "Dashboard mockup iterations", completed: false },
-          { id: "sub-2-3", title: "Settings page finalization", completed: false },
-        ],
-        dependencies: [], createdAt: new Date(Date.now() - 86400000 * 2), updatedAt: new Date(), dueDate: addDays(new Date(), 5),
-        recurrenceRule: { type: "weekly" },
-        timerActive: true, timeSpentSeconds: 1200, timerStartTime: Date.now() - 300000, 
-      },
-      {
-        id: "task-3", title: "Write Q3 Report", description: "Draft the quarterly report highlighting key achievements and challenges. Include financial summaries and projections.", columnId: "todo",
-        priority: "high", tags: ["work", "reporting", "finance"], subtasks: [], dependencies: ["task-2"], 
-        createdAt: new Date(Date.now() - 86400000 * 1), updatedAt: new Date(),
-        timerActive: false, timeSpentSeconds: 0, timerStartTime: null,
-      },
-      {
-        id: "task-4", title: "Client Meeting - Project Beta", description: "Prepare slides and agenda for Tuesday's client meeting on Project Beta. Focus on timeline and budget.", columnId: "review",
-        priority: "high", tags: ["work", "client", "project-beta"], subtasks: [], dependencies: [],
-        createdAt: new Date(Date.now() - 86400000 * 4), updatedAt: new Date(), dueDate: addDays(new Date(), -1),
-        timerActive: false, timeSpentSeconds: 7200, timerStartTime: null,
-      },
-      {
-        id: "task-5", title: "Pay Utility Bills", description: "Pay electricity, water, and internet bills for the month.", columnId: "done",
-        priority: "medium", tags: ["personal", "finance", "bills"], subtasks: [], dependencies: [],
-        createdAt: new Date(Date.now() - 86400000 * 5), updatedAt: new Date(), dueDate: addDays(new Date(), -7),
-        timerActive: false, timeSpentSeconds: 300, timerStartTime: null, 
-      },
-       {
-        id: "task-6", title: "Plan Weekend Trip", description: "Research destinations and book accommodation for the upcoming weekend trip.", columnId: "todo",
-        priority: "low", tags: ["personal", "travel", "leisure"], subtasks: [
-            { id: "sub-6-1", title: "Research destinations", completed: false },
-            { id: "sub-6-2", title: "Book hotel", completed: false },
-            { id: "sub-6-3", title: "Pack bags", completed: false },
-        ], dependencies: [], createdAt: new Date(), updatedAt: new Date(),
-        timerActive: false, timeSpentSeconds: 0, timerStartTime: null,
-      },
-    ].map(parseTask);
-    const initialColumns = DEFAULT_COLUMNS.map(col => ({
-      ...col, 
-      taskIds: mockTasks.filter(task => task.columnId === col.id).map(task => task.id)
-    }));
-    
-    dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: mockTasks, columns: initialColumns } });
-    if (typeof window !== 'undefined') sessionStorage.setItem(MOCK_TASKS_KEY, "true");
-  }, []); 
-
   useEffect(() => {
-    if (typeof window === 'undefined') return; // Don't run on server
+    if (typeof window === 'undefined') return; 
 
     const tasksStorageKey = getTasksStorageKey();
     const columnsStorageKey = getColumnsStorageKey();
@@ -456,20 +369,34 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
       } catch (e) {
-        console.error("Failed to parse stored data, generating mock data.", e);
-        generateMockData();
+        console.error("Failed to parse stored data, initializing with empty state.", e);
+        dispatch({ 
+          type: "SET_INITIAL_DATA", 
+          payload: { 
+            tasks: [], 
+            columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })) 
+          } 
+        });
       }
     } else {
-      generateMockData();
+      // Initialize with an empty state if no data is found in localStorage
+      dispatch({ 
+        type: "SET_INITIAL_DATA", 
+        payload: { 
+          tasks: [], 
+          columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })) 
+        } 
+      });
     }
-  }, [generateMockData]);
+  }, []); // Empty dependency array, runs once on mount
 
   useEffect(() => {
-    if (typeof window === 'undefined') return; // Don't run on server
+    if (typeof window === 'undefined') return; 
     
     const tasksStorageKey = getTasksStorageKey();
     const columnsStorageKey = getColumnsStorageKey();
 
+    // Only save to localStorage if there are tasks or if keys already exist (to clear them if tasks become empty)
     if (state.tasks.length > 0 || localStorage.getItem(tasksStorageKey)) { 
         try {
             const tasksToSave = state.tasks.map(task => ({
