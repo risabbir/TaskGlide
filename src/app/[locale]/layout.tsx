@@ -49,7 +49,7 @@ export default async function RootLayout({
         {/* Removed: NextIntlClientProvider wrapper */}
         <AuthProvider>
           <KanbanProvider>
-            <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow pb-16 md:pb-0">
+            <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow px-[8%] sm:px-[10px] pt-2 sm:pt-[10px] pb-16 md:pb-0">
               {children}
             </div>
             <Toaster />
