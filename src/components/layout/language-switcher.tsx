@@ -3,7 +3,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
-import { locales, defaultLocale } from '@/i18n'; // Make sure locales and defaultLocale are exported from i18n.ts
+import { locales, defaultLocale } from '@/i18n-config'; // Make sure locales and defaultLocale are exported from i18n-config.ts
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 import {
@@ -83,3 +83,4 @@ export function LanguageSwitcher() {
     </DropdownMenu>
   );
 }
+

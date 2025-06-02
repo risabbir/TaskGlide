@@ -9,7 +9,7 @@ import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { KanbanProvider } from '@/lib/store';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages, getTranslations} from 'next-intl/server';
-import { locales, defaultLocale } from '@/i18n'; // Import locales and defaultLocale
+import { locales, defaultLocale } from '@/i18n-config'; // Import from new config file
 import { notFound } from 'next/navigation'; // Ensure this is from next/navigation
 
 export function generateStaticParams() {
