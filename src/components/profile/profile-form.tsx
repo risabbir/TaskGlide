@@ -89,17 +89,25 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (user) {
-      const currentFormValues = form.getValues();
-      form.reset({
-        displayName: user.displayName || currentFormValues.displayName || "",
-        role: currentFormValues.role || "", 
-        otherRole: currentFormValues.otherRole || "", 
-        bio: currentFormValues.bio || "", 
-        website: currentFormValues.website || "", 
-      }, { keepDirty: form.formState.isDirty, keepValues: true });
+      // Get the current values that React Hook Form is tracking.
+      // These could be initial defaults, values from a previous reset, or current user edits.
+      const { displayName: _currentDisplayNameInForm, ...otherCurrentFormValues } = form.getValues();
+
+      // Define the new "base" or "default" values for the form.
+      // For displayName, always try to take the latest from the user object.
+      // For other fields (role, bio, website), their "base" for reset will be their current state.
+      // If these other fields are dirty (being edited), `keepDirty: true` will preserve the user's input visually.
+      const valuesForReset = {
+        displayName: user.displayName || "", // Prioritize user.displayName from auth
+        ...otherCurrentFormValues,          // Use current form values for other fields
+      };
+
+      form.reset(valuesForReset, {
+        keepDirty: form.formState.isDirty, // This is crucial: if form is dirty, RHF keeps the user's input values
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, form.reset]);
+  }, [user]); // RHF's form.getValues, form.formState.isDirty, and form.reset are stable, so `user` is the main dependency
 
 
   // Effect 1: For local preview when a file is selected
@@ -107,14 +115,14 @@ export function ProfileForm() {
     if (selectedFile) {
         const objectUrl = URL.createObjectURL(selectedFile);
         setPreviewURL(objectUrl);
-        setAvatarKey(Date.now()); 
+        setAvatarKey(Date.now());
         return () => URL.revokeObjectURL(objectUrl);
     }
   }, [selectedFile]);
 
   // Effect 2: To update preview from user.photoURL (when no local file selected) AND to update avatarKey on context changes
   useEffect(() => {
-    if (!selectedFile) { 
+    if (!selectedFile) {
         setPreviewURL(user?.photoURL || null);
     }
     setAvatarKey(Date.now());
@@ -171,7 +179,7 @@ export function ProfileForm() {
       }
       setSelectedFile(file);
     } else {
-      setSelectedFile(null); 
+      setSelectedFile(null);
     }
   };
 
@@ -179,8 +187,8 @@ export function ProfileForm() {
     if (!selectedFile || !user) return;
     setIsUploadingPhoto(true);
     try {
-      const uploadedPhotoURL = await updateUserPhotoURL(selectedFile); 
-      if (uploadedPhotoURL) { 
+      const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
+      if (uploadedPhotoURL) {
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
         // user context update will trigger useEffect to update avatarKey and previewURL
       }
