@@ -89,25 +89,33 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (user) {
-      // Get the current values that React Hook Form is tracking.
-      // These could be initial defaults, values from a previous reset, or current user edits.
-      const { displayName: _currentDisplayNameInForm, ...otherCurrentFormValues } = form.getValues();
+      // Get the current state of all form fields. This includes any default values,
+      // values from a previous form.reset(), or current user edits.
+      const currentFormValues = form.getValues();
 
-      // Define the new "base" or "default" values for the form.
-      // For displayName, always try to take the latest from the user object.
-      // For other fields (role, bio, website), their "base" for reset will be their current state.
-      // If these other fields are dirty (being edited), `keepDirty: true` will preserve the user's input visually.
+      // Construct the new set of values to reset the form with.
+      // We want to ensure displayName is always updated from the 'user' object (auth state).
+      // For all other fields (role, bio, website, otherRole), we use their values
+      // from 'currentFormValues'.
       const valuesForReset = {
-        displayName: user.displayName || "", // Prioritize user.displayName from auth
-        ...otherCurrentFormValues,          // Use current form values for other fields
+        ...currentFormValues,              // This carries over the current state of non-displayName fields
+        displayName: user.displayName || "", // This explicitly updates displayName
       };
 
+      // Reset the form. The `keepDirty: form.formState.isDirty` option is crucial:
+      // - If the form (or specific fields) are "dirty" (i.e., user has made unsaved changes),
+      //   those changes will be preserved in the input fields.
+      // - If the form is "clean" (no unsaved changes), the fields will be reset to 'valuesForReset'.
+      //   For displayName, this means it updates to user.displayName.
+      //   For other fields, they effectively "reset" to their current value (which would be
+      //   their last saved state if a save occurred, or their initial default if not).
       form.reset(valuesForReset, {
-        keepDirty: form.formState.isDirty, // This is crucial: if form is dirty, RHF keeps the user's input values
+        keepDirty: form.formState.isDirty,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // RHF's form.getValues, form.formState.isDirty, and form.reset are stable, so `user` is the main dependency
+    // form.reset is stable and form.getValues / form.formState are part of the `form` object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, form.reset]);
 
 
   // Effect 1: For local preview when a file is selected
