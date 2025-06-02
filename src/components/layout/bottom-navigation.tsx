@@ -66,18 +66,18 @@ export function BottomNavigation() {
     { action: handleOpenNewTaskModal, label: "Add Task", icon: Plus, isCentral: true, isActiveOverride: false },
     { 
       action: () => {
-        setModalSearchTerm(filters.searchTerm ?? "");
+        setModalSearchTerm(filters.searchTerm ?? ""); // Initialize modal search with current filter
         setIsSearchModalOpen(true);
       }, 
       label: "Search", 
       icon: Search, 
-      isActiveOverride: isSearchModalOpen || (!!filters.searchTerm && filters.searchTerm.length > 0)
+      isActiveOverride: isSearchModalOpen || (!!filters.searchTerm && filters.searchTerm.length > 0) 
     },
   ];
 
   let navItems = [...navItemsBase];
   if (authLoading) {
-    // Placeholder for loading state
+    // Placeholder for loading state if needed
   } else if (user) {
     navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
   } else {
@@ -97,7 +97,7 @@ export function BottomNavigation() {
               return (
                 <Button
                   key={item.label}
-                  variant="default" // Ensure primary background
+                  variant="default"
                   className={cn(
                     "relative -top-3.5 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center",
                     "transition-all duration-200 ease-in-out hover:bg-primary/90 active:bg-primary/80 transform hover:scale-105 active:scale-95",
@@ -112,19 +112,19 @@ export function BottomNavigation() {
             }
             
             const itemWrapperClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-md",
+              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg", // Added group here
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
-              "transition-all duration-150 ease-in-out active:scale-95",
-              isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30"
+              "transition-all duration-150 ease-in-out",
+              isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30 active:scale-95" // active:scale-95 added
             );
 
             const iconClasses = cn(
-                "h-5 w-5 mb-0.5 transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary/90"
+                "h-5 w-5 mb-0.5 transition-all duration-150 ease-in-out group-hover:scale-110", // Added group-hover:scale-110 and transition
+                isActive ? "text-primary scale-105" : "text-muted-foreground group-hover:text-primary/90" // Added scale-105 for active icon
             );
             
             const labelClasses = cn(
-                "text-[11px] leading-tight tracking-tight transition-colors",
+                "text-[11px] leading-tight tracking-tight transition-colors duration-150 ease-in-out",
                 isActive ? "text-primary font-semibold" : "text-muted-foreground group-hover:text-primary/90"
             );
 
@@ -141,7 +141,7 @@ export function BottomNavigation() {
                 <Link key={item.label} href={item.href} passHref legacyBehavior>
                   <Button
                     as="a" 
-                    variant="ghost" // Ghost variant to remove default button background
+                    variant="ghost" 
                     className={itemWrapperClasses}
                     aria-label={item.label}
                   >
@@ -154,7 +154,7 @@ export function BottomNavigation() {
             return (
               <Button
                 key={item.label}
-                variant="ghost" // Ghost variant
+                variant="ghost" 
                 className={itemWrapperClasses}
                 onClick={item.action}
                 aria-label={item.label}
