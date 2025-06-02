@@ -27,11 +27,12 @@ export function BottomNavigation() {
 
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [modalSearchTerm, setModalSearchTerm] = useState("");
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Not currently used for submit, but good for live search
 
   const filters = kanbanState.filters;
    
   useEffect(() => {
+    // Sync modal search term if filter search term changes externally while modal is open
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
     }
@@ -51,51 +52,59 @@ export function BottomNavigation() {
     setModalSearchTerm(event.target.value);
   };
   
+  // This function now directly applies the search and closes the modal.
   const handleModalSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    if (debounceTimeoutRef.current) { 
+    if (debounceTimeoutRef.current) { // Clear any pending debounce if form is submitted manually
       clearTimeout(debounceTimeoutRef.current);
     }
     dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
-    setIsSearchModalOpen(false);
+    setIsSearchModalOpen(false); // Close modal on submit
   };
 
   const navItemsBase = [
     { href: "/", label: "Board", icon: Home, isActiveOverride: pathname === "/" },
     { action: handleToggleFilterSidebar, label: "Filters", icon: SlidersHorizontal, isActiveOverride: kanbanState.isFilterSidebarOpen },
-    { action: handleOpenNewTaskModal, label: "Add Task", icon: PlusCircle, isCentral: true, isActiveOverride: false },
-    { action: () => setIsSearchModalOpen(true), label: "Search", icon: Search, isActiveOverride: isSearchModalOpen },
+    { action: handleOpenNewTaskModal, label: "Add Task", icon: PlusCircle, isCentral: true, isActiveOverride: false }, // Central button isn't "active" in the same way
+    { 
+      action: () => {
+        setModalSearchTerm(filters.searchTerm ?? ""); // Initialize modal with current search term
+        setIsSearchModalOpen(true);
+      }, 
+      label: "Search", 
+      icon: Search, 
+      isActiveOverride: isSearchModalOpen || (!!filters.searchTerm && filters.searchTerm.length > 0) // Active if modal open OR if a search term exists
+    },
   ];
 
-  // Add Profile/Login item conditionally
   let navItems = [...navItemsBase];
   if (authLoading) {
-    // Optionally show a placeholder or skip during auth loading
+    // Optionally show a loading indicator or skeleton item
   } else if (user) {
     navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
   } else {
-    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname === "/auth/signin" });
+    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname.startsWith("/auth/") });
   }
 
 
   return (
     <>
       <div className="fixed inset-x-0 bottom-0 z-40 h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <nav className="flex h-full items-center justify-around px-2 gap-1">
+        <nav className="flex h-full items-center justify-around px-1 sm:px-2 gap-0.5 sm:gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = !!item.isActiveOverride; // Use the override
+            const isActive = !!item.isActiveOverride;
 
             const buttonContent = (
               <>
                 <Icon className={cn(
                   "h-5 w-5 mb-0.5",
                   "transition-transform duration-200 ease-in-out",
-                  isActive && !item.isCentral && "scale-110" // Slightly scale active icon for non-central items
+                  isActive && !item.isCentral && "scale-110 text-primary" // Scale active icon and make it primary color
                 )} />
                 <span className={cn(
-                  "text-[10px] leading-tight",
-                  isActive && !item.isCentral && "font-semibold" // Bold active label for non-central
+                  "text-[10px] leading-tight tracking-tight", // Added tracking-tight for better fit
+                  isActive && !item.isCentral && "font-semibold text-primary" // Bold active label and make it primary
                 )}>{item.label}</span>
               </>
             );
@@ -107,9 +116,9 @@ export function BottomNavigation() {
               return (
                 <Button
                   key={item.label}
-                  variant="ghost"
+                  variant="ghost" // Ghost variant to remove default button background
                   className={cn(
-                    "flex flex-col items-center justify-center text-xs", // base for content alignment
+                    "flex flex-col items-center justify-center text-xs p-0", // Remove padding, text-xs for consistency if label was shown
                     "relative -top-3 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg",
                     "transition-all duration-200 ease-in-out hover:bg-primary/90 active:bg-primary/80 transform hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   )}
@@ -121,18 +130,19 @@ export function BottomNavigation() {
               );
             }
             
-            const baseItemClasses = "flex flex-col items-center justify-center h-full w-full text-xs p-1 rounded-md";
+            const baseItemClasses = "flex flex-col items-center justify-center h-full w-full text-xs p-0.5 sm:p-1 rounded-md"; // Adjusted padding
             const transitionClasses = "transition-all duration-200 ease-in-out";
-            const interactionClasses = "active:scale-90"; // Hover is handled by variant="ghost" default (bg-accent)
+            const interactionClasses = "active:scale-90"; 
 
-            const activeStateClasses = isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground";
+            // More distinct active state for non-central items
+            const activeStateClasses = isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-accent/50";
 
             if (item.href) {
               return (
                 <Link key={item.label} href={item.href} passHref legacyBehavior>
                   <Button
-                    as="a" // Render Button as an anchor tag
-                    variant="ghost"
+                    as="a" 
+                    variant="ghost" // Use ghost for consistent background behavior
                     className={cn(baseItemClasses, transitionClasses, interactionClasses, activeStateClasses)}
                     aria-label={item.label}
                   >
@@ -145,7 +155,7 @@ export function BottomNavigation() {
             return (
               <Button
                 key={item.label}
-                variant="ghost"
+                variant="ghost" // Use ghost for consistent background behavior
                 className={cn(baseItemClasses, transitionClasses, interactionClasses, activeStateClasses)}
                 onClick={item.action}
                 aria-label={item.label}
@@ -182,7 +192,9 @@ export function BottomNavigation() {
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                   onClick={() => {
                     setModalSearchTerm("");
-                    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
+                    // Optionally dispatch clear search here if desired for immediate effect,
+                    // or let submit handle it. For now, only clears modal input.
+                    // dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }); 
                   }}
                 >
                   <XCircle className="h-4 w-4" />

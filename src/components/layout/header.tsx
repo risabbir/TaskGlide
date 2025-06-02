@@ -3,7 +3,6 @@
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// SheetTrigger removed as mobile filter button is now primarily in BottomNav
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Search, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2, SlidersHorizontal } from "lucide-react"; 
 import { useKanban } from "@/lib/store";
@@ -138,7 +137,7 @@ export function Header({ children }: HeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container px-4 flex h-16 items-center justify-between gap-1 sm:gap-2">
+        <div className="container px-2 sm:px-4 flex h-16 items-center justify-between gap-1 sm:gap-2">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center space-x-2">
               <LayoutDashboard className="h-6 w-6 text-primary" />
@@ -146,7 +145,7 @@ export function Header({ children }: HeaderProps) {
             </Link>
           </div>
 
-          {/* Desktop Search Form */}
+          {/* Desktop Search Form - Hidden on mobile */}
           <form onSubmit={(e) => e.preventDefault()} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -171,80 +170,73 @@ export function Header({ children }: HeaderProps) {
           </form>
 
           <div className="flex items-center space-x-1">
-            {/* Mobile Search Icon - kept for consistency, BottomNav also has search */}
-            <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden" onClick={() => {
-              setModalSearchTerm(filters.searchTerm ?? ""); 
-              setIsSearchModalOpen(true);
-            }}>
-              <Search className="h-4 w-4" />
-              <span className="sr-only">Search</span>
-            </Button>
-
-            {/* New Task Button - primarily for desktop, mobile has prominent add in BottomNav */}
-            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden sm:inline-flex">
+            {/* New Task Button - Hidden on mobile, visible md and up */}
+            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">New Task</span>
             </Button>
             
-            {/* Desktop Filter Button */}
+            {/* Desktop Filter Button - Hidden on mobile, visible md and up */}
             <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Filters & Sort</span>
             </Button>
             
-            {/* For page-specific header actions like filter on mobile (if any) */}
-            {/* This children prop might not be needed if bottom nav is comprehensive */}
-            {/* {children}  */} 
-            
+            {/* Theme Toggle - Visible on all screen sizes */}
             <ThemeToggle />
 
-            {!authLoading && user ? (
-               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                    <Avatar className="h-8 w-8">
-                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
-                       <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
-                    </Avatar>
+            {/* User Profile / Auth Buttons - Hidden on mobile, visible md and up */}
+            <div className="hidden md:flex items-center space-x-1">
+              {!authLoading && user ? (
+                 <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-8 w-8">
+                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
+                         <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <UserCircle2 className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={signOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : !authLoading && (
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3">
+                    <Link href="/auth/signin">Sign In</Link>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">
-                      <UserCircle2 className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : !authLoading && (
-              <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3">
-                  <Link href="/auth/signin">Sign In</Link>
-                </Button>
-                <Button size="sm" asChild className="px-2 sm:px-3">
-                  <Link href="/auth/signup">Sign Up</Link>
-                </Button>
-              </div>
-            )}
+                  <Button size="sm" asChild className="px-2 sm:px-3">
+                    <Link href="/auth/signup">Sign Up</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Header's own search modal (primarily for desktop or if mobile search icon in header is clicked) */}
+      {/* This modal is triggered by the desktop search if needed, or could be by a future desktop search icon. */}
+      {/* For now, it's mostly un-triggered on mobile since the mobile search icon in header is removed. */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
