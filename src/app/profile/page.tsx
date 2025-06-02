@@ -108,28 +108,39 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="flex flex-col w-full items-stretch space-y-2 rounded-lg sm:flex-row sm:w-auto sm:space-y-0 sm:space-x-1.5 sm:items-center sm:justify-center sm:bg-muted sm:p-1.5 mb-10">
+            <TabsList className="flex items-center border-b overflow-x-auto whitespace-nowrap mb-6 
+                               sm:bg-muted sm:p-1.5 sm:rounded-lg sm:w-auto sm:overflow-x-visible sm:border-b-0 sm:mb-10 sm:space-x-1.5">
               <TabsTrigger 
                 value="profile" 
-                className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-2.5 sm:px-4 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
+                className="relative inline-flex items-center justify-center whitespace-nowrap px-4 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
+                           data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground 
+                           gap-2 border-b-2 border-transparent data-[state=active]:border-primary
+                           sm:px-4 sm:py-2.5 sm:rounded-md sm:border-b-0 
+                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-sm 
+                           sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
               >
                 <UserCircle className="h-5 w-5" /> Personal Info
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-2.5 sm:px-4 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
+                className="relative inline-flex items-center justify-center whitespace-nowrap px-4 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
+                           data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground 
+                           gap-2 border-b-2 border-transparent data-[state=active]:border-primary
+                           sm:px-4 sm:py-2.5 sm:rounded-md sm:border-b-0 
+                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-sm
+                           sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
               >
                 <Settings className="h-5 w-5" /> Account Settings
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="profile" className="mt-6">
+            <TabsContent value="profile" className="mt-2 sm:mt-6">
               <Suspense fallback={<ProfileFormSkeleton />}>
                 <ProfileForm />
               </Suspense>
             </TabsContent>
 
-            <TabsContent value="account" className="space-y-10 mt-6">
+            <TabsContent value="account" className="space-y-10 mt-2 sm:mt-6">
               <Suspense fallback={<FormSkeleton title="Change Email Address" fields={3} />}>
                 <ChangeEmailForm />
               </Suspense>
