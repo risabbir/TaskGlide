@@ -108,27 +108,29 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="flex items-center border-b overflow-x-auto whitespace-nowrap mb-6 
-                               sm:bg-muted sm:p-1.5 sm:rounded-lg sm:w-auto sm:overflow-x-visible sm:border-b-0 sm:mb-10 sm:space-x-1.5">
+            <TabsList className="flex flex-col items-stretch w-full space-y-1 mb-6 
+                               sm:flex-row sm:bg-muted sm:p-1.5 sm:rounded-lg sm:w-auto sm:space-y-0 sm:space-x-1.5 sm:mb-10">
               <TabsTrigger 
                 value="profile" 
-                className="relative inline-flex items-center justify-center whitespace-nowrap px-4 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
-                           data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground 
-                           gap-2 border-b-2 border-transparent data-[state=active]:border-primary
-                           sm:px-4 sm:py-2.5 sm:rounded-md sm:border-b-0 
-                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-sm 
-                           sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
+                className="flex items-center justify-center px-4 py-3 text-sm font-medium rounded-md border border-transparent ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
+                           data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md
+                           data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:border-border data-[state=inactive]:hover:bg-muted/80
+                           gap-2
+                           sm:px-4 sm:py-2.5 sm:rounded-md 
+                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-lg 
+                           sm:data-[state=inactive]:bg-transparent sm:data-[state=inactive]:border-transparent sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
               >
                 <UserCircle className="h-5 w-5" /> Personal Info
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="relative inline-flex items-center justify-center whitespace-nowrap px-4 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
-                           data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground 
-                           gap-2 border-b-2 border-transparent data-[state=active]:border-primary
-                           sm:px-4 sm:py-2.5 sm:rounded-md sm:border-b-0 
-                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-sm
-                           sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
+                className="flex items-center justify-center px-4 py-3 text-sm font-medium rounded-md border border-transparent ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
+                           data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md
+                           data-[state=inactive]:bg-card data-[state=inactive]:text-foreground data-[state=inactive]:border-border data-[state=inactive]:hover:bg-muted/80
+                           gap-2
+                           sm:px-4 sm:py-2.5 sm:rounded-md 
+                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-lg
+                           sm:data-[state=inactive]:bg-transparent sm:data-[state=inactive]:border-transparent sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
               >
                 <Settings className="h-5 w-5" /> Account Settings
               </TabsTrigger>
@@ -155,3 +157,6 @@ export default function ProfilePage() {
     </>
   );
 }
+
+
+    
