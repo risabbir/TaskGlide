@@ -19,7 +19,8 @@ import {
   updateProfile as firebaseUpdateProfile,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  updatePassword as firebaseUpdatePassword
+  updatePassword as firebaseUpdatePassword,
+  verifyBeforeUpdateEmail
 } from 'firebase/auth';
 import { auth, storage } from '@/lib/firebase'; 
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'; 
@@ -43,6 +44,7 @@ interface AuthContextType {
   updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
   updateUserPhotoURL: (photoFile: File) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  updateUserEmailWithVerification: (currentPassword: string, newEmail: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -134,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
-      // Avoid confirming if an email exists or not for security.
       toast({ title: "Password Reset Request", description: "If an account exists for this email, a reset link has been sent. If you don't receive it, please check your email address and try again.", variant: "destructive" });
       return false;
     } finally {
@@ -147,7 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
-    // No setAuthOpLoading here, handled by ProfileForm's local state
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
@@ -168,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return false;
     }
-    // No setAuthOpLoading here, handled by ProfileForm's local state
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${photoFile.name}`;
@@ -220,6 +219,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [toast]);
 
+  const updateUserEmailWithVerification = useCallback(async (currentPassword: string, newEmail: string): Promise<boolean> => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      toast({ title: "Not Authenticated", description: "You must be logged in to change your email.", variant: "destructive" });
+      return false;
+    }
+    setAuthOpLoading(true);
+    setError(null);
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
+      // Note: Firebase handles sending the email. The user's email in auth.currentUser won't update until they click the link.
+      // onAuthStateChanged will pick up the change eventually after verification.
+      toast({ 
+        title: "Verification Email Sent", 
+        description: `A verification email has been sent to ${newEmail}. Please check your inbox and follow the instructions to complete the email change. Your current email remains active until then.`,
+        duration: 9000, // Longer duration for this important message
+      });
+      return true;
+    } catch (e) {
+      const authError = e as AuthError;
+      setError(authError);
+      let errorMessage = authError.message || "Failed to initiate email change.";
+      if (authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-credential') {
+        errorMessage = "Incorrect current password. Please try again.";
+      } else if (authError.code === 'auth/email-already-in-use') {
+        errorMessage = "The new email address is already in use by another account.";
+      } else if (authError.code === 'auth/invalid-email') {
+        errorMessage = "The new email address is not valid.";
+      }
+      toast({ title: "Email Change Error", description: errorMessage, variant: "destructive" });
+      return false;
+    } finally {
+      setAuthOpLoading(false);
+    }
+  }, [toast]);
+
   const value = { 
     user, 
     loading: initialLoading,
@@ -231,7 +267,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword, 
     updateUserProfile, 
     updateUserPhotoURL, 
-    changePassword 
+    changePassword,
+    updateUserEmailWithVerification
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

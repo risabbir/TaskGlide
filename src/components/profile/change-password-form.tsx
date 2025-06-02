@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 
@@ -58,7 +58,10 @@ export function ChangePasswordForm() {
   return (
     <Card className="w-full shadow-xl overflow-hidden">
       <CardHeader className="p-6 border-b">
-        <CardTitle className="text-2xl font-semibold">Change Password</CardTitle>
+        <CardTitle className="text-2xl font-semibold flex items-center">
+            <ShieldCheck className="mr-3 h-6 w-6 text-primary" />
+            Change Password
+        </CardTitle>
         <CardDescription className="text-base">Update your account password. For security, you will be asked for your current password.</CardDescription>
       </CardHeader>
       <Form {...form}>
