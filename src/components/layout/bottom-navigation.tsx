@@ -77,7 +77,7 @@ export function BottomNavigation() {
 
   let navItems = [...navItemsBase];
   if (authLoading) {
-    // Skeleton item or loading placeholder could go here if desired
+    // Placeholder for loading state if needed
   } else if (user) {
     navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
   } else {
@@ -115,21 +115,21 @@ export function BottomNavigation() {
               <>
                 <Icon className={cn(
                   "h-5 w-5 mb-0.5 transition-colors duration-150",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary group-focus-visible:text-primary"
+                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground"
                 )} />
                 <span className={cn(
-                  "text-[10px] leading-tight tracking-tight transition-colors duration-150",
-                  isActive ? "font-semibold text-primary" : "text-muted-foreground group-hover:text-primary group-focus-visible:text-primary"
+                  "text-xs leading-tight tracking-tight transition-colors duration-150",
+                  isActive ? "font-medium text-primary" : "text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground"
                 )}>{item.label}</span>
               </>
             );
 
             const itemClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg", // rounded-lg for softer corners
-              "transition-colors duration-150 ease-in-out",
+              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg",
+              "transition-all duration-150 ease-in-out",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-              isActive ? "bg-primary/10" : "hover:bg-primary/5 active:bg-primary/10", // Subtle background for active and hover
-              "active:scale-95" // Keep gentle scale on tap
+              isActive ? "bg-primary/10" : "hover:bg-muted/30 active:bg-muted/50",
+              "active:scale-95"
             );
 
             if (item.href) {
