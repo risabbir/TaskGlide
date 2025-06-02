@@ -41,8 +41,8 @@ interface AuthContextType {
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
-  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
-  updateUserPhotoURL: (photoFile: File) => Promise<boolean>;
+  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>; // Will not use authOpLoading internally
+  updateUserPhotoURL: (photoFile: File) => Promise<string | null>; // Returns photoURL or null, will not use authOpLoading
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   updateUserEmailWithVerification: (currentPassword: string, newEmail: string) => Promise<boolean>;
 }
@@ -136,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
-      // Simplified message to avoid giving away whether an account exists for privacy reasons
       toast({ title: "Password Reset Request", description: "If an account exists for this email, a reset link has been sent. If you don't receive it, please check your email address and try again.", variant: authError.code === 'auth/user-not-found' ? "default" : "destructive" });
       return false;
     } finally {
@@ -149,29 +148,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
-    setAuthOpLoading(true);
+    // No setAuthOpLoading here; ProfileForm will manage its own 'isSavingDetails' state
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
       setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
-      // Toast for display name update is usually handled by the caller form with more context
       return true;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
       toast({ title: "Profile Update Error", description: authError.message || "Failed to update profile.", variant: "destructive" });
       return false;
-    } finally {
-      setAuthOpLoading(false);
     }
   }, [toast, setUser]);
 
-  const updateUserPhotoURL = useCallback(async (photoFile: File): Promise<boolean> => {
+  const updateUserPhotoURL = useCallback(async (photoFile: File): Promise<string | null> => {
     if (!auth.currentUser) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
-      return false;
+      return null;
     }
-    setAuthOpLoading(true);
+    // No setAuthOpLoading here; ProfileForm will manage its own 'isUploadingPhoto' state
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${Date.now()}_${photoFile.name}`;
@@ -181,23 +177,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
       setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); 
-
+      
       toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
-      return true;
+      return photoURL;
     } catch (e) {
       const err = e as AuthError | Error; 
       console.error("Photo Update Error:", e);
-      // Check if error has a 'code' property to differentiate Firebase errors
       const firebaseError = err as AuthError;
       setError(firebaseError); 
       let description = firebaseError.message || "Failed to update profile picture.";
-      if (firebaseError.code === 'storage/unauthorized' || firebaseError.code === 'storage/object-not-found') { // Example codes
-          description = "Photo update failed. Please check storage permissions or try again.";
+      if (firebaseError.code === 'storage/unauthorized' ) { 
+          description = "Photo upload failed. Please check storage permissions for profile-pictures/{userId}/{fileName} or try again.";
       }
       toast({ title: "Photo Update Error", description, variant: "destructive" });
-      return false;
-    } finally {
-      setAuthOpLoading(false);
+      return null;
     }
   }, [toast, setUser]);
 
@@ -290,5 +283,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

@@ -65,12 +65,13 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function ProfileForm() {
-  const { user, updateUserProfile, updateUserPhotoURL, authOpLoading } = useAuth();
+  const { user, updateUserProfile, updateUserPhotoURL } = useAuth();
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState(Date.now()); 
-  const [isProfileUpdating, setIsProfileUpdating] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormData>({
@@ -88,19 +89,14 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (user) {
-      // Retrieve current form values to avoid overwriting them if they were set by user interaction
-      // before user data was available (less likely scenario but good for robustness)
       const currentFormValues = form.getValues();
       form.reset({ 
         displayName: user.displayName || currentFormValues.displayName || "",
-        // For fields not directly on Firebase user object, prefer form's current state if set,
-        // then fallback to an empty string or initial value.
-        // Eventually, these would be loaded from Firestore.
-        role: currentFormValues.role || "", // This would be loaded from Firestore
-        otherRole: currentFormValues.otherRole || "", // This would be loaded from Firestore
-        bio: currentFormValues.bio || "", // This would be loaded from Firestore
-        website: currentFormValues.website || "", // This would be loaded from Firestore
-      }, { keepDirty: false, keepValues: true }); // Keep values if form was dirty
+        role: currentFormValues.role || "", 
+        otherRole: currentFormValues.otherRole || "", 
+        bio: currentFormValues.bio || "", 
+        website: currentFormValues.website || "", 
+      }, { keepDirty: false, keepValues: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]); 
@@ -109,14 +105,14 @@ export function ProfileForm() {
     if (selectedFile) {
       const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewURL(objectUrl);
-      setAvatarKey(Date.now()); // Force re-render for selected file preview
+      setAvatarKey(Date.now()); 
       return () => URL.revokeObjectURL(objectUrl);
     } else if (user?.photoURL) {
       setPreviewURL(user.photoURL);
-      setAvatarKey(Date.now()); // Force re-render if user.photoURL changes (e.g. after successful upload clears selectedFile)
+      setAvatarKey(Date.now()); 
     } else {
       setPreviewURL(null);
-      setAvatarKey(Date.now()); // Force re-render for fallback
+      setAvatarKey(Date.now()); 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFile, user?.photoURL]);
@@ -124,7 +120,7 @@ export function ProfileForm() {
 
   async function onProfileSubmit(data: ProfileFormData) {
     if (!user) return;
-    setIsProfileUpdating(true);
+    setIsSavingDetails(true);
 
     const profileAuthUpdates: { displayName?: string } = {};
     if (data.displayName !== (user.displayName || "")) {
@@ -139,7 +135,6 @@ export function ProfileForm() {
     if (authUpdateSuccess) {
       const finalRole = data.role === 'other' ? data.otherRole : data.role;
       
-      // Placeholder for saving additional fields to Firestore
       console.log("Simulating save of additional profile details to Firestore:", {
         userId: user.uid,
         role: finalRole,
@@ -147,23 +142,20 @@ export function ProfileForm() {
         website: data.website,
       });
       
-      // Determine which toast message to show
       const hasAuthUpdates = Object.keys(profileAuthUpdates).length > 0;
-      const hasAdditionalUpdates = data.bio || data.website || finalRole;
+      const hasAdditionalUpdates = data.bio || data.website || finalRole || (form.getValues().role && data.role !== form.getValues().role) || (form.getValues().otherRole && data.otherRole !== form.getValues().otherRole);
 
       if (hasAuthUpdates && !hasAdditionalUpdates) {
         toast({ title: "Display Name Updated", description: "Your display name has been successfully updated." });
       } else if (hasAuthUpdates || hasAdditionalUpdates) {
          toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
       }
-      // If only non-auth fields were changed and submitted, a toast might still be desired
-      // For now, the above logic covers cases where auth or additional info changes.
       
       form.reset(data, { keepDirty: false }); 
     } else if (Object.keys(profileAuthUpdates).length > 0) {
         toast({ title: "Update Failed", description: "Could not update your display name.", variant: "destructive"});
     }
-    setIsProfileUpdating(false);
+    setIsSavingDetails(false);
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,14 +163,14 @@ export function ProfileForm() {
       const file = event.target.files[0];
       if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
         toast({title: "Invalid File Type", description: "Please select an image (JPEG, PNG, GIF, WebP).", variant: "destructive"});
-        setSelectedFile(null); // Clear selection
-        if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+        setSelectedFile(null);
+        if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({title: "File Too Large", description: "Maximum photo size is 5MB.", variant: "destructive"});
-        setSelectedFile(null); // Clear selection
-        if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+        setSelectedFile(null);
+        if(fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       setSelectedFile(file);
@@ -187,11 +179,14 @@ export function ProfileForm() {
 
   const handlePhotoUpload = async () => {
     if (!selectedFile || !user) return;
-    const success = await updateUserPhotoURL(selectedFile);
-    if (success) {
-      setSelectedFile(null); // This should trigger useEffect to update previewURL from user.photoURL
-      if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+    setIsUploadingPhoto(true);
+    const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
+    if (uploadedPhotoURL) {
+      setSelectedFile(null); 
+      if(fileInputRef.current) fileInputRef.current.value = ""; 
+      // The useEffect for previewURL will pick up the change from user.photoURL via context update
     }
+    setIsUploadingPhoto(false);
   };
 
   const triggerFileSelect = () => fileInputRef.current?.click();
@@ -210,7 +205,7 @@ export function ProfileForm() {
     return "??";
   };
   
-  const isLoading = authOpLoading || isProfileUpdating;
+  const isFormBusy = isSavingDetails || isUploadingPhoto;
 
   return (
     <Card className="w-full shadow-xl overflow-hidden">
@@ -248,19 +243,20 @@ export function ProfileForm() {
                             accept="image/jpeg,image/png,image/gif,image/webp"
                             className="hidden"
                             id="profile-picture-input"
+                            disabled={isFormBusy}
                         />
                     </div>
                     <div className="flex-grow text-center sm:text-left">
                         {selectedFile ? (
                         <div className="flex flex-col items-center sm:items-start gap-2">
                             <p className="text-sm text-muted-foreground truncate max-w-xs">New: {selectedFile.name}</p>
-                            <Button onClick={handlePhotoUpload} disabled={authOpLoading} size="sm">
-                            {authOpLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                            <Button type="button" onClick={handlePhotoUpload} disabled={isUploadingPhoto || isSavingDetails || !selectedFile} size="sm">
+                            {isUploadingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                             Upload Photo
                             </Button>
                         </div>
                         ) : (
-                            <Button variant="outline" onClick={triggerFileSelect} size="sm" disabled={authOpLoading}>
+                            <Button type="button" variant="outline" onClick={triggerFileSelect} size="sm" disabled={isFormBusy}>
                                <UploadCloud className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         )}
@@ -275,7 +271,7 @@ export function ProfileForm() {
                     <FormItem>
                     <FormLabel className="text-base">Display Name</FormLabel>
                     <FormControl>
-                        <Input placeholder="Your Name" {...field} className="text-base" disabled={isLoading}/>
+                        <Input placeholder="Your Name" {...field} className="text-base" disabled={isFormBusy}/>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -288,7 +284,7 @@ export function ProfileForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base">Your Role</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={isLoading}>
+                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={isFormBusy}>
                         <FormControl>
                           <SelectTrigger className="text-base">
                             <SelectValue placeholder="Select your role..." />
@@ -315,7 +311,7 @@ export function ProfileForm() {
                       <FormItem>
                         <FormLabel className="text-base">Please specify your role</FormLabel>
                         <FormControl>
-                          <Input placeholder="E.g., UX Researcher" {...field} className="text-base" disabled={isLoading} />
+                          <Input placeholder="E.g., UX Researcher" {...field} className="text-base" disabled={isFormBusy} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -330,7 +326,7 @@ export function ProfileForm() {
                     <FormItem>
                       <FormLabel className="text-base">Bio / About Me</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-base min-h-[100px]" disabled={isLoading}/>
+                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-base min-h-[100px]" disabled={isFormBusy}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -344,7 +340,7 @@ export function ProfileForm() {
                     <FormItem>
                       <FormLabel className="text-base">Website URL</FormLabel>
                       <FormControl>
-                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-base" disabled={isLoading}/>
+                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-base" disabled={isFormBusy}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -366,9 +362,9 @@ export function ProfileForm() {
             <Button 
                 type="submit" 
                 className="w-full sm:w-auto" 
-                disabled={isLoading || !form.formState.isDirty}
+                disabled={isSavingDetails || isUploadingPhoto || !form.formState.isDirty}
             >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingDetails && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
             </Button>
             </CardFooter>
@@ -377,5 +373,3 @@ export function ProfileForm() {
     </Card>
   );
 }
-
-    
