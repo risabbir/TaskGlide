@@ -17,7 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning={true}> {/* Default lang, [locale]/layout.tsx overrides */}
+    <html lang="en" suppressHydrationWarning={true}>
+      {/*
+        The <head> element is automatically injected by Next.js.
+        Ensure no whitespace text nodes are between <html> and <body>.
+      */}
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`} suppressHydrationWarning={true}>
         {/*
           AuthProvider, KanbanProvider, Toaster, and BottomNavigation are removed from here.
