@@ -140,7 +140,7 @@ export function Header({ children }: HeaderProps) {
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center space-x-2">
               <LayoutDashboard className="h-6 w-6 text-primary" />
-              <span className="hidden sm:inline-block font-bold text-lg">{APP_NAME}</span>
+              <span className="font-bold text-lg">{APP_NAME}</span>
             </Link>
           </div>
 
@@ -167,19 +167,35 @@ export function Header({ children }: HeaderProps) {
             )}
           </form>
 
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
+            {/* Mobile Search Button */}
+            <Button variant="ghost" size="icon" onClick={() => {
+                setModalSearchTerm(filters?.searchTerm ?? ""); 
+                setIsSearchModalOpen(true);
+            }} className="md:hidden h-9 w-9">
+                <Search className="h-5 w-5" />
+                <span className="sr-only">Search Tasks</span>
+            </Button>
+
+            {/* Mobile New Task Button */}
+            <Button variant="ghost" size="icon" onClick={handleOpenNewTaskModal} className="md:hidden h-9 w-9">
+                <PlusCircle className="h-5 w-5" />
+                <span className="sr-only">New Task</span>
+            </Button>
+            
+            {/* Desktop New Task Button */}
             <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">New Task</span>
             </Button>
             
+            {/* Desktop Filters Button */}
             <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Filters & Sort</span>
             </Button>
             
             <ThemeToggle />
-            {/* LanguageSwitcher removed */}
 
             <div className="hidden md:flex items-center space-x-1">
               {!authLoading && user ? (
