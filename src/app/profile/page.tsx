@@ -108,11 +108,11 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="flex w-full mb-6 border-b 
-                               sm:inline-flex sm:mb-10 sm:w-auto sm:h-auto sm:items-center sm:justify-center sm:rounded-lg sm:bg-muted sm:p-1.5 sm:space-x-1.5 sm:border-0">
+            <TabsList className="flex w-full mb-6 border-b pb-2
+                               sm:inline-flex sm:mb-10 sm:w-auto sm:h-auto sm:items-center sm:justify-center sm:rounded-lg sm:bg-muted sm:p-1.5 sm:space-x-1.5 sm:border-0 sm:pb-0">
               <TabsTrigger 
                 value="profile" 
-                className="flex-1 py-3 px-1 text-center text-sm font-medium flex items-center justify-center gap-2 
+                className="flex-1 py-3 px-2 text-center text-sm font-medium flex items-center justify-center gap-2 
                            data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary
                            data-[state=inactive]:text-muted-foreground data-[state=inactive]:border-b-2 data-[state=inactive]:border-transparent hover:text-foreground
                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background
@@ -125,7 +125,7 @@ export default function ProfilePage() {
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="flex-1 py-3 px-1 text-center text-sm font-medium flex items-center justify-center gap-2
+                className="flex-1 py-3 px-2 text-center text-sm font-medium flex items-center justify-center gap-2
                            data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary
                            data-[state=inactive]:text-muted-foreground data-[state=inactive]:border-b-2 data-[state=inactive]:border-transparent hover:text-foreground
                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background
