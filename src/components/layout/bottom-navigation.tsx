@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, SlidersHorizontal, PlusCircle, Search, UserCircle2, LogIn } from "lucide-react";
+import { Home, SlidersHorizontal, Plus, Search, UserCircle2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
@@ -63,7 +63,7 @@ export function BottomNavigation() {
   const navItemsBase = [
     { href: "/", label: "Board", icon: Home, isActiveOverride: pathname === "/" },
     { action: handleToggleFilterSidebar, label: "Filters", icon: SlidersHorizontal, isActiveOverride: kanbanState.isFilterSidebarOpen },
-    { action: handleOpenNewTaskModal, label: "Add Task", icon: PlusCircle, isCentral: true, isActiveOverride: false },
+    { action: handleOpenNewTaskModal, label: "Add Task", icon: Plus, isCentral: true, isActiveOverride: false },
     { 
       action: () => {
         setModalSearchTerm(filters.searchTerm ?? "");
@@ -77,7 +77,7 @@ export function BottomNavigation() {
 
   let navItems = [...navItemsBase];
   if (authLoading) {
-    // Placeholder for loading state if needed
+    // Placeholder for loading state
   } else if (user) {
     navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
   } else {
@@ -87,8 +87,8 @@ export function BottomNavigation() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-40 h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <nav className="flex h-full items-center justify-around px-1 sm:px-2">
+      <div className="fixed md:hidden bottom-3 left-3 right-3 z-40 h-16 rounded-2xl bg-background/80 backdrop-blur-md shadow-lg border">
+        <nav className="flex h-full items-center justify-around px-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = !!item.isActiveOverride;
@@ -97,11 +97,11 @@ export function BottomNavigation() {
               return (
                 <Button
                   key={item.label}
-                  variant="ghost"
+                  variant="default" // Ensure primary background
                   className={cn(
-                    "flex flex-col items-center justify-center p-0",
-                    "relative -top-3 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg",
-                    "transition-all duration-200 ease-in-out hover:bg-primary/90 active:bg-primary/80 transform hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    "relative -top-3.5 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center",
+                    "transition-all duration-200 ease-in-out hover:bg-primary/90 active:bg-primary/80 transform hover:scale-105 active:scale-95",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   )}
                   onClick={item.action}
                   aria-label={item.label}
@@ -111,34 +111,38 @@ export function BottomNavigation() {
               );
             }
             
+            const itemWrapperClasses = cn(
+              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-md",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
+              "transition-all duration-150 ease-in-out active:scale-95",
+              isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30"
+            );
+
+            const iconClasses = cn(
+                "h-5 w-5 mb-0.5 transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary/90"
+            );
+            
+            const labelClasses = cn(
+                "text-[11px] leading-tight tracking-tight transition-colors",
+                isActive ? "text-primary font-semibold" : "text-muted-foreground group-hover:text-primary/90"
+            );
+
             const buttonContent = (
               <>
-                <Icon className={cn(
-                  "h-5 w-5 mb-0.5 transition-colors duration-150",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground"
-                )} />
-                <span className={cn(
-                  "text-xs leading-tight tracking-tight transition-colors duration-150",
-                  isActive ? "font-medium text-primary" : "text-muted-foreground group-hover:text-foreground group-focus-visible:text-foreground"
-                )}>{item.label}</span>
+                <Icon className={iconClasses} />
+                <span className={labelClasses}>{item.label}</span>
               </>
             );
 
-            const itemClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg",
-              "transition-all duration-150 ease-in-out",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-              isActive ? "bg-primary/10" : "hover:bg-muted/30 active:bg-muted/50",
-              "active:scale-95"
-            );
 
             if (item.href) {
               return (
                 <Link key={item.label} href={item.href} passHref legacyBehavior>
                   <Button
                     as="a" 
-                    variant="ghost"
-                    className={itemClasses}
+                    variant="ghost" // Ghost variant to remove default button background
+                    className={itemWrapperClasses}
                     aria-label={item.label}
                   >
                     {buttonContent}
@@ -150,8 +154,8 @@ export function BottomNavigation() {
             return (
               <Button
                 key={item.label}
-                variant="ghost"
-                className={itemClasses}
+                variant="ghost" // Ghost variant
+                className={itemWrapperClasses}
                 onClick={item.action}
                 aria-label={item.label}
               >
@@ -208,3 +212,4 @@ export function BottomNavigation() {
     </>
   );
 }
+
