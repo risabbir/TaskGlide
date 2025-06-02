@@ -41,8 +41,8 @@ interface AuthContextType {
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
-  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>; // Will not use authOpLoading internally
-  updateUserPhotoURL: (photoFile: File) => Promise<string | null>; // Returns photoURL or null, will not use authOpLoading
+  updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
+  updateUserPhotoURL: (photoFile: File) => Promise<string | null>; 
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   updateUserEmailWithVerification: (currentPassword: string, newEmail: string) => Promise<boolean>;
 }
@@ -148,7 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
-    // No setAuthOpLoading here; ProfileForm will manage its own 'isSavingDetails' state
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
@@ -160,14 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Profile Update Error", description: authError.message || "Failed to update profile.", variant: "destructive" });
       return false;
     }
-  }, [toast, setUser]);
+  }, [toast]); // Removed setUser from here, as it's indirectly covered by onAuthStateChanged or direct call in consuming component
 
   const updateUserPhotoURL = useCallback(async (photoFile: File): Promise<string | null> => {
     if (!auth.currentUser) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return null;
     }
-    // No setAuthOpLoading here; ProfileForm will manage its own 'isUploadingPhoto' state
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${Date.now()}_${photoFile.name}`;
@@ -178,7 +176,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
       setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); 
       
-      toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       return photoURL;
     } catch (e) {
       const err = e as AuthError | Error; 
@@ -192,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Photo Update Error", description, variant: "destructive" });
       return null;
     }
-  }, [toast, setUser]);
+  }, [toast, storage]); // Added storage to dependency array
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     if (!auth.currentUser || !auth.currentUser.email) {
@@ -283,3 +280,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

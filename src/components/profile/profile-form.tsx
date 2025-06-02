@@ -89,41 +89,34 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (user) {
-      // Preserve existing form values if they exist (e.g., from a previous edit session)
-      // but prioritize user data from context for initial load or after external changes.
       const currentFormValues = form.getValues();
       form.reset({
         displayName: user.displayName || currentFormValues.displayName || "",
-        // For role, bio, website - these are not in Firebase Auth user object, so we keep form state
-        // unless this is the first load. Firestore would be needed for these to persist.
-        role: currentFormValues.role || "", // Placeholder for actual data source
-        otherRole: currentFormValues.otherRole || "", // Placeholder
-        bio: currentFormValues.bio || "", // Placeholder
-        website: currentFormValues.website || "", // Placeholder
-      }, { keepDirty: form.formState.isDirty, keepValues: true }); // keepDirty only if form was already dirty
+        role: currentFormValues.role || "", 
+        otherRole: currentFormValues.otherRole || "", 
+        bio: currentFormValues.bio || "", 
+        website: currentFormValues.website || "", 
+      }, { keepDirty: form.formState.isDirty, keepValues: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, form.reset]);
 
 
   // Effect 1: For local preview when a file is selected
   useEffect(() => {
     if (selectedFile) {
         const objectUrl = URL.createObjectURL(selectedFile);
-        setPreviewURL(objectUrl); // Show local preview
-        setAvatarKey(Date.now()); // Change key to force re-render with local preview
+        setPreviewURL(objectUrl);
+        setAvatarKey(Date.now()); 
         return () => URL.revokeObjectURL(objectUrl);
     }
-    // If no file is selected (e.g., after upload or initially), Effect 2 will handle it.
   }, [selectedFile]);
 
   // Effect 2: To update preview from user.photoURL (when no local file selected) AND to update avatarKey on context changes
   useEffect(() => {
-    if (!selectedFile) { // Only use user.photoURL if no local file is being previewed
+    if (!selectedFile) { 
         setPreviewURL(user?.photoURL || null);
     }
-    // Force Avatar re-render whenever user.photoURL changes (e.g. after context update from successful upload)
-    // OR when selectedFile is cleared (to switch back from local preview to user.photoURL)
     setAvatarKey(Date.now());
   }, [user?.photoURL, selectedFile]);
 
@@ -132,27 +125,33 @@ export function ProfileForm() {
     if (!user) return;
     setIsSavingDetails(true);
 
-    const profileAuthUpdates: { displayName?: string } = {};
-    if (data.displayName !== (user.displayName || "")) {
-      profileAuthUpdates.displayName = data.displayName;
-    }
+    try {
+        const profileAuthUpdates: { displayName?: string } = {};
+        if (data.displayName !== (user.displayName || "")) {
+        profileAuthUpdates.displayName = data.displayName;
+        }
 
-    let authUpdateSuccess = true;
-    if (Object.keys(profileAuthUpdates).length > 0) {
-      authUpdateSuccess = await updateUserProfile(profileAuthUpdates);
-    }
+        let authUpdateSuccess = true;
+        if (Object.keys(profileAuthUpdates).length > 0) {
+        authUpdateSuccess = await updateUserProfile(profileAuthUpdates);
+        }
 
-    if (authUpdateSuccess) {
-      const finalRole = data.role === 'other' ? data.otherRole : data.role;
-      console.log("Simulating save of additional profile details (role, bio, website):", {
-        userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
-      });
-      toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
-      form.reset(data, { keepDirty: false });
-    } else if (Object.keys(profileAuthUpdates).length > 0) {
-      toast({ title: "Update Failed", description: "Could not update your display name.", variant: "destructive"});
+        if (authUpdateSuccess) {
+        const finalRole = data.role === 'other' ? data.otherRole : data.role;
+        console.log("Simulating save of additional profile details (role, bio, website):", {
+            userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
+        });
+        toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
+        form.reset(data, { keepDirty: false }); // Reset form with new data, clear dirty state
+        } else if (Object.keys(profileAuthUpdates).length > 0) {
+        // Error toast is handled by updateUserProfile in context
+        }
+    } catch (error) {
+        console.error("Error submitting profile details:", error);
+        toast({ title: "Error", description: "An unexpected error occurred while saving details.", variant: "destructive" });
+    } finally {
+        setIsSavingDetails(false);
     }
-    setIsSavingDetails(false);
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,23 +171,30 @@ export function ProfileForm() {
       }
       setSelectedFile(file);
     } else {
-      setSelectedFile(null); // If no file is chosen (e.g., user cancels dialog)
+      setSelectedFile(null); 
     }
   };
 
   const handlePhotoUpload = async () => {
     if (!selectedFile || !user) return;
     setIsUploadingPhoto(true);
-    const uploadedPhotoURL = await updateUserPhotoURL(selectedFile); // From context
-    if (uploadedPhotoURL !== null) { // Check for non-null to indicate success
-      // Success: user context will update via onAuthStateChanged or direct setUser in context
-      // which triggers the useEffect for user.photoURL
-      toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
+    try {
+      const uploadedPhotoURL = await updateUserPhotoURL(selectedFile); 
+      if (uploadedPhotoURL) { 
+        toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
+        // user context update will trigger useEffect to update avatarKey and previewURL
+      }
+      // Error toasts are handled within updateUserPhotoURL
+    } catch (error) {
+        // This catch block is for unexpected errors thrown directly by updateUserPhotoURL
+        // if its internal try/catch failed, which is unlikely.
+        console.error("Error during photo upload process in ProfileForm:", error);
+        toast({ title: "Upload Error", description: "An unexpected error occurred during photo upload.", variant: "destructive"});
+    } finally {
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setIsUploadingPhoto(false);
     }
-    // Reset selection regardless of success/failure of upload itself, user context handles new URL
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    setIsUploadingPhoto(false);
   };
 
   const triggerFileSelect = () => fileInputRef.current?.click();
@@ -235,7 +241,7 @@ export function ProfileForm() {
                             type="file" ref={fileInputRef} onChange={handleFileChange}
                             accept="image/jpeg,image/png,image/gif,image/webp"
                             className="hidden" id="profile-picture-input"
-                            disabled={isUploadingPhoto || isSavingDetails} // Disable if any form operation is busy
+                            disabled={isUploadingPhoto || isSavingDetails}
                         />
                     </div>
                     <div className="flex-grow text-center sm:text-left">
@@ -365,3 +371,5 @@ export function ProfileForm() {
     </Card>
   );
 }
+
+    
