@@ -156,7 +156,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           <div className="flex justify-between items-start gap-2">
             <div
               className={cn(
-                "text-base font-semibold leading-snug pr-1 flex-grow break-words",
+                "text-base font-semibold leading-normal pr-1 flex-grow break-words", // Changed leading-snug to leading-normal
                 // Apply line-clamp only if collapsed AND not already programmatically truncated
                 (!isExpanded && !isTitleProgrammaticallyTruncated) && "line-clamp-2"
               )}
