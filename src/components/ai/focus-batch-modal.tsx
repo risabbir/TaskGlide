@@ -65,9 +65,14 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         } else {
           setError("AI couldn't find any specific tasks to suggest for focus right now. Try again later or with more tasks.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching focus batch suggestions:", err);
-        setError("Failed to get suggestions from AI. Please try again.");
+        const errMessage = String(err.message || "").toLowerCase();
+        if (errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('service unavailable')) {
+            setError("The AI service is currently overloaded or unavailable. Please try again in a few moments.");
+        } else {
+            setError("Failed to get suggestions from AI. Please try again.");
+        }
       } finally {
         setIsLoading(false);
       }

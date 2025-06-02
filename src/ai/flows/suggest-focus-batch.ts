@@ -84,23 +84,64 @@ const suggestFocusBatchFlow = ai.defineFlow(
     inputSchema: SuggestFocusBatchInputSchema,
     outputSchema: SuggestFocusBatchOutputSchema,
   },
-  async input => {
-    // Filter out 'done' tasks before sending to AI, if many tasks exist this could save tokens.
-    // However, the AI might also benefit from seeing recently completed tasks for context.
-    // For now, sending all. Can be optimized later.
-    const {output} = await prompt(input);
-     if (output && output.suggestions) {
-      // Further ensure that titles are included in the suggestions from AI output.
-      // Sometimes the model might only return taskId and reason if not strictly guided.
-      const validatedSuggestions = output.suggestions.map(s => {
-        const originalTask = input.tasks.find(t => t.id === s.taskId);
-        return {
-          ...s,
-          title: s.title || originalTask?.title || "Unknown Task" // Fallback for title
-        };
-      });
-      return { suggestions: validatedSuggestions };
+  async (input: SuggestFocusBatchInput): Promise<SuggestFocusBatchOutput> => {
+    let attempts = 0;
+    const maxAttempts = 3;
+    const baseDelayMs = 1000; // Initial delay for retries
+    let lastError: any;
+
+    while (attempts < maxAttempts) {
+      try {
+        const { output } = await prompt(input); // output is SuggestFocusBatchOutput | undefined
+
+        if (output && output.suggestions) {
+          const validatedSuggestions = output.suggestions.map(s => {
+            const originalTask = input.tasks.find(t => t.id === s.taskId);
+            return {
+              ...s,
+              title: s.title || originalTask?.title || "Unknown Task"
+            };
+          });
+          return { suggestions: validatedSuggestions }; // Success
+        } else if (output && Array.isArray(output.suggestions) && output.suggestions.length === 0) {
+          // AI returned a valid structure with an empty suggestions array.
+          return { suggestions: [] };
+        } else {
+          // Output is null, undefined, or output.suggestions is not as expected.
+          // This could be due to schema mismatch or empty response not caught as an error.
+          lastError = new Error("AI returned an empty, malformed, or non-conforming response.");
+          console.warn(`[suggestFocusBatchFlow] Attempt ${attempts + 1}: ${lastError.message}`);
+          // This specific type of "failure" will proceed to retry logic.
+        }
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = String(error.message || error).toLowerCase();
+        console.warn(`[suggestFocusBatchFlow] Attempt ${attempts + 1} failed with error: ${errorMessage}`);
+
+        if (errorMessage.includes('503') ||
+            errorMessage.includes('overloaded') ||
+            errorMessage.includes('service unavailable') ||
+            errorMessage.includes('internal error') || // Generic internal server error
+            errorMessage.includes('timeout')) {
+          // This is a recognized retryable error. Loop will continue to the next attempt.
+        } else {
+          // For other errors (e.g., auth, bad request, API key issues), don't retry.
+          console.error(`[suggestFocusBatchFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
+          throw error; // Immediately throw non-retryable errors
+        }
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        const delay = baseDelayMs * Math.pow(2, attempts -1); // Exponential backoff: 1s, 2s
+        console.log(`[suggestFocusBatchFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    return { suggestions: [] }; // Fallback
+
+    // If loop finishes, all attempts failed for retryable errors.
+    const finalErrorMessage = `Failed to get AI suggestions after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
+    console.error(`[suggestFocusBatchFlow] ${finalErrorMessage}`);
+    throw lastError || new Error(finalErrorMessage);
   }
 );
