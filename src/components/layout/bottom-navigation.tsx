@@ -66,7 +66,7 @@ export function BottomNavigation() {
     { action: handleOpenNewTaskModal, label: "Add Task", icon: Plus, isCentral: true, isActiveOverride: false },
     { 
       action: () => {
-        setModalSearchTerm(filters.searchTerm ?? ""); // Initialize modal search with current filter
+        setModalSearchTerm(filters.searchTerm ?? ""); 
         setIsSearchModalOpen(true);
       }, 
       label: "Search", 
@@ -112,15 +112,15 @@ export function BottomNavigation() {
             }
             
             const itemWrapperClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg", // Added group here
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
+              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg", 
               "transition-all duration-150 ease-in-out",
-              isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30 active:scale-95" // active:scale-95 added
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
+              isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30 active:scale-95"
             );
 
             const iconClasses = cn(
-                "h-5 w-5 mb-0.5 transition-all duration-150 ease-in-out group-hover:scale-110", // Added group-hover:scale-110 and transition
-                isActive ? "text-primary scale-105" : "text-muted-foreground group-hover:text-primary/90" // Added scale-105 for active icon
+                "h-5 w-5 mb-0.5 transition-all duration-150 ease-in-out group-hover:scale-110",
+                isActive ? "text-primary scale-105" : "text-muted-foreground group-hover:text-primary/90"
             );
             
             const labelClasses = cn(
@@ -212,4 +212,3 @@ export function BottomNavigation() {
     </>
   );
 }
-
