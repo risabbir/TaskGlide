@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { XCircle } from "lucide-react";
 
 export function BottomNavigation() {
-  const { dispatch } = useKanban();
+  const { dispatch, state: kanbanState } = useKanban();
   const { user, loading: authLoading } = useAuth();
   const pathname = usePathname();
 
@@ -29,7 +29,6 @@ export function BottomNavigation() {
   const [modalSearchTerm, setModalSearchTerm] = useState("");
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { state: kanbanState } = useKanban();
   const filters = kanbanState.filters;
    
   useEffect(() => {
@@ -61,59 +60,80 @@ export function BottomNavigation() {
     setIsSearchModalOpen(false);
   };
 
-  const navItems = [
-    { href: "/", label: "Board", icon: Home, isActive: pathname === "/" },
-    { action: handleToggleFilterSidebar, label: "Filters", icon: SlidersHorizontal, isActive: kanbanState.isFilterSidebarOpen },
-    { action: handleOpenNewTaskModal, label: "Add Task", icon: PlusCircle, isCentral: true },
-    { action: () => setIsSearchModalOpen(true), label: "Search", icon: Search, isActive: isSearchModalOpen },
+  const navItemsBase = [
+    { href: "/", label: "Board", icon: Home, isActiveOverride: pathname === "/" },
+    { action: handleToggleFilterSidebar, label: "Filters", icon: SlidersHorizontal, isActiveOverride: kanbanState.isFilterSidebarOpen },
+    { action: handleOpenNewTaskModal, label: "Add Task", icon: PlusCircle, isCentral: true, isActiveOverride: false },
+    { action: () => setIsSearchModalOpen(true), label: "Search", icon: Search, isActiveOverride: isSearchModalOpen },
   ];
 
   // Add Profile/Login item conditionally
+  let navItems = [...navItemsBase];
   if (authLoading) {
     // Optionally show a placeholder or skip during auth loading
   } else if (user) {
-    navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActive: pathname === "/profile" });
+    navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
   } else {
-    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActive: pathname === "/auth/signin" });
+    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname === "/auth/signin" });
   }
 
 
   return (
     <>
       <div className="fixed inset-x-0 bottom-0 z-40 h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-        <nav className="flex h-full items-center justify-around px-2">
-          {navItems.map((item, index) => {
+        <nav className="flex h-full items-center justify-around px-2 gap-1">
+          {navItems.map((item) => {
             const Icon = item.icon;
-            const commonButtonClasses = "flex flex-col items-center justify-center h-full w-full rounded-none text-xs";
-            const activeClasses = item.isActive ? "text-primary" : "text-muted-foreground";
+            const isActive = !!item.isActiveOverride; // Use the override
+
+            const buttonContent = (
+              <>
+                <Icon className={cn(
+                  "h-5 w-5 mb-0.5",
+                  "transition-transform duration-200 ease-in-out",
+                  isActive && !item.isCentral && "scale-110" // Slightly scale active icon for non-central items
+                )} />
+                <span className={cn(
+                  "text-[10px] leading-tight",
+                  isActive && !item.isCentral && "font-semibold" // Bold active label for non-central
+                )}>{item.label}</span>
+              </>
+            );
+            
+            const centralButtonContent = <Icon className="h-7 w-7" />;
+
 
             if (item.isCentral) {
               return (
                 <Button
                   key={item.label}
                   variant="ghost"
-                  className={cn(commonButtonClasses, "relative -top-3 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90")}
+                  className={cn(
+                    "flex flex-col items-center justify-center text-xs", // base for content alignment
+                    "relative -top-3 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg",
+                    "transition-all duration-200 ease-in-out hover:bg-primary/90 active:bg-primary/80 transform hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  )}
                   onClick={item.action}
                   aria-label={item.label}
                 >
-                  <Icon className="h-7 w-7" />
+                  {centralButtonContent}
                 </Button>
               );
             }
             
-            const buttonContent = (
-                <>
-                  <Icon className={cn("h-5 w-5 mb-0.5", item.isActive && "text-primary")} />
-                  <span className={cn("text-[10px] leading-tight", item.isActive && "text-primary font-medium")}>{item.label}</span>
-                </>
-            );
+            const baseItemClasses = "flex flex-col items-center justify-center h-full w-full text-xs p-1 rounded-md";
+            const transitionClasses = "transition-all duration-200 ease-in-out";
+            const interactionClasses = "active:scale-90"; // Hover is handled by variant="ghost" default (bg-accent)
+
+            const activeStateClasses = isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground";
 
             if (item.href) {
               return (
                 <Link key={item.label} href={item.href} passHref legacyBehavior>
                   <Button
+                    as="a" // Render Button as an anchor tag
                     variant="ghost"
-                    className={cn(commonButtonClasses, activeClasses)}
+                    className={cn(baseItemClasses, transitionClasses, interactionClasses, activeStateClasses)}
                     aria-label={item.label}
                   >
                     {buttonContent}
@@ -126,7 +146,7 @@ export function BottomNavigation() {
               <Button
                 key={item.label}
                 variant="ghost"
-                className={cn(commonButtonClasses, activeClasses)}
+                className={cn(baseItemClasses, transitionClasses, interactionClasses, activeStateClasses)}
                 onClick={item.action}
                 aria-label={item.label}
               >
