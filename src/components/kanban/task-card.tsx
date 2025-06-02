@@ -145,7 +145,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
       >
         <CardHeader className="p-3 pb-2">
           <div className="flex justify-between items-start gap-2">
-            <div className={cn("text-base font-semibold leading-tight pr-1 flex-grow break-words", !isExpanded ? "line-clamp-2" : "")} title={task.title}>
+            <div className={cn("text-base font-semibold leading-snug pr-1 flex-grow break-words", !isExpanded ? "line-clamp-2" : "")} title={task.title}>
               {task.title}
             </div>
             
