@@ -1,3 +1,4 @@
+
 # TaskGlide (Firebase Studio Project)
 
 This is a Next.js starter application for TaskGlide, built in Firebase Studio.
@@ -16,17 +17,17 @@ This application uses Firebase for backend services including Authentication, Fi
     *   Enable the following services in your Firebase project:
         *   Authentication (with Email/Password sign-in method)
         *   Firestore Database
-        *   Storage
+        *   Storage (You may need to upgrade to the Blaze plan - pay-as-you-go, but with a generous free tier - to enable Storage. You'll be prompted if this is necessary.)
 
-2.  **Configure Environment Variables:**
+2.  **Configure Environment Variables for Firebase:**
     *   In your Firebase project settings, find your web app's Firebase configuration (the `firebaseConfig` object).
-    *   Create a `.env` file in the root of this Next.js project.
-    *   Add your Firebase project's credentials to the `.env` file. It should look like this:
+    *   Create a `.env` file in the root of this Next.js project if it doesn't exist.
+    *   Add your Firebase project's credentials to the `.env` file. It should look like this (replace placeholders with your actual values):
 
     ```env
     NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here 
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here
     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
@@ -36,7 +37,7 @@ This application uses Firebase for backend services including Authentication, Fi
     *   Replace the other placeholder values with your actual credentials.
 
 3.  **Security Rules:**
-    *   **Firestore:** Set appropriate security rules for your Firestore database. For development, you might start with more open rules, but ensure they are secure for production.
+    *   **Firestore:** Set appropriate security rules for your Firestore database. Go to Firestore Database -> Rules in the Firebase console.
         *Example (allow read/write if authenticated):*
         ```rules
         rules_version = '2';
@@ -48,14 +49,14 @@ This application uses Firebase for backend services including Authentication, Fi
           }
         }
         ```
-    *   **Storage:** Set security rules for Firebase Storage, especially for profile pictures.
+    *   **Storage:** Set security rules for Firebase Storage, especially for profile pictures. Go to Storage -> Rules in the Firebase console.
         *Example (for profile pictures):*
         ```rules
         rules_version = '2';
         service firebase.storage {
           match /b/{bucket}/o {
             match /profile-pictures/{userId}/{fileName} {
-              allow read: if true; 
+              allow read: if true;
               allow write: if request.auth != null && request.auth.uid == userId;
             }
           }
@@ -65,11 +66,27 @@ This application uses Firebase for backend services including Authentication, Fi
 
 4.  **Authentication Email Templates:**
     *   In the Firebase console, go to Authentication -> Templates.
-    *   Customize the email templates (e.g., Password Reset, Email Verification) to match your app's branding (e.g., change sender name from "kanvasai team" to "TaskGlide team").
+    *   Customize the email templates (e.g., Password Reset, Email Verification) to match your app's branding (e.g., change sender name from the default to "TaskGlide team").
+
+## AI Features Setup (Genkit with Google AI)
+
+This application uses Genkit to power its AI features (like suggesting task details, tags, subtasks, and focus batches) via Google AI (Gemini models).
+
+1.  **Get a Google AI API Key:**
+    *   You can obtain an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    *   Alternatively, if you are using Google Cloud, you can create an API key in the Google Cloud Console. Ensure that the **"Generative Language API"** or **"Vertex AI API"** is enabled for the Google Cloud project associated with your API key.
+
+2.  **Configure Environment Variable for API Key:**
+    *   Add your Google AI API key to your `.env` file:
+    ```env
+    GOOGLE_API_KEY=YOUR_GOOGLE_AI_API_KEY_HERE
+    ```
+    *   Replace `YOUR_GOOGLE_AI_API_KEY_HERE` with the actual key you obtained.
+    *   The Genkit `googleAI` plugin will automatically use this environment variable.
 
 ## Development
 
-To run the development server:
+To run the development server for the Next.js application:
 
 ```bash
 npm run dev
@@ -81,9 +98,20 @@ pnpm dev
 
 Open [http://localhost:9002](http://localhost:9002) (or the port specified in `package.json`) with your browser to see the result.
 
-To run Genkit flows locally for AI features (if configured):
+To run Genkit flows locally for testing AI features:
 ```bash
 npm run genkit:dev
 ```
-This will start the Genkit development server, typically on port 3400.
-```
+This will start the Genkit development server, typically on port 3400. It uses `dotenv` to load environment variables (like `GOOGLE_API_KEY` and Firebase credentials) from your `.env` file.
+
+## Data Migration (If switching Firebase projects)
+
+If you have switched from an old Firebase project to a new one (e.g., from "kanvasai" to "taskglide-app"):
+
+*   **Authentication Users:** You need to migrate users. Use the Firebase CLI:
+    *   Export from old project: `firebase auth:export users.json --project OLD_PROJECT_ID`
+    *   Import to new project: `firebase auth:import users.json --project NEW_PROJECT_ID --hash-algo=SCRYPT --rounds=8 --mem-cost=14` (adjust hash parameters if your old project used different ones).
+*   **Firestore Data:** Export data from the old Firestore (via Firebase Console or `gcloud firestore export`) and import it into the new one (`gcloud firestore import`).
+*   **Storage Files:** Manually download/upload or use `gsutil` to transfer files between buckets.
+
+Remember to update security rules and email templates in the new Firebase project as well.
