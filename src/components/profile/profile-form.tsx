@@ -26,7 +26,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Loader2, UploadCloud, Edit3, Info, UserCircle as UserIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
@@ -74,66 +74,55 @@ export function ProfileForm() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const initialDefaultValues = useMemo(() => ({
+    displayName: user?.displayName || "",
+    // Since role, bio, website are not currently persisted independently,
+    // their "previously saved" state is their initial empty string or value from last successful submit.
+    // For simplicity, initialize them as empty. If they were loaded from Firestore,
+    // that data would be used here.
+    role: "", // Or load from persisted user profile data
+    otherRole: "", // Or load from persisted user profile data
+    bio: "", // Or load from persisted user profile data
+    website: "", // Or load from persisted user profile data
+  }), [user?.displayName]);
+
+
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      displayName: "",
-      role: "",
-      otherRole: "",
-      bio: "",
-      website: "",
-    },
+    defaultValues: initialDefaultValues,
   });
 
   const watchedRole = form.watch("role");
 
+  // Effect to synchronize displayName from auth context if it's not dirty in the form
   useEffect(() => {
-    if (user) {
-      // Get the current state of all form fields. This includes any default values,
-      // values from a previous form.reset(), or current user edits.
-      const currentFormValues = form.getValues();
-
-      // Construct the new set of values to reset the form with.
-      // We want to ensure displayName is always updated from the 'user' object (auth state).
-      // For all other fields (role, bio, website, otherRole), we use their values
-      // from 'currentFormValues'.
-      const valuesForReset = {
-        ...currentFormValues,              // This carries over the current state of non-displayName fields
-        displayName: user.displayName || "", // This explicitly updates displayName
-      };
-
-      // Reset the form. The `keepDirty: form.formState.isDirty` option is crucial:
-      // - If the form (or specific fields) are "dirty" (i.e., user has made unsaved changes),
-      //   those changes will be preserved in the input fields.
-      // - If the form is "clean" (no unsaved changes), the fields will be reset to 'valuesForReset'.
-      //   For displayName, this means it updates to user.displayName.
-      //   For other fields, they effectively "reset" to their current value (which would be
-      //   their last saved state if a save occurred, or their initial default if not).
-      form.reset(valuesForReset, {
-        keepDirty: form.formState.isDirty,
-      });
+    if (user && user.displayName !== form.getValues('displayName')) {
+      if (!form.formState.dirtyFields.displayName) {
+        form.setValue('displayName', user.displayName || '', {
+          shouldDirty: false, // Syncing from auth should not make the field dirty
+          shouldValidate: false, // Avoid triggering validation just for this sync
+        });
+      }
     }
-    // form.reset is stable and form.getValues / form.formState are part of the `form` object.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, form.reset]);
+  }, [user?.displayName, form]); // form includes getValues, setValue, formState.dirtyFields
 
-
-  // Effect 1: For local preview when a file is selected
+  // Effect for local preview when a file is selected
   useEffect(() => {
     if (selectedFile) {
         const objectUrl = URL.createObjectURL(selectedFile);
         setPreviewURL(objectUrl);
-        setAvatarKey(Date.now());
+        // setAvatarKey(Date.now()); // Not needed here, previewURL change triggers re-render
         return () => URL.revokeObjectURL(objectUrl);
     }
   }, [selectedFile]);
 
-  // Effect 2: To update preview from user.photoURL (when no local file selected) AND to update avatarKey on context changes
+  // Effect to update preview from user.photoURL (when no local file selected)
+  // AND to update avatarKey on context changes to force re-render of AvatarImage
   useEffect(() => {
-    if (!selectedFile) {
+    if (!selectedFile) { // Only use user.photoURL if no local file is selected for preview
         setPreviewURL(user?.photoURL || null);
     }
-    setAvatarKey(Date.now());
+    setAvatarKey(Date.now()); // Force Avatar re-render on user.photoURL change
   }, [user?.photoURL, selectedFile]);
 
 
@@ -143,24 +132,36 @@ export function ProfileForm() {
 
     try {
         const profileAuthUpdates: { displayName?: string } = {};
+        // Only include displayName in auth update if it actually changed from the auth state
         if (data.displayName !== (user.displayName || "")) {
-        profileAuthUpdates.displayName = data.displayName;
+            profileAuthUpdates.displayName = data.displayName;
         }
 
         let authUpdateSuccess = true;
         if (Object.keys(profileAuthUpdates).length > 0) {
-        authUpdateSuccess = await updateUserProfile(profileAuthUpdates);
+            authUpdateSuccess = await updateUserProfile(profileAuthUpdates);
         }
 
         if (authUpdateSuccess) {
-        const finalRole = data.role === 'other' ? data.otherRole : data.role;
-        console.log("Simulating save of additional profile details (role, bio, website):", {
-            userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
-        });
-        toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
-        form.reset(data, { keepDirty: false }); // Reset form with new data, clear dirty state
+            // Simulate saving other fields (role, bio, website)
+            // In a real app, this would be an API call to your backend/Firestore
+            const finalRole = data.role === 'other' ? data.otherRole : data.role;
+            console.log("Simulating save of additional profile details (role, bio, website):", {
+                userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
+            });
+            toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
+            
+            // Reset the form with the newly submitted data as the new defaults
+            // This makes the form "clean" again.
+            form.reset({
+              displayName: data.displayName, // This is the successfully saved display name
+              role: data.role,
+              otherRole: data.otherRole,
+              bio: data.bio,
+              website: data.website,
+            }, { keepDirty: false });
         } else if (Object.keys(profileAuthUpdates).length > 0) {
-        // Error toast is handled by updateUserProfile in context
+            // Error toast for auth update is handled by updateUserProfile in context
         }
     } catch (error) {
         console.error("Error submitting profile details:", error);
@@ -198,17 +199,15 @@ export function ProfileForm() {
       const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
       if (uploadedPhotoURL) {
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
-        // user context update will trigger useEffect to update avatarKey and previewURL
+        // user context update will trigger useEffect to update avatarKey and previewURL if !selectedFile
       }
       // Error toasts are handled within updateUserPhotoURL
     } catch (error) {
-        // This catch block is for unexpected errors thrown directly by updateUserPhotoURL
-        // if its internal try/catch failed, which is unlikely.
         console.error("Error during photo upload process in ProfileForm:", error);
         toast({ title: "Upload Error", description: "An unexpected error occurred during photo upload.", variant: "destructive"});
     } finally {
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setSelectedFile(null); // Clear selected file after attempt
+      if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
       setIsUploadingPhoto(false);
     }
   };
@@ -257,7 +256,7 @@ export function ProfileForm() {
                             type="file" ref={fileInputRef} onChange={handleFileChange}
                             accept="image/jpeg,image/png,image/gif,image/webp"
                             className="hidden" id="profile-picture-input"
-                            disabled={isUploadingPhoto || isSavingDetails}
+                            disabled={isFormBusy}
                         />
                     </div>
                     <div className="flex-grow text-center sm:text-left">
@@ -387,5 +386,6 @@ export function ProfileForm() {
     </Card>
   );
 }
+    
 
     
