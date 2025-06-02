@@ -32,7 +32,6 @@ export function BottomNavigation() {
   const filters = kanbanState.filters;
    
   useEffect(() => {
-    // Update modal search term if the global search term changes while modal is open
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
     }
@@ -62,7 +61,7 @@ export function BottomNavigation() {
   };
 
   const navItemsBase = [
-    { href: "/", label: "Board", icon: Home, isActiveOverride: pathname === "/" }, // Check against root path
+    { href: "/", label: "Board", icon: Home, isActiveOverride: pathname === "/" },
     { action: handleToggleFilterSidebar, label: "Filters", icon: SlidersHorizontal, isActiveOverride: kanbanState.isFilterSidebarOpen },
     { action: handleOpenNewTaskModal, label: "Add Task", icon: Plus, isCentral: true, isActiveOverride: false },
     { 
@@ -80,9 +79,9 @@ export function BottomNavigation() {
   if (authLoading) {
     // Placeholder for loading state if needed
   } else if (user) {
-    navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname.startsWith("/profile") });
+    navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
   } else {
-    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname.startsWith("/auth/") });
+    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname === "/auth/signin" });
   }
 
   return (
@@ -92,14 +91,12 @@ export function BottomNavigation() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const label = item.label;
-            // For isActiveOverride, we can simplify it. For href based items, it's pathname startsWith item.href
-            // For action based items, item.isActiveOverride is used directly.
+            
             let isActive = item.isActiveOverride;
-            if (item.href && !item.isCentral) { // Central button has its own active logic (none visually)
-                // Exact match for "/", startsWith for others
+            // Only calculate isActive based on href if isActiveOverride is not explicitly set to true or false
+            if (item.isActiveOverride === undefined && item.href && !item.isCentral) {
                 isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             }
-
 
             if (item.isCentral) {
               return (
@@ -143,12 +140,11 @@ export function BottomNavigation() {
               </>
             );
 
-
             if (item.href) {
               return (
-                <Link key={label} href={item.href} passHref legacyBehavior>
+                <Link key={label} href={item.href} passHref>
+                  {/* Link renders its own <a>, Button is a child for styling & content */}
                   <Button
-                    as="a" 
                     variant="ghost" 
                     className={itemWrapperClasses}
                     aria-label={label}
