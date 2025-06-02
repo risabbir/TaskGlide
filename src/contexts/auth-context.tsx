@@ -136,7 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
-      toast({ title: "Password Reset Request", description: "If an account exists for this email, a reset link has been sent. If you don't receive it, please check your email address and try again.", variant: "destructive" });
+      // Simplified message to avoid giving away whether an account exists for privacy reasons
+      toast({ title: "Password Reset Request", description: "If an account exists for this email, a reset link has been sent. If you don't receive it, please check your email address and try again.", variant: authError.code === 'auth/user-not-found' ? "default" : "destructive" });
       return false;
     } finally {
       setAuthOpLoading(false);
@@ -152,10 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      // Firebase's auth.currentUser object reference might not update immediately.
-      // Creating a new object from auth.currentUser ensures React detects the change.
       setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
-      toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
+      // Toast for display name update is usually handled by the caller form with more context
       return true;
     } catch (e) {
       const authError = e as AuthError;
@@ -165,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthOpLoading(false);
     }
-  }, [toast, setUser]); // Added setUser to dependency array
+  }, [toast, setUser]);
 
   const updateUserPhotoURL = useCallback(async (photoFile: File): Promise<boolean> => {
     if (!auth.currentUser) {
@@ -175,28 +174,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthOpLoading(true);
     setError(null);
     try {
-      // IMPORTANT: Ensure Firebase Storage rules allow writes to this path for authenticated users.
-      // Example rule in README.md: `match /profile-pictures/{userId}/{fileName} { allow write: if request.auth != null && request.auth.uid == userId; }`
-      const filePath = `profile-pictures/${auth.currentUser.uid}/${photoFile.name}`;
+      const filePath = `profile-pictures/${auth.currentUser.uid}/${Date.now()}_${photoFile.name}`;
       const fileRef = storageRef(storage, filePath);
       await uploadBytes(fileRef, photoFile);
       const photoURL = await getDownloadURL(fileRef);
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
-      setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); // Update context user
+      setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); 
 
       toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       return true;
     } catch (e) {
       const err = e as AuthError | Error; 
       console.error("Photo Update Error:", e);
-      setError(err as AuthError); 
-      toast({ title: "Photo Update Error", description: err.message || "Failed to update profile picture. Check Storage rules in Firebase.", variant: "destructive" });
+      // Check if error has a 'code' property to differentiate Firebase errors
+      const firebaseError = err as AuthError;
+      setError(firebaseError); 
+      let description = firebaseError.message || "Failed to update profile picture.";
+      if (firebaseError.code === 'storage/unauthorized' || firebaseError.code === 'storage/object-not-found') { // Example codes
+          description = "Photo update failed. Please check storage permissions or try again.";
+      }
+      toast({ title: "Photo Update Error", description, variant: "destructive" });
       return false;
     } finally {
       setAuthOpLoading(false);
     }
-  }, [toast, setUser, setAuthOpLoading]);
+  }, [toast, setUser]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     if (!auth.currentUser || !auth.currentUser.email) {

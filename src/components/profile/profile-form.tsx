@@ -96,33 +96,30 @@ export function ProfileForm() {
         // For fields not directly on Firebase user object, prefer form's current state if set,
         // then fallback to an empty string or initial value.
         // Eventually, these would be loaded from Firestore.
-        role: currentFormValues.role || "", 
-        otherRole: currentFormValues.otherRole || "",
-        bio: currentFormValues.bio || "",
-        website: currentFormValues.website || "",
-      });
+        role: currentFormValues.role || "", // This would be loaded from Firestore
+        otherRole: currentFormValues.otherRole || "", // This would be loaded from Firestore
+        bio: currentFormValues.bio || "", // This would be loaded from Firestore
+        website: currentFormValues.website || "", // This would be loaded from Firestore
+      }, { keepDirty: false, keepValues: true }); // Keep values if form was dirty
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, form.reset]); 
+  }, [user]); 
 
   useEffect(() => {
     if (selectedFile) {
       const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewURL(objectUrl);
-      setAvatarKey(Date.now()); // Force re-render of Avatar
+      setAvatarKey(Date.now()); // Force re-render for selected file preview
       return () => URL.revokeObjectURL(objectUrl);
     } else if (user?.photoURL) {
       setPreviewURL(user.photoURL);
-      // No need to setAvatarKey here if user.photoURL itself changes,
-      // but if it's to refresh after selectedFile is cleared, then yes.
-      // Let's ensure avatarKey changes when selectedFile becomes null AND user.photoURL is used.
-      setAvatarKey(Date.now());
+      setAvatarKey(Date.now()); // Force re-render if user.photoURL changes (e.g. after successful upload clears selectedFile)
     } else {
       setPreviewURL(null);
-      setAvatarKey(Date.now());
+      setAvatarKey(Date.now()); // Force re-render for fallback
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFile, user?.photoURL]); // Rerun if selectedFile or user.photoURL changes.
+  }, [selectedFile, user?.photoURL]);
 
 
   async function onProfileSubmit(data: ProfileFormData) {
@@ -142,19 +139,26 @@ export function ProfileForm() {
     if (authUpdateSuccess) {
       const finalRole = data.role === 'other' ? data.otherRole : data.role;
       
-      console.log("Simulating save of additional profile details:", {
+      // Placeholder for saving additional fields to Firestore
+      console.log("Simulating save of additional profile details to Firestore:", {
         userId: user.uid,
         role: finalRole,
         bio: data.bio,
         website: data.website,
       });
       
-      if (Object.keys(profileAuthUpdates).length > 0 && !data.bio && !data.website && !finalRole && data.role !== 'other' && !data.otherRole) {
+      // Determine which toast message to show
+      const hasAuthUpdates = Object.keys(profileAuthUpdates).length > 0;
+      const hasAdditionalUpdates = data.bio || data.website || finalRole;
+
+      if (hasAuthUpdates && !hasAdditionalUpdates) {
         toast({ title: "Display Name Updated", description: "Your display name has been successfully updated." });
-      } else {
+      } else if (hasAuthUpdates || hasAdditionalUpdates) {
          toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
       }
-      // Reset form with new data, keepDirty false to reflect saved state
+      // If only non-auth fields were changed and submitted, a toast might still be desired
+      // For now, the above logic covers cases where auth or additional info changes.
+      
       form.reset(data, { keepDirty: false }); 
     } else if (Object.keys(profileAuthUpdates).length > 0) {
         toast({ title: "Update Failed", description: "Could not update your display name.", variant: "destructive"});
@@ -167,10 +171,14 @@ export function ProfileForm() {
       const file = event.target.files[0];
       if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
         toast({title: "Invalid File Type", description: "Please select an image (JPEG, PNG, GIF, WebP).", variant: "destructive"});
+        setSelectedFile(null); // Clear selection
+        if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
         return;
       }
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         toast({title: "File Too Large", description: "Maximum photo size is 5MB.", variant: "destructive"});
+        setSelectedFile(null); // Clear selection
+        if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
         return;
       }
       setSelectedFile(file);
@@ -181,9 +189,8 @@ export function ProfileForm() {
     if (!selectedFile || !user) return;
     const success = await updateUserPhotoURL(selectedFile);
     if (success) {
-      setSelectedFile(null); 
-      // user.photoURL will be updated by AuthContext, useEffect for previewURL will pick it up.
-      // setAvatarKey(Date.now()); // Explicitly trigger re-render if needed. Already handled by previewURL's useEffect.
+      setSelectedFile(null); // This should trigger useEffect to update previewURL from user.photoURL
+      if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
     }
   };
 
@@ -208,11 +215,11 @@ export function ProfileForm() {
   return (
     <Card className="w-full shadow-xl overflow-hidden">
       <CardHeader className="p-6 border-b">
-         <CardTitle className="text-xl font-semibold flex items-center">
-            <UserIcon className="mr-3 h-5 w-5 text-primary" />
+         <CardTitle className="text-2xl font-semibold flex items-center">
+            <UserIcon className="mr-3 h-6 w-6 text-primary" />
             Personal Information
         </CardTitle>
-        <CardDescription className="text-sm">Update your display name, photo, and other personal details.</CardDescription>
+        <CardDescription className="text-base">Update your display name, photo, and other personal details.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onProfileSubmit)}>
@@ -266,9 +273,9 @@ export function ProfileForm() {
                 name="displayName"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel className="text-sm">Display Name</FormLabel>
+                    <FormLabel className="text-base">Display Name</FormLabel>
                     <FormControl>
-                        <Input placeholder="Your Name" {...field} className="text-sm" disabled={isLoading}/>
+                        <Input placeholder="Your Name" {...field} className="text-base" disabled={isLoading}/>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -280,16 +287,16 @@ export function ProfileForm() {
                   name="role" 
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm">Your Role</FormLabel>
+                      <FormLabel className="text-base">Your Role</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ""} disabled={isLoading}>
                         <FormControl>
-                          <SelectTrigger className="text-sm">
+                          <SelectTrigger className="text-base">
                             <SelectValue placeholder="Select your role..." />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {OCCUPATIONS.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                            <SelectItem key={opt.value} value={opt.value} className="text-base">
                               {opt.label}
                             </SelectItem>
                           ))}
@@ -306,9 +313,9 @@ export function ProfileForm() {
                     name="otherRole" 
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm">Please specify your role</FormLabel>
+                        <FormLabel className="text-base">Please specify your role</FormLabel>
                         <FormControl>
-                          <Input placeholder="E.g., UX Researcher" {...field} className="text-sm" disabled={isLoading} />
+                          <Input placeholder="E.g., UX Researcher" {...field} className="text-base" disabled={isLoading} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -321,9 +328,9 @@ export function ProfileForm() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm">Bio / About Me</FormLabel>
+                      <FormLabel className="text-base">Bio / About Me</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-sm min-h-[100px]" disabled={isLoading}/>
+                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-base min-h-[100px]" disabled={isLoading}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -335,9 +342,9 @@ export function ProfileForm() {
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm">Website URL</FormLabel>
+                      <FormLabel className="text-base">Website URL</FormLabel>
                       <FormControl>
-                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-sm" disabled={isLoading}/>
+                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-base" disabled={isLoading}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -345,8 +352,8 @@ export function ProfileForm() {
                 />
 
                 <FormItem>
-                    <FormLabel className="text-sm">Current Email Address</FormLabel>
-                    <Input type="email" value={user?.email || ""} disabled className="bg-muted/50 cursor-not-allowed border-input/50 text-sm"/>
+                    <FormLabel className="text-base">Current Email Address</FormLabel>
+                    <Input type="email" value={user?.email || ""} disabled className="bg-muted/50 cursor-not-allowed border-input/50 text-base"/>
                     <Alert variant="default" className="mt-2 text-xs text-muted-foreground p-2.5">
                         <Info className="h-3.5 w-3.5 !top-3 !left-3" />
                         <AlertDescription className="!pl-5">
@@ -355,7 +362,7 @@ export function ProfileForm() {
                     </Alert>
                 </FormItem>
             </CardContent>
-            <CardFooter className="bg-muted/20 p-6 sm:p-8 border-t">
+            <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
             <Button 
                 type="submit" 
                 className="w-full sm:w-auto" 
