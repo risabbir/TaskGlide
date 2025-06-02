@@ -87,7 +87,7 @@ export function BottomNavigation() {
   return (
     <>
       <div className="fixed md:hidden bottom-3 left-3 right-3 z-40 h-16 rounded-2xl bg-background/80 backdrop-blur-md shadow-lg border">
-        <nav className="flex h-full items-center justify-around px-1">
+        <nav className="flex h-full items-center justify-around px-2"> {/* Changed px-1 to px-2 */}
           {navItems.map((item) => {
             const Icon = item.icon;
             const label = item.label;
@@ -143,7 +143,6 @@ export function BottomNavigation() {
             if (item.href) {
               return (
                 <Link key={label} href={item.href} passHref>
-                  {/* Link renders its own <a>, Button is a child for styling & content */}
                   <Button
                     variant="ghost" 
                     className={itemWrapperClasses}
