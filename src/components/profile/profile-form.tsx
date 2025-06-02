@@ -48,15 +48,15 @@ const OCCUPATIONS = [
 
 const profileSchema = z.object({
   displayName: z.string().min(1, "Display name is required.").max(50, "Display name is too long."),
-  role: z.string().optional(), // Changed from occupation to role
-  otherRole: z.string().max(100, "Role details are too long.").optional(), // Changed from otherOccupation
+  role: z.string().optional(),
+  otherRole: z.string().max(100, "Role details are too long.").optional(),
   bio: z.string().max(500, "Bio should not exceed 500 characters.").optional(),
   website: z.string().url({ message: "Please enter a valid URL (e.g., https://example.com)." }).optional().or(z.literal('')),
 }).superRefine((data, ctx) => {
   if (data.role === 'other' && !data.otherRole?.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Please specify your role", // Updated message
+      message: "Please specify your role",
       path: ["otherRole"],
     });
   }
@@ -65,7 +65,7 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function ProfileForm() {
-  const { user, updateUserProfile, updateUserPhotoURL, authOpLoading } = useAuth(); // Added authOpLoading
+  const { user, updateUserProfile, updateUserPhotoURL, authOpLoading } = useAuth();
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
@@ -87,38 +87,42 @@ export function ProfileForm() {
   const watchedRole = form.watch("role");
 
   useEffect(() => {
-    // Populate form with user data if available
     if (user) {
+      // Retrieve current form values to avoid overwriting them if they were set by user interaction
+      // before user data was available (less likely scenario but good for robustness)
+      const currentFormValues = form.getValues();
       form.reset({ 
-        displayName: user.displayName || "",
-        // These would typically come from Firestore if saved there
-        role: form.getValues("role") || "", 
-        otherRole: form.getValues("otherRole") || "",
-        bio: form.getValues("bio") || "",
-        website: form.getValues("website") || "",
+        displayName: user.displayName || currentFormValues.displayName || "",
+        // For fields not directly on Firebase user object, prefer form's current state if set,
+        // then fallback to an empty string or initial value.
+        // Eventually, these would be loaded from Firestore.
+        role: currentFormValues.role || "", 
+        otherRole: currentFormValues.otherRole || "",
+        bio: currentFormValues.bio || "",
+        website: currentFormValues.website || "",
       });
     }
-  }, [user, form.reset, form]); // form.getValues not needed if form instance is stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, form.reset]); 
 
   useEffect(() => {
-    // Update preview URL based on selected file or user's current photoURL
     if (selectedFile) {
       const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewURL(objectUrl);
-      setAvatarKey(Date.now());
+      setAvatarKey(Date.now()); // Force re-render of Avatar
       return () => URL.revokeObjectURL(objectUrl);
     } else if (user?.photoURL) {
-      if (previewURL !== user.photoURL) { // Only update if different
-        setPreviewURL(user.photoURL);
-        setAvatarKey(Date.now());
-      }
+      setPreviewURL(user.photoURL);
+      // No need to setAvatarKey here if user.photoURL itself changes,
+      // but if it's to refresh after selectedFile is cleared, then yes.
+      // Let's ensure avatarKey changes when selectedFile becomes null AND user.photoURL is used.
+      setAvatarKey(Date.now());
     } else {
-        if (previewURL !== null) { // Only update if different
-            setPreviewURL(null);
-            setAvatarKey(Date.now());
-        }
+      setPreviewURL(null);
+      setAvatarKey(Date.now());
     }
-  }, [selectedFile, user, previewURL]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFile, user?.photoURL]); // Rerun if selectedFile or user.photoURL changes.
 
 
   async function onProfileSubmit(data: ProfileFormData) {
@@ -137,18 +141,20 @@ export function ProfileForm() {
 
     if (authUpdateSuccess) {
       const finalRole = data.role === 'other' ? data.otherRole : data.role;
-      // Placeholder for saving additional fields to Firestore
-      console.log("Additional profile details to save to Firestore:", {
+      
+      console.log("Simulating save of additional profile details:", {
+        userId: user.uid,
         role: finalRole,
         bio: data.bio,
         website: data.website,
       });
       
-      if (Object.keys(profileAuthUpdates).length > 0 && !data.bio && !data.website && !finalRole) {
+      if (Object.keys(profileAuthUpdates).length > 0 && !data.bio && !data.website && !finalRole && data.role !== 'other' && !data.otherRole) {
         toast({ title: "Display Name Updated", description: "Your display name has been successfully updated." });
       } else {
-         toast({ title: "Profile Details Saved", description: "Your profile details have been submitted." });
+         toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
       }
+      // Reset form with new data, keepDirty false to reflect saved state
       form.reset(data, { keepDirty: false }); 
     } else if (Object.keys(profileAuthUpdates).length > 0) {
         toast({ title: "Update Failed", description: "Could not update your display name.", variant: "destructive"});
@@ -173,11 +179,11 @@ export function ProfileForm() {
 
   const handlePhotoUpload = async () => {
     if (!selectedFile || !user) return;
-    // authOpLoading is used by context for its operations
     const success = await updateUserPhotoURL(selectedFile);
     if (success) {
-      setSelectedFile(null); // Clear selected file, useEffect will update previewURL to user.photoURL
-      // setAvatarKey(Date.now()); // useEffect for previewURL already handles this
+      setSelectedFile(null); 
+      // user.photoURL will be updated by AuthContext, useEffect for previewURL will pick it up.
+      // setAvatarKey(Date.now()); // Explicitly trigger re-render if needed. Already handled by previewURL's useEffect.
     }
   };
 
@@ -202,20 +208,20 @@ export function ProfileForm() {
   return (
     <Card className="w-full shadow-xl overflow-hidden">
       <CardHeader className="p-6 border-b">
-         <CardTitle className="text-xl font-semibold flex items-center"> {/* Adjusted size */}
+         <CardTitle className="text-xl font-semibold flex items-center">
             <UserIcon className="mr-3 h-5 w-5 text-primary" />
             Personal Information
         </CardTitle>
-        <CardDescription className="text-sm">Update your display name, photo, and other personal details.</CardDescription> {/* Adjusted size */}
+        <CardDescription className="text-sm">Update your display name, photo, and other personal details.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onProfileSubmit)}>
-            <CardContent className="space-y-6 p-6 sm:p-8"> {/* Adjusted spacing */}
+            <CardContent className="space-y-6 p-6 sm:p-8">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="relative group">
-                        <Avatar key={avatarKey} className="h-28 w-28 sm:h-32 sm:w-32 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar"> {/* Adjusted size */}
+                        <Avatar key={avatarKey} className="h-28 w-28 sm:h-32 sm:w-32 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar">
                             <AvatarImage src={previewURL || undefined} alt={user?.displayName || user?.email || "User"} />
-                            <AvatarFallback className="text-3xl sm:text-4xl bg-muted">{getInitials(user?.displayName, user?.email)}</AvatarFallback> {/* Adjusted size */}
+                            <AvatarFallback className="text-3xl sm:text-4xl bg-muted">{getInitials(user?.displayName, user?.email)}</AvatarFallback>
                         </Avatar>
                         <div
                             className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
@@ -225,7 +231,7 @@ export function ProfileForm() {
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') triggerFileSelect();}}
                             aria-label="Change profile picture"
                         >
-                            <Edit3 className="h-7 w-7 sm:h-8 sm:w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> {/* Adjusted size */}
+                            <Edit3 className="h-7 w-7 sm:h-8 sm:w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <p className="mt-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">Change</p>
                         </div>
                         <input
@@ -260,9 +266,9 @@ export function ProfileForm() {
                 name="displayName"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel className="text-sm">Display Name</FormLabel> {/* Adjusted size */}
+                    <FormLabel className="text-sm">Display Name</FormLabel>
                     <FormControl>
-                        <Input placeholder="Your Name" {...field} className="text-sm" disabled={isLoading}/> {/* Adjusted size */}
+                        <Input placeholder="Your Name" {...field} className="text-sm" disabled={isLoading}/>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -274,16 +280,16 @@ export function ProfileForm() {
                   name="role" 
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm">Your Role</FormLabel> {/* Changed label */}
-                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isLoading}>
+                      <FormLabel className="text-sm">Your Role</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={isLoading}>
                         <FormControl>
-                          <SelectTrigger className="text-sm"> {/* Adjusted size */}
+                          <SelectTrigger className="text-sm">
                             <SelectValue placeholder="Select your role..." />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {OCCUPATIONS.map(opt => (
-                            <SelectItem key={opt.value} value={opt.value} className="text-sm"> {/* Adjusted size */}
+                            <SelectItem key={opt.value} value={opt.value} className="text-sm">
                               {opt.label}
                             </SelectItem>
                           ))}
@@ -300,9 +306,9 @@ export function ProfileForm() {
                     name="otherRole" 
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm">Please specify your role</FormLabel> {/* Changed label */}
+                        <FormLabel className="text-sm">Please specify your role</FormLabel>
                         <FormControl>
-                          <Input placeholder="E.g., UX Researcher" {...field} className="text-sm" disabled={isLoading} /> {/* Adjusted size */}
+                          <Input placeholder="E.g., UX Researcher" {...field} className="text-sm" disabled={isLoading} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -315,9 +321,9 @@ export function ProfileForm() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm">Bio / About Me</FormLabel> {/* Adjusted size */}
+                      <FormLabel className="text-sm">Bio / About Me</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-sm min-h-[100px]" disabled={isLoading}/> {/* Adjusted size */}
+                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-sm min-h-[100px]" disabled={isLoading}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -329,9 +335,9 @@ export function ProfileForm() {
                   name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm">Website URL</FormLabel> {/* Adjusted size */}
+                      <FormLabel className="text-sm">Website URL</FormLabel>
                       <FormControl>
-                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-sm" disabled={isLoading}/> {/* Adjusted size */}
+                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-sm" disabled={isLoading}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -339,17 +345,17 @@ export function ProfileForm() {
                 />
 
                 <FormItem>
-                    <FormLabel className="text-sm">Current Email Address</FormLabel> {/* Adjusted size */}
-                    <Input type="email" value={user?.email || ""} disabled className="bg-muted/50 cursor-not-allowed border-input/50 text-sm"/> {/* Adjusted size */}
-                    <Alert variant="default" className="mt-2 text-xs text-muted-foreground p-2.5"> {/* Adjusted size and padding */}
-                        <Info className="h-3.5 w-3.5 !top-3 !left-3" /> {/* Adjusted size and position */}
-                        <AlertDescription className="!pl-5"> {/* Adjusted padding */}
+                    <FormLabel className="text-sm">Current Email Address</FormLabel>
+                    <Input type="email" value={user?.email || ""} disabled className="bg-muted/50 cursor-not-allowed border-input/50 text-sm"/>
+                    <Alert variant="default" className="mt-2 text-xs text-muted-foreground p-2.5">
+                        <Info className="h-3.5 w-3.5 !top-3 !left-3" />
+                        <AlertDescription className="!pl-5">
                             To change your email address, please use the "Account Settings" tab.
                         </AlertDescription>
                     </Alert>
                 </FormItem>
             </CardContent>
-            <CardFooter className="bg-muted/20 p-6 sm:p-8 border-t"> {/* Subtle background */}
+            <CardFooter className="bg-muted/20 p-6 sm:p-8 border-t">
             <Button 
                 type="submit" 
                 className="w-full sm:w-auto" 
