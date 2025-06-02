@@ -35,6 +35,8 @@ interface TaskCardProps {
   columns: Column[];
 }
 
+const MAX_WORDS_COLLAPSED_TITLE = 4;
+
 export function TaskCard({ task, columns }: TaskCardProps) {
   const { dispatch, state: { tasks: allTasks } } = useKanban();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -130,6 +132,13 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     }
   };
 
+  const titleWords = task.title.split(/\s+/); // Split by any whitespace
+  const isTitleProgrammaticallyTruncated = !isExpanded && titleWords.length > MAX_WORDS_COLLAPSED_TITLE;
+  let displayTitleContent = task.title;
+
+  if (isTitleProgrammaticallyTruncated) {
+    displayTitleContent = titleWords.slice(0, MAX_WORDS_COLLAPSED_TITLE).join(" ") + "...";
+  }
 
   return (
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -145,8 +154,15 @@ export function TaskCard({ task, columns }: TaskCardProps) {
       >
         <CardHeader className="p-3 pb-2">
           <div className="flex justify-between items-start gap-2">
-            <div className={cn("text-base font-semibold leading-snug pr-1 flex-grow break-words", !isExpanded ? "line-clamp-2" : "")} title={task.title}>
-              {task.title}
+            <div
+              className={cn(
+                "text-base font-semibold leading-snug pr-1 flex-grow break-words",
+                // Apply line-clamp only if collapsed AND not already programmatically truncated
+                (!isExpanded && !isTitleProgrammaticallyTruncated) && "line-clamp-2"
+              )}
+              title={task.title} // Tooltip always shows full title
+            >
+              {displayTitleContent}
             </div>
             
             <div className="flex items-center shrink-0 no-expand">
