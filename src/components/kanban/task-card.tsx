@@ -156,12 +156,14 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           <div className="flex justify-between items-start gap-2">
             <div
               className={cn(
-                "text-base font-semibold leading-normal pr-1 flex-grow break-words min-w-0",
-                (!isExpanded && !isTitleProgrammaticallyTruncated) && "line-clamp-2"
+                "text-base font-semibold leading-normal pr-1 flex-grow min-w-0", // Base styles for the title container
+                isExpanded
+                  ? "break-words whitespace-normal" // When expanded, allow words to break and wrap. Height will be auto.
+                  : "line-clamp-2 break-words"      // When collapsed, limit to 2 lines, allow breaks within those lines.
               )}
               title={task.title} 
             >
-              {displayTitleContent}
+              {displayTitleContent} {/* This will be task.title when isExpanded is true */}
             </div>
             
             <div className="flex items-center shrink-0 no-expand">
@@ -421,3 +423,4 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </AlertDialog>
   );
 }
+
