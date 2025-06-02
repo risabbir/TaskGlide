@@ -1,17 +1,71 @@
 
 "use client"; 
 
+import React, { useEffect, Suspense } from "react";
+import dynamic from 'next/dynamic';
 import { Header } from "@/components/layout/header";
-import { ProfileForm } from "@/components/profile/profile-form";
-import { ChangePasswordForm } from "@/components/profile/change-password-form"; 
-import { ChangeEmailForm } from "@/components/profile/change-email-form";
-import { LayoutDashboard, UserCog, UserCircle, Settings, MailCheck, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, UserCog, UserCircle, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { APP_NAME } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const ProfileForm = dynamic(() => import('@/components/profile/profile-form').then(mod => mod.ProfileForm), {
+  loading: () => <ProfileFormSkeleton />,
+  ssr: false
+});
+const ChangePasswordForm = dynamic(() => import('@/components/profile/change-password-form').then(mod => mod.ChangePasswordForm), {
+  loading: () => <FormSkeleton title="Change Password" fields={3} />,
+  ssr: false
+});
+const ChangeEmailForm = dynamic(() => import('@/components/profile/change-email-form').then(mod => mod.ChangeEmailForm), {
+  loading: () => <FormSkeleton title="Change Email Address" fields={3} />,
+  ssr: false
+});
+
+function ProfileFormSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        <Skeleton className="h-28 w-28 sm:h-32 sm:w-32 rounded-full" />
+        <div className="flex-grow space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+      </div>
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-20 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+    </div>
+  );
+}
+
+function FormSkeleton({ title, fields }: { title: string; fields: number }) {
+  return (
+    <div className="w-full">
+      <div className="p-6 border-b">
+        <Skeleton className="h-6 w-3/4 mb-2" /> 
+        <Skeleton className="h-4 w-1/2" />
+      </div>
+      <div className="space-y-6 p-6 sm:p-8">
+        {Array.from({ length: fields }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
+      </div>
+      <div className="bg-muted/30 p-6 sm:p-8 border-t">
+        <Skeleton className="h-10 w-24" />
+      </div>
+    </div>
+  );
+}
+
 
 export default function ProfilePage() {
   const { user, loading } = useAuth(); 
@@ -54,29 +108,35 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="rounded-lg mb-10 w-full flex flex-col space-y-2 items-stretch justify-start sm:w-auto sm:flex-row sm:space-y-0 sm:space-x-1.5 sm:items-center sm:justify-center sm:bg-muted sm:p-1.5">
+            <TabsList className="flex flex-col w-full items-stretch space-y-2 rounded-lg sm:flex-row sm:w-auto sm:space-y-0 sm:space-x-1.5 sm:items-center sm:justify-center sm:bg-muted sm:p-1.5 mb-10">
               <TabsTrigger 
                 value="profile" 
-                className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
+                className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-2.5 sm:px-4 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
               >
                 <UserCircle className="h-5 w-5" /> Personal Info
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
+                className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-2.5 sm:px-4 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
               >
                 <Settings className="h-5 w-5" /> Account Settings
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="mt-6">
-              <ProfileForm />
+              <Suspense fallback={<ProfileFormSkeleton />}>
+                <ProfileForm />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="account" className="space-y-10 mt-6">
-              <ChangeEmailForm />
+              <Suspense fallback={<FormSkeleton title="Change Email Address" fields={3} />}>
+                <ChangeEmailForm />
+              </Suspense>
               <Separator className="my-6"/>
-              <ChangePasswordForm /> 
+              <Suspense fallback={<FormSkeleton title="Change Password" fields={3} />}>
+                <ChangePasswordForm /> 
+              </Suspense>
             </TabsContent>
           </Tabs>
         </div>
