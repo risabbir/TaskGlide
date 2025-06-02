@@ -5,7 +5,7 @@ import { ProfileForm } from "@/components/profile/profile-form";
 import { ChangePasswordForm } from "@/components/profile/change-password-form"; 
 import { ChangeEmailForm } from "@/components/profile/change-email-form";
 import { APP_NAME } from "@/lib/constants";
-import { LayoutDashboard, UserCog, UserCircle, Settings } from "lucide-react";
+import { LayoutDashboard, UserCog, UserCircle, Settings, MailCheck, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from "react";
@@ -39,38 +39,33 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-background via-secondary/10 to-background dark:from-background dark:via-card/20 dark:to-background py-8 px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-background via-secondary/5 to-background dark:from-background dark:via-card/10 dark:to-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-4xl space-y-10"> 
         <div className="flex flex-col items-center text-center mb-10">
-          <Link href="/" className="flex items-center space-x-2 group mb-4">
-            <LayoutDashboard className="h-8 w-8 sm:h-9 sm:w-9 text-primary transition-transform group-hover:scale-110" />
-            <span className="text-2xl sm:text-3xl font-bold text-foreground group-hover:text-primary transition-colors">
-              {APP_NAME}
-            </span>
-          </Link>
+          {/* Removed Link to APP_NAME from here to declutter, main header has it */}
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl flex items-center">
             <UserCog className="mr-3 h-8 w-8 text-primary/80" /> Profile & Settings
           </h1>
-          <p className="mt-2 text-md text-muted-foreground sm:text-lg">Manage your profile details, preferences, and account security.</p>
+          <p className="mt-2 text-md text-muted-foreground sm:text-lg max-w-xl">Manage your personal information, preferences, and account security settings.</p>
         </div>
         
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-8 h-auto sm:h-10 p-1">
-            <TabsTrigger value="profile" className="py-2 sm:py-1.5 text-sm sm:text-base">
-              <UserCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Profile Details
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-8 h-auto sm:h-12 p-1.5 bg-muted/70 rounded-lg shadow-inner">
+            <TabsTrigger value="profile" className="py-2.5 text-base rounded-md data-[state=active]:bg-background data-[state=active]:shadow-md flex items-center justify-center gap-2">
+              <UserCircle className="h-5 w-5" /> Personal Info
             </TabsTrigger>
-            <TabsTrigger value="account" className="py-2 sm:py-1.5 text-sm sm:text-base">
-              <Settings className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Account Settings
+            <TabsTrigger value="account" className="py-2.5 text-base rounded-md data-[state=active]:bg-background data-[state=active]:shadow-md flex items-center justify-center gap-2">
+              <Settings className="h-5 w-5" /> Account Settings
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile">
+          <TabsContent value="profile" className="mt-6">
             <ProfileForm />
           </TabsContent>
 
-          <TabsContent value="account" className="space-y-8">
+          <TabsContent value="account" className="space-y-10 mt-6"> {/* Increased spacing */}
             <ChangeEmailForm />
-            <Separator />
+            <Separator className="my-6"/> {/* Added margin to separator */}
             <ChangePasswordForm /> 
           </TabsContent>
         </Tabs>
@@ -78,3 +73,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

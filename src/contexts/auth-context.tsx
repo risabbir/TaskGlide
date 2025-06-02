@@ -148,11 +148,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
+    setAuthOpLoading(true);
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      const latestUser = auth.currentUser;
-      setUser(latestUser ? { ...latestUser } as FirebaseUser : null);
+      // Firebase's auth.currentUser object reference might not update immediately.
+      // Creating a new object from auth.currentUser ensures React detects the change.
+      setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
       toast({ title: "Profile Updated", description: "Your profile has been successfully updated." });
       return true;
     } catch (e) {
@@ -160,24 +162,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(authError);
       toast({ title: "Profile Update Error", description: authError.message || "Failed to update profile.", variant: "destructive" });
       return false;
+    } finally {
+      setAuthOpLoading(false);
     }
-  }, [toast]);
+  }, [toast, setUser]); // Added setUser to dependency array
 
   const updateUserPhotoURL = useCallback(async (photoFile: File): Promise<boolean> => {
     if (!auth.currentUser) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return false;
     }
+    setAuthOpLoading(true);
     setError(null);
     try {
+      // IMPORTANT: Ensure Firebase Storage rules allow writes to this path for authenticated users.
+      // Example rule in README.md: `match /profile-pictures/{userId}/{fileName} { allow write: if request.auth != null && request.auth.uid == userId; }`
       const filePath = `profile-pictures/${auth.currentUser.uid}/${photoFile.name}`;
       const fileRef = storageRef(storage, filePath);
       await uploadBytes(fileRef, photoFile);
       const photoURL = await getDownloadURL(fileRef);
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
-      const latestUser = auth.currentUser;
-      setUser(latestUser ? { ...latestUser } as FirebaseUser : null);
+      setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); // Update context user
 
       toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       return true;
@@ -185,10 +191,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const err = e as AuthError | Error; 
       console.error("Photo Update Error:", e);
       setError(err as AuthError); 
-      toast({ title: "Photo Update Error", description: err.message || "Failed to update profile picture.", variant: "destructive" });
+      toast({ title: "Photo Update Error", description: err.message || "Failed to update profile picture. Check Storage rules in Firebase.", variant: "destructive" });
       return false;
+    } finally {
+      setAuthOpLoading(false);
     }
-  }, [toast]);
+  }, [toast, setUser, setAuthOpLoading]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     if (!auth.currentUser || !auth.currentUser.email) {
@@ -230,12 +238,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
       await reauthenticateWithCredential(auth.currentUser, credential);
       await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
-      // Note: Firebase handles sending the email. The user's email in auth.currentUser won't update until they click the link.
-      // onAuthStateChanged will pick up the change eventually after verification.
       toast({ 
         title: "Verification Email Sent", 
         description: `A verification email has been sent to ${newEmail}. Please check your inbox and follow the instructions to complete the email change. Your current email remains active until then.`,
-        duration: 9000, // Longer duration for this important message
+        duration: 9000,
       });
       return true;
     } catch (e) {
@@ -281,3 +287,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
