@@ -108,33 +108,29 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="flex w-full justify-start border-b mb-6 overflow-x-auto
-                               sm:inline-flex sm:h-auto sm:items-center sm:justify-center sm:rounded-lg sm:bg-muted sm:p-1.5 sm:space-x-1.5 sm:mb-10 sm:w-auto sm:border-b-0">
+            <TabsList className="mb-6 w-full grid grid-cols-2 gap-2 bg-muted p-2 rounded-lg 
+                               sm:inline-flex sm:grid-cols-none sm:gap-0 sm:space-x-1.5 sm:p-1.5 sm:mb-10 sm:w-auto sm:h-auto sm:items-center sm:justify-center">
               <TabsTrigger 
                 value="profile" 
-                className="flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 border-transparent rounded-none
-                           ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+                className="flex items-center justify-center text-center w-full px-3 py-3 text-sm font-semibold rounded-md transition-colors gap-2 
+                           ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
                            disabled:pointer-events-none disabled:opacity-50 
-                           data-[state=active]:text-primary data-[state=active]:border-primary data-[state=active]:font-semibold
-                           data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/30
-                           gap-2
-                           sm:px-4 sm:py-2.5 sm:rounded-md sm:border-b-0 
-                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-lg 
-                           sm:data-[state=inactive]:bg-transparent sm:data-[state=inactive]:border-transparent sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
+                           data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg 
+                           data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                           sm:w-auto sm:px-4 sm:py-2.5 
+                           sm:data-[state=inactive]:hover:bg-background/70"
               >
                 <UserCircle className="h-5 w-5" /> Personal Info
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 border-transparent rounded-none
-                           ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+                className="flex items-center justify-center text-center w-full px-3 py-3 text-sm font-semibold rounded-md transition-colors gap-2 
+                           ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
                            disabled:pointer-events-none disabled:opacity-50 
-                           data-[state=active]:text-primary data-[state=active]:border-primary data-[state=active]:font-semibold
-                           data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/30
-                           gap-2
-                           sm:px-4 sm:py-2.5 sm:rounded-md sm:border-b-0 
-                           sm:data-[state=active]:bg-background sm:data-[state=active]:text-primary sm:data-[state=active]:shadow-lg
-                           sm:data-[state=inactive]:bg-transparent sm:data-[state=inactive]:border-transparent sm:data-[state=inactive]:text-muted-foreground sm:data-[state=inactive]:hover:bg-background/70 sm:data-[state=inactive]:hover:text-foreground"
+                           data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg
+                           data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                           sm:w-auto sm:px-4 sm:py-2.5
+                           sm:data-[state=inactive]:hover:bg-background/70"
               >
                 <Settings className="h-5 w-5" /> Account Settings
               </TabsTrigger>
@@ -161,3 +157,4 @@ export default function ProfilePage() {
     </>
   );
 }
+
