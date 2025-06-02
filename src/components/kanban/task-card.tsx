@@ -156,11 +156,10 @@ export function TaskCard({ task, columns }: TaskCardProps) {
           <div className="flex justify-between items-start gap-2">
             <div
               className={cn(
-                "text-base font-semibold leading-normal pr-1 flex-grow break-words", // Changed leading-snug to leading-normal
-                // Apply line-clamp only if collapsed AND not already programmatically truncated
+                "text-base font-semibold leading-normal pr-1 flex-grow break-words min-w-0",
                 (!isExpanded && !isTitleProgrammaticallyTruncated) && "line-clamp-2"
               )}
-              title={task.title} // Tooltip always shows full title
+              title={task.title} 
             >
               {displayTitleContent}
             </div>
@@ -236,14 +235,13 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               )}
               
-              {/* Timer Display Logic for Collapsed View */}
               {(task.columnId === 'inprogress' || ((task.columnId === 'review' || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{formatTime(displayTime)}</span>
                   </div>
-                  {task.columnId === 'inprogress' && ( // Only show button for 'inprogress'
+                  {task.columnId === 'inprogress' && ( 
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -276,7 +274,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                 </div>
               </div>
               
-              {/* Time Tracker Section for Expanded View */}
               {(task.columnId === 'inprogress' || ((task.columnId === 'review' || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
                 <div className="pt-2 pb-1 border-b border-dashed">
                   <div className="flex items-center justify-between">
@@ -286,7 +283,7 @@ export function TaskCard({ task, columns }: TaskCardProps) {
                           <Clock className="h-4 w-4" />
                           <span className="font-medium text-foreground">{formatTime(displayTime)}</span>
                         </div>
-                        {task.columnId === 'inprogress' && ( // Only show button for 'inprogress'
+                        {task.columnId === 'inprogress' && ( 
                           <Button 
                             variant="outline" 
                             size="sm" 
