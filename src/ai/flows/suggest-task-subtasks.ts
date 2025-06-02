@@ -51,13 +51,56 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
     inputSchema: SuggestTaskSubtasksInputSchema,
     outputSchema: SuggestTaskSubtasksOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    // Ensure output and output.subtasks are not null/undefined before returning
-    if (output && output.subtasks) {
-      return output;
+  async (input: SuggestTaskSubtasksInput): Promise<SuggestTaskSubtasksOutput> => {
+    let attempts = 0;
+    const maxAttempts = 3;
+    const baseDelayMs = 1000;
+    let lastError: any;
+
+    while (attempts < maxAttempts) {
+      try {
+        const { output } = await prompt(input);
+        if (output && output.subtasks) { // Check if output and output.subtasks exist
+          return output;
+        } else {
+          lastError = new Error("AI returned an empty or malformed response for subtask suggestions.");
+          console.warn(`[suggestTaskSubtasksFlow] Attempt ${attempts + 1}: ${lastError.message}`);
+        }
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = String(error.message || error).toLowerCase();
+        console.warn(`[suggestTaskSubtasksFlow] Attempt ${attempts + 1} failed with error: ${errorMessage}`);
+
+        if (errorMessage.includes('503') ||
+            errorMessage.includes('overloaded') ||
+            errorMessage.includes('service unavailable') ||
+            errorMessage.includes('internal error') ||
+            errorMessage.includes('timeout')) {
+          // Retryable error
+        } else {
+          console.error(`[suggestTaskSubtasksFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
+          throw error; // Immediately throw non-retryable errors
+        }
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        const delay = baseDelayMs * Math.pow(2, attempts - 1);
+        console.log(`[suggestTaskSubtasksFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    // Fallback to an empty array if AI doesn't return expected structure
-    return { subtasks: [] };
+    const finalErrorMessage = `Failed to suggest task subtasks after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
+    console.error(`[suggestTaskSubtasksFlow] ${finalErrorMessage}`);
+    // Fallback to empty array if all retries fail for specific errors or AI consistently returns malformed/empty
+     if (lastError && (String(lastError.message || lastError).toLowerCase().includes('503') ||
+        String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
+        String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
+        String(lastError.message || lastError).toLowerCase().includes('internal error') ||
+        String(lastError.message || lastError).toLowerCase().includes('timeout') ||
+        String(lastError.message || lastError).toLowerCase().includes('malformed response'))) {
+      return { subtasks: [] }; // Graceful fallback for UI
+    }
+    throw lastError || new Error(finalErrorMessage); // Re-throw if it's a non-retryable error or a new one
   }
 );

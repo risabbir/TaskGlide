@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI-powered tag suggestion flow for task categorization.
@@ -45,8 +46,57 @@ const suggestTaskTagsFlow = ai.defineFlow(
     inputSchema: SuggestTaskTagsInputSchema,
     outputSchema: SuggestTaskTagsOutputSchema,
   },
-  async input => {
-    const {output} = await suggestTaskTagsPrompt(input);
-    return output!;
+  async (input: SuggestTaskTagsInput): Promise<SuggestTaskTagsOutput> => {
+    let attempts = 0;
+    const maxAttempts = 3;
+    const baseDelayMs = 1000;
+    let lastError: any;
+
+    while (attempts < maxAttempts) {
+      try {
+        const { output } = await suggestTaskTagsPrompt(input);
+        if (output && output.tags) { // Check if output and output.tags exist
+          return output;
+        } else {
+          // Handle cases where output is null/undefined or output.tags is missing
+          lastError = new Error("AI returned an empty or malformed response for tag suggestions.");
+          console.warn(`[suggestTaskTagsFlow] Attempt ${attempts + 1}: ${lastError.message}`);
+        }
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = String(error.message || error).toLowerCase();
+        console.warn(`[suggestTaskTagsFlow] Attempt ${attempts + 1} failed with error: ${errorMessage}`);
+
+        if (errorMessage.includes('503') ||
+            errorMessage.includes('overloaded') ||
+            errorMessage.includes('service unavailable') ||
+            errorMessage.includes('internal error') ||
+            errorMessage.includes('timeout')) {
+          // Retryable error
+        } else {
+          console.error(`[suggestTaskTagsFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
+          throw error; // Immediately throw non-retryable errors
+        }
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        const delay = baseDelayMs * Math.pow(2, attempts - 1);
+        console.log(`[suggestTaskTagsFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    const finalErrorMessage = `Failed to suggest task tags after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
+    console.error(`[suggestTaskTagsFlow] ${finalErrorMessage}`);
+    // Fallback to empty array if all retries fail for specific errors or if AI consistently returns malformed/empty.
+    if (lastError && (String(lastError.message || lastError).toLowerCase().includes('503') ||
+        String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
+        String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
+        String(lastError.message || lastError).toLowerCase().includes('internal error') ||
+        String(lastError.message || lastError).toLowerCase().includes('timeout') ||
+        String(lastError.message || lastError).toLowerCase().includes('malformed response'))) {
+      return { tags: [] }; // Graceful fallback for UI
+    }
+    throw lastError || new Error(finalErrorMessage); // Re-throw if it's a non-retryable error or a new one
   }
 );
