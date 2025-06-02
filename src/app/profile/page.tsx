@@ -54,7 +54,7 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="bg-muted p-1.5 rounded-lg mb-10 w-full sm:w-auto flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-1.5 items-stretch sm:items-center justify-start sm:justify-center">
+            <TabsList className="rounded-lg mb-10 w-full flex flex-col space-y-2 items-stretch justify-start sm:w-auto sm:flex-row sm:space-y-0 sm:space-x-1.5 sm:items-center sm:justify-center sm:bg-muted sm:p-1.5">
               <TabsTrigger 
                 value="profile" 
                 className="w-full sm:w-auto inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-background/70 data-[state=inactive]:hover:text-foreground gap-2"
