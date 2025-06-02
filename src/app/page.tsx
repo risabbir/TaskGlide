@@ -9,21 +9,26 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
-import { FocusBatchModalContent } from "@/components/ai/focus-batch-modal";
+// Removed direct import of FocusBatchModalContent
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import React, { useState, Suspense } from "react";
 import dynamic from 'next/dynamic';
 
 const TaskModal = dynamic(() => import('@/components/task/task-modal').then(mod => mod.TaskModal), {
   ssr: false,
-  loading: () => <p>Loading task editor...</p> 
+  loading: () => <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50"><p>Loading task editor...</p></div>
 });
 const FilterSidebar = dynamic(() => import('@/components/filter-sort/filter-sidebar').then(mod => mod.FilterSidebar), { 
   ssr: false,
-  loading: () => <p>Loading filters...</p>
+  loading: () => <div className="p-6 text-center"><p>Loading filters...</p></div>
 });
 const Confetti = dynamic(() => import('@/components/ui/confetti').then(mod => mod.Confetti), { 
   ssr: false 
+});
+const FocusBatchModalContent = dynamic(() => import('@/components/ai/focus-batch-modal').then(mod => mod.FocusBatchModalContent), {
+  ssr: false,
+  // Basic loading state, Dialog's own structure will provide some framing
+  loading: () => <div className="p-6 text-center">Loading AI suggestions...</div> 
 });
 
 
@@ -45,7 +50,12 @@ function QuickActionsBar() {
               Suggest Focus Batch
             </Button>
           </DialogTrigger>
-          <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
+          {/* Conditionally render Suspense and FocusBatchModalContent only when dialog is open */}
+          {isFocusBatchModalOpen && (
+            <Suspense fallback={<div className="p-6 text-center">Loading AI suggestions...</div>}>
+              <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
+            </Suspense>
+          )}
         </Dialog>
       </div>
     </div>
@@ -70,11 +80,11 @@ function PageContent() {
         <KanbanBoard />
       </main>
       <Footer />
-      {isTaskModalOpen && <Suspense fallback={<div>Loading task editor...</div>}><TaskModal /></Suspense>}
+      {isTaskModalOpen && <Suspense fallback={<div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50"><p>Loading task editor...</p></div>}><TaskModal /></Suspense>}
       {isFilterSidebarOpen && (
         <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
           <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
-              <Suspense fallback={<div>Loading filters...</div>}><FilterSidebar /></Suspense>
+              <Suspense fallback={<div className="p-6 text-center"><p>Loading filters...</p></div>}><FilterSidebar /></Suspense>
           </SheetContent>
         </Sheet>
       )}
@@ -88,4 +98,3 @@ export default function HomePage() {
       <PageContent />
   );
 }
-
