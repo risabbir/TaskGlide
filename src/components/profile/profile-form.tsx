@@ -62,7 +62,14 @@ const profileSchema = z.object({
   }
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+export type ProfileFormData = z.infer<typeof profileSchema>;
+
+interface OtherProfileData {
+  role?: string;
+  otherRole?: string;
+  bio?: string;
+  website?: string;
+}
 
 export function ProfileForm() {
   const { user, updateUserProfile, updateUserPhotoURL } = useAuth();
@@ -74,44 +81,59 @@ export function ProfileForm() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const initialDefaultValues = useMemo(() => ({
-    displayName: user?.displayName || "",
-    // Since role, bio, website are not currently persisted independently,
-    // their "previously saved" state is their initial empty string or value from last successful submit.
-    // For simplicity, initialize them as empty. If they were loaded from Firestore,
-    // that data would be used here.
-    role: "", // Or load from persisted user profile data
-    otherRole: "", // Or load from persisted user profile data
-    bio: "", // Or load from persisted user profile data
-    website: "", // Or load from persisted user profile data
-  }), [user?.displayName]);
+  // State to store the last successfully saved "other" profile data
+  const [lastSavedOtherData, setLastSavedOtherData] = useState<OtherProfileData>({
+    role: "",
+    otherRole: "",
+    bio: "",
+    website: "",
+  });
 
+  const memoizedDefaultValues = useMemo(() => ({
+    displayName: user?.displayName || "",
+    role: lastSavedOtherData.role || "",
+    otherRole: lastSavedOtherData.otherRole || "",
+    bio: lastSavedOtherData.bio || "",
+    website: lastSavedOtherData.website || "",
+  }), [user?.displayName, lastSavedOtherData]);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: initialDefaultValues,
+    defaultValues: memoizedDefaultValues,
   });
 
   const watchedRole = form.watch("role");
 
-  // Effect to synchronize displayName from auth context if it's not dirty in the form
+  // Effect to reset the form with new defaults when user or lastSavedOtherData changes,
+  // while preserving dirty field values.
   useEffect(() => {
-    if (user && user.displayName !== form.getValues('displayName')) {
-      if (!form.formState.dirtyFields.displayName) {
-        form.setValue('displayName', user.displayName || '', {
-          shouldDirty: false, // Syncing from auth should not make the field dirty
-          shouldValidate: false, // Avoid triggering validation just for this sync
-        });
+    // Get current form values to preserve dirty inputs
+    const currentFormValues = form.getValues();
+    const newResetValues = { ...memoizedDefaultValues };
+
+    // If a field is dirty, its current input value should be used for the reset,
+    // otherwise, the new default from memoizedDefaultValues is used.
+    (Object.keys(form.formState.dirtyFields) as Array<keyof ProfileFormData>).forEach(key => {
+      if (form.formState.dirtyFields[key]) {
+        // Ensure currentFormValues[key] is not undefined before assigning
+        if (currentFormValues[key] !== undefined) {
+          newResetValues[key] = currentFormValues[key] as any;
+        }
       }
-    }
-  }, [user?.displayName, form]); // form includes getValues, setValue, formState.dirtyFields
+    });
+    form.reset(newResetValues);
+
+  // It's important that form.reset is stable or included here carefully.
+  // form itself contains form.reset, so including form is okay.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memoizedDefaultValues, form.reset]); // Rely on RHF to manage form.reset stability
+
 
   // Effect for local preview when a file is selected
   useEffect(() => {
     if (selectedFile) {
         const objectUrl = URL.createObjectURL(selectedFile);
         setPreviewURL(objectUrl);
-        // setAvatarKey(Date.now()); // Not needed here, previewURL change triggers re-render
         return () => URL.revokeObjectURL(objectUrl);
     }
   }, [selectedFile]);
@@ -119,10 +141,10 @@ export function ProfileForm() {
   // Effect to update preview from user.photoURL (when no local file selected)
   // AND to update avatarKey on context changes to force re-render of AvatarImage
   useEffect(() => {
-    if (!selectedFile) { // Only use user.photoURL if no local file is selected for preview
+    if (!selectedFile) {
         setPreviewURL(user?.photoURL || null);
     }
-    setAvatarKey(Date.now()); // Force Avatar re-render on user.photoURL change
+    setAvatarKey(Date.now());
   }, [user?.photoURL, selectedFile]);
 
 
@@ -132,7 +154,6 @@ export function ProfileForm() {
 
     try {
         const profileAuthUpdates: { displayName?: string } = {};
-        // Only include displayName in auth update if it actually changed from the auth state
         if (data.displayName !== (user.displayName || "")) {
             profileAuthUpdates.displayName = data.displayName;
         }
@@ -143,23 +164,23 @@ export function ProfileForm() {
         }
 
         if (authUpdateSuccess) {
-            // Simulate saving other fields (role, bio, website)
-            // In a real app, this would be an API call to your backend/Firestore
             const finalRole = data.role === 'other' ? data.otherRole : data.role;
-            console.log("Simulating save of additional profile details (role, bio, website):", {
+            console.log("Simulating save of additional profile details:", {
                 userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
             });
-            toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
-            
-            // Reset the form with the newly submitted data as the new defaults
-            // This makes the form "clean" again.
-            form.reset({
-              displayName: data.displayName, // This is the successfully saved display name
+
+            // Update the state for last saved "other" data
+            setLastSavedOtherData({
               role: data.role,
               otherRole: data.otherRole,
               bio: data.bio,
               website: data.website,
-            }, { keepDirty: false });
+            });
+            
+            // Reset the form with the newly submitted data as the new "clean" defaults.
+            // This includes displayName which should be in sync.
+            form.reset(data, { keepDirty: false }); // keepDirty: false to make form clean
+            toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
         } else if (Object.keys(profileAuthUpdates).length > 0) {
             // Error toast for auth update is handled by updateUserProfile in context
         }
@@ -199,15 +220,13 @@ export function ProfileForm() {
       const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
       if (uploadedPhotoURL) {
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
-        // user context update will trigger useEffect to update avatarKey and previewURL if !selectedFile
       }
-      // Error toasts are handled within updateUserPhotoURL
     } catch (error) {
         console.error("Error during photo upload process in ProfileForm:", error);
         toast({ title: "Upload Error", description: "An unexpected error occurred during photo upload.", variant: "destructive"});
     } finally {
-      setSelectedFile(null); // Clear selected file after attempt
-      if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setIsUploadingPhoto(false);
     }
   };
@@ -386,6 +405,3 @@ export function ProfileForm() {
     </Card>
   );
 }
-    
-
-    
