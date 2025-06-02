@@ -25,16 +25,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LanguageSwitcher } from "./language-switcher"; // Added import
-import { useTranslations } from "next-intl"; // Added import
+import { APP_NAME } from "@/lib/constants";
 
 interface HeaderProps {
   children?: ReactNode; 
 }
 
 export function Header({ children }: HeaderProps) {
-  const t = useTranslations('Header'); // Initialize translation hook
-  const tApp = useTranslations('App');
   const { dispatch, state } = useKanban();
   const filters = state.filters;
   const { user, signOut, loading: authLoading } = useAuth();
@@ -51,6 +48,7 @@ export function Header({ children }: HeaderProps) {
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters?.searchTerm, isSearchModalOpen, desktopSearchTerm]);
 
 
@@ -87,6 +85,7 @@ export function Header({ children }: HeaderProps) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalSearchTerm, dispatch, filters.searchTerm, isSearchModalOpen]);
 
 
@@ -141,7 +140,7 @@ export function Header({ children }: HeaderProps) {
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center space-x-2">
               <LayoutDashboard className="h-6 w-6 text-primary" />
-              <span className="hidden sm:inline-block font-bold text-lg">{tApp('name')}</span>
+              <span className="hidden sm:inline-block font-bold text-lg">{APP_NAME}</span>
             </Link>
           </div>
 
@@ -149,7 +148,7 @@ export function Header({ children }: HeaderProps) {
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder={t('searchTasks')}
+              placeholder="Search tasks..."
               className="pl-8 pr-8 h-9 w-full"
               value={desktopSearchTerm}
               onChange={handleDesktopSearchChange}
@@ -171,16 +170,16 @@ export function Header({ children }: HeaderProps) {
           <div className="flex items-center space-x-1">
             <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">{t('newTask')}</span>
+              <span className="hidden sm:inline">New Task</span>
             </Button>
             
             <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
-              <span className="sr-only">{t('filtersSort')}</span>
+              <span className="sr-only">Filters & Sort</span>
             </Button>
             
             <ThemeToggle />
-            <LanguageSwitcher /> 
+            {/* LanguageSwitcher removed */}
 
             <div className="hidden md:flex items-center space-x-1">
               {!authLoading && user ? (
@@ -206,22 +205,22 @@ export function Header({ children }: HeaderProps) {
                     <DropdownMenuItem asChild>
                       <Link href="/profile">
                         <UserCircle2 className="mr-2 h-4 w-4" />
-                        {t('profile')}
+                        Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={signOut}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      {t('signOut')}
+                      Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : !authLoading && (
                 <div className="flex items-center space-x-1">
                   <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3">
-                    <Link href="/auth/signin">{t('signIn')}</Link>
+                    <Link href="/auth/signin">Sign In</Link>
                   </Button>
                   <Button size="sm" asChild className="px-2 sm:px-3">
-                    <Link href="/auth/signup">{t('signUp')}</Link>
+                    <Link href="/auth/signup">Sign Up</Link>
                   </Button>
                 </div>
               )}
@@ -233,14 +232,14 @@ export function Header({ children }: HeaderProps) {
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('searchTasks')}</DialogTitle>
+            <DialogTitle>Search tasks...</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleModalSearchSubmit} className="space-y-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder={t('searchTasks')}
+                placeholder="Search tasks..."
                 className="pl-8 h-10 w-full"
                 value={modalSearchTerm}
                 onChange={handleModalSearchChange}
