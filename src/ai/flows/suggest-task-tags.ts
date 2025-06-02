@@ -55,10 +55,9 @@ const suggestTaskTagsFlow = ai.defineFlow(
     while (attempts < maxAttempts) {
       try {
         const { output } = await suggestTaskTagsPrompt(input);
-        if (output && output.tags) { // Check if output and output.tags exist
+        if (output && output.tags) { 
           return output;
         } else {
-          // Handle cases where output is null/undefined or output.tags is missing
           lastError = new Error("AI returned an empty or malformed response for tag suggestions.");
           console.warn(`[suggestTaskTagsFlow] Attempt ${attempts + 1}: ${lastError.message}`);
         }
@@ -75,7 +74,7 @@ const suggestTaskTagsFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[suggestTaskTagsFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; // Immediately throw non-retryable errors
+          throw error; 
         }
       }
 
@@ -86,17 +85,25 @@ const suggestTaskTagsFlow = ai.defineFlow(
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
+    
     const finalErrorMessage = `Failed to suggest task tags after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
-    console.error(`[suggestTaskTagsFlow] ${finalErrorMessage}`);
-    // Fallback to empty array if all retries fail for specific errors or if AI consistently returns malformed/empty.
-    if (lastError && (String(lastError.message || lastError).toLowerCase().includes('503') ||
+    const wasRetryableFailure = lastError && (
+        String(lastError.message || lastError).toLowerCase().includes('503') ||
         String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
         String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
         String(lastError.message || lastError).toLowerCase().includes('internal error') ||
         String(lastError.message || lastError).toLowerCase().includes('timeout') ||
-        String(lastError.message || lastError).toLowerCase().includes('malformed response'))) {
-      return { tags: [] }; // Graceful fallback for UI
+        String(lastError.message || lastError).toLowerCase().includes('malformed response')
+    );
+
+    if (wasRetryableFailure) {
+        console.warn(`[suggestTaskTagsFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
+        // Fallback to empty array if all retries fail for specific errors or if AI consistently returns malformed/empty.
+        return { tags: [] }; // Graceful fallback for UI
+    } else {
+        console.error(`[suggestTaskTagsFlow] ${finalErrorMessage}`);
     }
-    throw lastError || new Error(finalErrorMessage); // Re-throw if it's a non-retryable error or a new one
+    
+    throw lastError || new Error(finalErrorMessage); 
   }
 );

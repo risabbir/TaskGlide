@@ -60,7 +60,7 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
     while (attempts < maxAttempts) {
       try {
         const { output } = await prompt(input);
-        if (output && output.subtasks) { // Check if output and output.subtasks exist
+        if (output && output.subtasks) { 
           return output;
         } else {
           lastError = new Error("AI returned an empty or malformed response for subtask suggestions.");
@@ -79,7 +79,7 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[suggestTaskSubtasksFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; // Immediately throw non-retryable errors
+          throw error; 
         }
       }
 
@@ -90,17 +90,25 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
+
     const finalErrorMessage = `Failed to suggest task subtasks after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
-    console.error(`[suggestTaskSubtasksFlow] ${finalErrorMessage}`);
-    // Fallback to empty array if all retries fail for specific errors or AI consistently returns malformed/empty
-     if (lastError && (String(lastError.message || lastError).toLowerCase().includes('503') ||
+    const wasRetryableFailure = lastError && (
+        String(lastError.message || lastError).toLowerCase().includes('503') ||
         String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
         String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
         String(lastError.message || lastError).toLowerCase().includes('internal error') ||
         String(lastError.message || lastError).toLowerCase().includes('timeout') ||
-        String(lastError.message || lastError).toLowerCase().includes('malformed response'))) {
-      return { subtasks: [] }; // Graceful fallback for UI
+        String(lastError.message || lastError).toLowerCase().includes('malformed response')
+    );
+    
+    if (wasRetryableFailure) {
+        console.warn(`[suggestTaskSubtasksFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
+         // Fallback to empty array if all retries fail for specific errors or AI consistently returns malformed/empty
+        return { subtasks: [] }; // Graceful fallback for UI
+    } else {
+        console.error(`[suggestTaskSubtasksFlow] ${finalErrorMessage}`);
     }
-    throw lastError || new Error(finalErrorMessage); // Re-throw if it's a non-retryable error or a new one
+
+    throw lastError || new Error(finalErrorMessage); 
   }
 );

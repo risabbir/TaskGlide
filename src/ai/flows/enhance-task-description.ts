@@ -46,15 +46,15 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
   async (input: EnhanceTaskDescriptionInput): Promise<EnhanceTaskDescriptionOutput> => {
     let attempts = 0;
     const maxAttempts = 3;
-    const baseDelayMs = 1000; // Initial delay for retries
+    const baseDelayMs = 1000; 
     let lastError: any;
 
     while (attempts < maxAttempts) {
       try {
-        const { output } = await prompt(input); // output is EnhanceTaskDescriptionOutput | undefined
+        const { output } = await prompt(input); 
 
         if (output && output.enhancedDescription) {
-          return output; // Success
+          return output; 
         } else {
           lastError = new Error("AI returned an empty or malformed response for description enhancement.");
           console.warn(`[enhanceTaskDescriptionFlow] Attempt ${attempts + 1}: ${lastError.message}`);
@@ -69,25 +69,37 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
             errorMessage.includes('service unavailable') ||
             errorMessage.includes('internal error') ||
             errorMessage.includes('timeout')) {
-          // Retryable error, loop will continue
+          // Retryable error
         } else {
-          // Non-retryable error
           console.error(`[enhanceTaskDescriptionFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; // Immediately throw non-retryable errors
+          throw error; 
         }
       }
 
       attempts++;
       if (attempts < maxAttempts) {
-        const delay = baseDelayMs * Math.pow(2, attempts - 1); // Exponential backoff: 1s, 2s
+        const delay = baseDelayMs * Math.pow(2, attempts - 1); 
         console.log(`[enhanceTaskDescriptionFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
 
-    // If loop finishes, all attempts failed for retryable errors.
     const finalErrorMessage = `Failed to enhance task description after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
-    console.error(`[enhanceTaskDescriptionFlow] ${finalErrorMessage}`);
-    throw lastError || new Error(finalErrorMessage); // Re-throw the last encountered error or a generic one
+    const wasRetryableFailure = lastError && (
+        String(lastError.message || lastError).toLowerCase().includes('503') ||
+        String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
+        String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
+        String(lastError.message || lastError).toLowerCase().includes('internal error') ||
+        String(lastError.message || lastError).toLowerCase().includes('timeout') ||
+        String(lastError.message || lastError).toLowerCase().includes('malformed response')
+    );
+
+    if (wasRetryableFailure) {
+        console.warn(`[enhanceTaskDescriptionFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
+    } else {
+        console.error(`[enhanceTaskDescriptionFlow] ${finalErrorMessage}`);
+    }
+    
+    throw lastError || new Error(finalErrorMessage); 
   }
 );
