@@ -1,22 +1,16 @@
+// This file is intentionally modified to remove active middleware functionality.
+// An empty default export is provided to satisfy Next.js's requirement
+// when a middleware.ts file is present, without performing any operations.
+import type { NextRequest, NextResponse } from 'next/server';
 
-import createMiddleware from 'next-intl/middleware';
-import {locales, defaultLocale} from './i18n-config'; // Import from new config file
+export default function middleware(request: NextRequest): NextResponse | undefined {
+  // Intentionally does nothing, allowing the request to proceed as if no middleware was present.
+  return undefined;
+}
 
-export default createMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed' // 'as-needed' will not add prefix for defaultLocale
-});
-
-export const config = {
-  // Match only internationalized pathnames
-  // Skip middleware for api, _next, static files, and files with extensions (e.g. favicon.ico)
-  matcher: [
-    // Match all pathnames except for
-    // - … if they start with `/api`, `/_next` or `/_vercel`
-    // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api|_next|_vercel|.*\\..*).*)',
-    // Match all root pathnames (e.g. `/`, `/en`, `/es`)
-    '/',
-  ]
-};
+// To explicitly make this middleware apply to no paths (or as few as possible),
+// you could use the config object, but simply returning undefined from the middleware
+// function for all paths effectively achieves the same for a "do-nothing" middleware.
+// export const config = {
+//   matcher: [], // Or a non-matching path like '/_never_match_this_path',
+// };
