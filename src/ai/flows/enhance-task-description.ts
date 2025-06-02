@@ -18,7 +18,8 @@ const EnhanceTaskDescriptionInputSchema = z.object({
 export type EnhanceTaskDescriptionInput = z.infer<typeof EnhanceTaskDescriptionInputSchema>;
 
 const EnhanceTaskDescriptionOutputSchema = z.object({
-  enhancedDescription: z.string().describe('The enhanced description of the task.'),
+  enhancedDescription: z.string().describe('The enhanced description of the task. If an error occurred, this will be the original description.'),
+  error: z.string().optional().describe('An error message if the operation failed after retries.'),
 });
 export type EnhanceTaskDescriptionOutput = z.infer<typeof EnhanceTaskDescriptionOutputSchema>;
 
@@ -29,7 +30,9 @@ export async function enhanceTaskDescription(input: EnhanceTaskDescriptionInput)
 const prompt = ai.definePrompt({
   name: 'enhanceTaskDescriptionPrompt',
   input: {schema: EnhanceTaskDescriptionInputSchema},
-  output: {schema: EnhanceTaskDescriptionOutputSchema},
+  // The output schema for the prompt itself should only contain the success field.
+  // The 'error' field in EnhanceTaskDescriptionOutputSchema is for the flow's wrapper.
+  output: {schema: z.object({ enhancedDescription: z.string() })},
   prompt: `You are an AI assistant helping to refine task descriptions.
   Given the task title and the existing description, enhance the description to be more comprehensive.
   Title: {{{title}}}
@@ -46,15 +49,15 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
   async (input: EnhanceTaskDescriptionInput): Promise<EnhanceTaskDescriptionOutput> => {
     let attempts = 0;
     const maxAttempts = 3;
-    const baseDelayMs = 1000; 
+    const baseDelayMs = 1000;
     let lastError: any;
 
     while (attempts < maxAttempts) {
       try {
-        const { output } = await prompt(input); 
+        const { output } = await prompt(input);
 
         if (output && output.enhancedDescription) {
-          return output; 
+          return { enhancedDescription: output.enhancedDescription, error: undefined };
         } else {
           lastError = new Error("AI returned an empty or malformed response for description enhancement.");
           console.warn(`[enhanceTaskDescriptionFlow] Attempt ${attempts + 1}: ${lastError.message}`);
@@ -72,13 +75,13 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[enhanceTaskDescriptionFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; 
+          throw error; // For non-retryable errors, we still throw
         }
       }
 
       attempts++;
       if (attempts < maxAttempts) {
-        const delay = baseDelayMs * Math.pow(2, attempts - 1); 
+        const delay = baseDelayMs * Math.pow(2, attempts - 1);
         console.log(`[enhanceTaskDescriptionFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -96,10 +99,12 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
 
     if (wasRetryableFailure) {
         console.warn(`[enhanceTaskDescriptionFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
+        return { enhancedDescription: input.existingDescription, error: finalErrorMessage }; // Return original description and error
     } else {
-        console.error(`[enhanceTaskDescriptionFlow] ${finalErrorMessage}`);
+        // This case should ideally be caught by the non-retryable throw above.
+        // If it reaches here for a non-retryable error after loop, something is wrong.
+        console.error(`[enhanceTaskDescriptionFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
+        throw lastError || new Error(finalErrorMessage);
     }
-    
-    throw lastError || new Error(finalErrorMessage); 
   }
 );

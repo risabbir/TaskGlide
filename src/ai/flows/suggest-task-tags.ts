@@ -20,7 +20,8 @@ export type SuggestTaskTagsInput = z.infer<typeof SuggestTaskTagsInputSchema>;
 const SuggestTaskTagsOutputSchema = z.object({
   tags: z
     .array(z.string())
-    .describe('An array of suggested tags based on the task title and description.'),
+    .describe('An array of suggested tags. Empty if an error occurred.'),
+  error: z.string().optional().describe('An error message if the operation failed after retries.'),
 });
 export type SuggestTaskTagsOutput = z.infer<typeof SuggestTaskTagsOutputSchema>;
 
@@ -31,7 +32,7 @@ export async function suggestTaskTags(input: SuggestTaskTagsInput): Promise<Sugg
 const suggestTaskTagsPrompt = ai.definePrompt({
   name: 'suggestTaskTagsPrompt',
   input: {schema: SuggestTaskTagsInputSchema},
-  output: {schema: SuggestTaskTagsOutputSchema},
+  output: {schema: z.object({ tags: z.array(z.string()) })}, // Prompt output is just the tags
   prompt: `You are a task management assistant. Your task is to suggest relevant tags for a given task based on its title and description.
 
 Task Title: {{{title}}}
@@ -55,8 +56,8 @@ const suggestTaskTagsFlow = ai.defineFlow(
     while (attempts < maxAttempts) {
       try {
         const { output } = await suggestTaskTagsPrompt(input);
-        if (output && output.tags) { 
-          return output;
+        if (output && output.tags) {
+          return { tags: output.tags, error: undefined };
         } else {
           lastError = new Error("AI returned an empty or malformed response for tag suggestions.");
           console.warn(`[suggestTaskTagsFlow] Attempt ${attempts + 1}: ${lastError.message}`);
@@ -74,7 +75,7 @@ const suggestTaskTagsFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[suggestTaskTagsFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; 
+          throw error; // For non-retryable errors, we still throw
         }
       }
 
@@ -85,7 +86,7 @@ const suggestTaskTagsFlow = ai.defineFlow(
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-    
+
     const finalErrorMessage = `Failed to suggest task tags after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
     const wasRetryableFailure = lastError && (
         String(lastError.message || lastError).toLowerCase().includes('503') ||
@@ -98,12 +99,10 @@ const suggestTaskTagsFlow = ai.defineFlow(
 
     if (wasRetryableFailure) {
         console.warn(`[suggestTaskTagsFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
-        // Fallback to empty array if all retries fail for specific errors or if AI consistently returns malformed/empty.
-        return { tags: [] }; // Graceful fallback for UI
+        return { tags: [], error: finalErrorMessage }; // Return empty tags and error
     } else {
-        console.error(`[suggestTaskTagsFlow] ${finalErrorMessage}`);
+        console.error(`[suggestTaskTagsFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
+        throw lastError || new Error(finalErrorMessage);
     }
-    
-    throw lastError || new Error(finalErrorMessage); 
   }
 );

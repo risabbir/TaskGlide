@@ -11,12 +11,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-// Removed ScrollArea import
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Removed CardDescription
 import { Sparkles, Loader2, AlertTriangle, Lightbulb, CalendarDays } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import type { Task } from "@/lib/types";
-import { suggestFocusBatch, type SuggestFocusBatchInput, type SuggestFocusBatchOutput, type FocusTaskSuggestion } from "@/ai/flows/suggest-focus-batch";
+import { suggestFocusBatch, type SuggestFocusBatchInput, type FocusTaskSuggestion } from "@/ai/flows/suggest-focus-batch"; // Removed SuggestFocusBatchOutput
 import { PRIORITY_STYLES } from "@/lib/constants";
 import { formatDistanceToNowStrict, parseISO, format } from "date-fns";
 
@@ -41,45 +40,55 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
       setError(null);
       setSuggestions([]);
 
-      try {
-        const tasksForAI: SuggestFocusBatchInput['tasks'] = allTasks
-          .filter(task => task.columnId !== 'done') // Only suggest from non-done tasks
-          .map(task => ({
-          id: task.id,
-          title: task.title,
-          priority: task.priority,
-          columnId: task.columnId,
-          description: task.description || "",
-          dueDate: task.dueDate ? (task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate) : undefined,
-        }));
+      const tasksForAI: SuggestFocusBatchInput['tasks'] = allTasks
+        .filter(task => task.columnId !== 'done')
+        .map(task => ({
+        id: task.id,
+        title: task.title,
+        priority: task.priority,
+        columnId: task.columnId,
+        description: task.description || "",
+        dueDate: task.dueDate ? (task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate) : undefined,
+      }));
 
-        if (tasksForAI.length === 0) {
-          setError("All tasks are marked as done. Nothing to suggest for focus.");
-          setIsLoading(false);
-          return;
-        }
-        
+      if (tasksForAI.length === 0) {
+        setError("All tasks are marked as done. Nothing to suggest for focus.");
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
         const result = await suggestFocusBatch({ tasks: tasksForAI });
-        if (result.suggestions && result.suggestions.length > 0) {
+
+        if (result.error) {
+          console.warn("AI Focus Batch error from flow:", result.error);
+          const errMessage = result.error.toLowerCase();
+          if (errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('service unavailable') || errMessage.includes('timeout')) {
+              setError("The AI service is currently busy or unavailable. Please try again in a few moments.");
+          } else if (errMessage.includes('malformed response') || errMessage.includes('empty response')) {
+              setError("AI returned an unexpected response. Please try again or check task details.");
+          }
+           else {
+              setError("Failed to get suggestions from AI. Please try again.");
+          }
+        } else if (result.suggestions && result.suggestions.length > 0) {
           setSuggestions(result.suggestions);
         } else {
+          // No error, but also no suggestions (e.g., AI explicitly returned empty)
           setError("AI couldn't find any specific tasks to suggest for focus right now. Try again later or with more tasks.");
         }
       } catch (err: any) {
-        console.error("Error fetching focus batch suggestions:", err);
-        const errMessage = String(err.message || "").toLowerCase();
-        if (errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('service unavailable')) {
-            setError("The AI service is currently overloaded or unavailable. Please try again in a few moments.");
-        } else {
-            setError("Failed to get suggestions from AI. Please try again.");
-        }
+        // This catch block is for unexpected errors *thrown* by the flow (e.g., non-retryable errors)
+        console.error("Unexpected error fetching focus batch suggestions:", err);
+        setError("An unexpected error occurred while fetching suggestions. Please try again.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchSuggestions();
-  }, [allTasks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allTasks]); // Intentionally not including 'setError' as it's a stable dispatcher
 
   const getTaskDetails = (taskId: string): Task | undefined => {
     return allTasks.find(task => task.id === taskId);
@@ -97,7 +106,6 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
         </DialogDescription>
       </DialogHeader>
       
-      {/* Replaced ScrollArea with a div using overflow-y: auto and custom-scrollbar class */}
       <div className="flex-grow min-h-0 overflow-y-auto custom-scrollbar">
         <div className="p-6 space-y-4">
           {isLoading && (

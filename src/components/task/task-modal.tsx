@@ -150,6 +150,25 @@ export function TaskModal() {
     setIsAiSubtasksLoading(false);
   };
 
+  const handleAiError = (flowName: string, errorMsg?: string) => {
+    console.warn(`AI Error in ${flowName}:`, errorMsg);
+    const genericMessage = `Could not get suggestions from AI for ${flowName.toLowerCase()}. Please try again.`;
+    let toastDescription = genericMessage;
+
+    if (errorMsg) {
+        const errLower = errorMsg.toLowerCase();
+        if (errLower.includes('503') || errLower.includes('overloaded') || errLower.includes('service unavailable') || errLower.includes('timeout')) {
+            toastDescription = `The AI service for ${flowName.toLowerCase()} is currently busy. Please try again in a few moments.`;
+        } else if (errLower.includes("malformed response") || errLower.includes("empty response")) {
+            toastDescription = `AI returned an unexpected response for ${flowName.toLowerCase()}. Please try again.`;
+        } else {
+            toastDescription = errorMsg; // Use the specific error if not a common one
+        }
+    }
+    toast({ title: `AI ${flowName} Error`, description: toastDescription, variant: "destructive" });
+  };
+
+
   const handleEnhanceDescription = async () => {
     if (!watchedTitle) {
         toast({ title: "Title Needed", description: "Please provide a title to enhance the description.", variant: "destructive" });
@@ -158,22 +177,16 @@ export function TaskModal() {
     setIsAiDescriptionLoading(true);
     try {
         const result = await enhanceTaskDescription({ title: watchedTitle, existingDescription: watchedDescription || "" });
-        if (result.enhancedDescription) {
+        if (result.error) {
+            handleAiError("Description Enhancement", result.error);
+        } else if (result.enhancedDescription) {
             setValue("description", result.enhancedDescription);
             toast({ title: "Description Enhanced", description: "AI has enhanced the task description." });
-        } else {
-             toast({ title: "Enhancement Unclear", description: "AI couldn't provide an enhancement this time. Try rephrasing or try again.", variant: "default" });
+        } else { // Should not happen if schema guarantees enhancedDescription or error
+             toast({ title: "Enhancement Unclear", description: "AI couldn't provide an enhancement this time.", variant: "default" });
         }
-    } catch (error: any) {
-        console.error("Error enhancing description:", error);
-        const errMessage = String(error.message || "").toLowerCase();
-        let toastDescription = "Could not enhance description. Please try again.";
-        if (errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('service unavailable')) {
-            toastDescription = "The AI service for description enhancement is currently busy. Please try again in a few moments.";
-        } else if (errMessage.includes("empty or malformed response")) {
-            toastDescription = "AI returned an unexpected response for description. Please try again.";
-        }
-        toast({ title: "AI Enhancement Error", description: toastDescription, variant: "destructive" });
+    } catch (error: any) { // Catch for unexpected throws from the flow (non-retryable)
+        handleAiError("Description Enhancement", String(error.message || "An unexpected error occurred."));
     } finally {
         setIsAiDescriptionLoading(false);
     }
@@ -187,22 +200,16 @@ export function TaskModal() {
     setIsAiTagsLoading(true);
     try {
         const result = await suggestTaskTags({ title: watchedTitle, description: watchedDescription || "" });
-        if (result.tags && result.tags.length > 0) {
+        if (result.error) {
+            handleAiError("Tag Suggestion", result.error);
+        } else if (result.tags && result.tags.length > 0) {
             setValue("tags", result.tags.join(", "));
             toast({ title: "Tags Suggested", description: "AI has suggested tags for your task." });
         } else {
-            toast({ title: "No Tags Found", description: "AI couldn't find relevant tags for this task. You can add them manually.", variant: "default" });
+            toast({ title: "No Tags Found", description: "AI couldn't find relevant tags for this task.", variant: "default" });
         }
     } catch (error: any) {
-        console.error("Error suggesting tags:", error);
-        const errMessage = String(error.message || "").toLowerCase();
-        let toastDescription = "Could not suggest tags. Please try again.";
-        if (errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('service unavailable')) {
-            toastDescription = "The AI service for tag suggestion is currently busy. Please try again in a few moments.";
-        } else if (errMessage.includes("empty or malformed response")) {
-            toastDescription = "AI returned an unexpected response for tags. Please try again.";
-        }
-        toast({ title: "AI Tag Suggestion Error", description: toastDescription, variant: "destructive" });
+        handleAiError("Tag Suggestion", String(error.message || "An unexpected error occurred."));
     } finally {
         setIsAiTagsLoading(false);
     }
@@ -216,24 +223,18 @@ export function TaskModal() {
     setIsAiSubtasksLoading(true);
     try {
         const result = await suggestTaskSubtasks({ title: watchedTitle, description: watchedDescription || "" });
-        if (result.subtasks && result.subtasks.length > 0) {
+        if (result.error) {
+            handleAiError("Subtask Suggestion", result.error);
+        } else if (result.subtasks && result.subtasks.length > 0) {
             result.subtasks.forEach(subtaskTitle => {
                 appendSubtask({ id: crypto.randomUUID(), title: subtaskTitle, completed: false });
             });
             toast({ title: "Subtasks Suggested", description: "AI has suggested subtasks." });
         } else {
-            toast({ title: "No Subtasks Found", description: "AI couldn't break this task into subtasks. You can add them manually.", variant: "default" });
+            toast({ title: "No Subtasks Found", description: "AI couldn't break this task into subtasks.", variant: "default" });
         }
     } catch (error: any) {
-        console.error("Error suggesting subtasks:", error);
-        const errMessage = String(error.message || "").toLowerCase();
-        let toastDescription = "Could not suggest subtasks. Please try again.";
-        if (errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('service unavailable')) {
-            toastDescription = "The AI service for subtask suggestion is currently busy. Please try again in a few moments.";
-        } else if (errMessage.includes("empty or malformed response")) {
-            toastDescription = "AI returned an unexpected response for subtasks. Please try again.";
-        }
-        toast({ title: "AI Subtask Suggestion Error", description: toastDescription, variant: "destructive" });
+        handleAiError("Subtask Suggestion", String(error.message || "An unexpected error occurred."));
     } finally {
         setIsAiSubtasksLoading(false);
     }
@@ -525,8 +526,3 @@ export function TaskModal() {
     </Dialog>
   );
 }
-    
-
-    
-
-    

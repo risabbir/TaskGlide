@@ -36,7 +36,8 @@ export type FocusTaskSuggestion = z.infer<typeof FocusTaskSuggestionSchema>;
 
 
 const SuggestFocusBatchOutputSchema = z.object({
-  suggestions: z.array(FocusTaskSuggestionSchema).describe('An array of suggested tasks to focus on, each with a reason.'),
+  suggestions: z.array(FocusTaskSuggestionSchema).describe('An array of suggested tasks to focus on. Empty if an error occurred.'),
+  error: z.string().optional().describe('An error message if the operation failed after retries.'),
 });
 export type SuggestFocusBatchOutput = z.infer<typeof SuggestFocusBatchOutputSchema>;
 
@@ -48,7 +49,8 @@ export async function suggestFocusBatch(input: SuggestFocusBatchInput): Promise<
 const prompt = ai.definePrompt({
   name: 'suggestFocusBatchPrompt',
   input: {schema: SuggestFocusBatchInputSchema},
-  output: {schema: SuggestFocusBatchOutputSchema},
+  // Prompt output schema does not include the 'error' field from SuggestFocusBatchOutputSchema
+  output: {schema: z.object({ suggestions: z.array(FocusTaskSuggestionSchema) })},
   prompt: `You are an expert productivity assistant. Your goal is to help users prioritize their work by suggesting a small batch of tasks (around 2-3, but no more than 4) to focus on from their current task list.
 
 Consider the following factors for each task:
@@ -87,12 +89,12 @@ const suggestFocusBatchFlow = ai.defineFlow(
   async (input: SuggestFocusBatchInput): Promise<SuggestFocusBatchOutput> => {
     let attempts = 0;
     const maxAttempts = 3;
-    const baseDelayMs = 1000; // Initial delay for retries
+    const baseDelayMs = 1000;
     let lastError: any;
 
     while (attempts < maxAttempts) {
       try {
-        const { output } = await prompt(input); 
+        const { output } = await prompt(input);
 
         if (output && output.suggestions) {
           const validatedSuggestions = output.suggestions.map(s => {
@@ -102,9 +104,10 @@ const suggestFocusBatchFlow = ai.defineFlow(
               title: s.title || originalTask?.title || "Unknown Task"
             };
           });
-          return { suggestions: validatedSuggestions }; // Success
+          return { suggestions: validatedSuggestions, error: undefined };
         } else if (output && Array.isArray(output.suggestions) && output.suggestions.length === 0) {
-          return { suggestions: [] };
+          // AI explicitly returned empty suggestions, which is a valid success case.
+          return { suggestions: [], error: undefined };
         } else {
           lastError = new Error("AI returned an empty, malformed, or non-conforming response.");
           console.warn(`[suggestFocusBatchFlow] Attempt ${attempts + 1}: ${lastError.message}`);
@@ -117,18 +120,18 @@ const suggestFocusBatchFlow = ai.defineFlow(
         if (errorMessage.includes('503') ||
             errorMessage.includes('overloaded') ||
             errorMessage.includes('service unavailable') ||
-            errorMessage.includes('internal error') || 
+            errorMessage.includes('internal error') ||
             errorMessage.includes('timeout')) {
           // Retryable error
         } else {
           console.error(`[suggestFocusBatchFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; 
+          throw error; // For non-retryable errors, we still throw
         }
       }
 
       attempts++;
       if (attempts < maxAttempts) {
-        const delay = baseDelayMs * Math.pow(2, attempts -1); 
+        const delay = baseDelayMs * Math.pow(2, attempts -1);
         console.log(`[suggestFocusBatchFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -141,15 +144,15 @@ const suggestFocusBatchFlow = ai.defineFlow(
         String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
         String(lastError.message || lastError).toLowerCase().includes('internal error') ||
         String(lastError.message || lastError).toLowerCase().includes('timeout') ||
-        String(lastError.message || lastError).toLowerCase().includes('malformed response') // Also treat malformed as potentially retryable or warn-level
+        String(lastError.message || lastError).toLowerCase().includes('malformed response')
     );
 
     if (wasRetryableFailure) {
         console.warn(`[suggestFocusBatchFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
+        return { suggestions: [], error: finalErrorMessage }; // Return empty suggestions and error
     } else {
-        console.error(`[suggestFocusBatchFlow] ${finalErrorMessage}`);
+        console.error(`[suggestFocusBatchFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
+        throw lastError || new Error(finalErrorMessage); // Still throw for truly unexpected/non-retryable errors
     }
-    
-    throw lastError || new Error(finalErrorMessage);
   }
 );

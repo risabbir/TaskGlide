@@ -20,7 +20,8 @@ export type SuggestTaskSubtasksInput = z.infer<typeof SuggestTaskSubtasksInputSc
 const SuggestTaskSubtasksOutputSchema = z.object({
   subtasks: z
     .array(z.string())
-    .describe('An array of suggested subtask titles (as strings).'),
+    .describe('An array of suggested subtask titles. Empty if an error occurred.'),
+  error: z.string().optional().describe('An error message if the operation failed after retries.'),
 });
 export type SuggestTaskSubtasksOutput = z.infer<typeof SuggestTaskSubtasksOutputSchema>;
 
@@ -31,7 +32,7 @@ export async function suggestTaskSubtasks(input: SuggestTaskSubtasksInput): Prom
 const prompt = ai.definePrompt({
   name: 'suggestTaskSubtasksPrompt',
   input: {schema: SuggestTaskSubtasksInputSchema},
-  output: {schema: SuggestTaskSubtasksOutputSchema},
+  output: {schema: z.object({ subtasks: z.array(z.string()) })}, // Prompt output is just the subtasks
   prompt: `You are a helpful assistant that breaks down tasks into smaller, actionable subtasks.
 Given the main task title and its description (if provided), suggest a list of subtasks.
 Focus on creating 2-5 concise subtasks. Each subtask should be a short phrase.
@@ -60,8 +61,8 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
     while (attempts < maxAttempts) {
       try {
         const { output } = await prompt(input);
-        if (output && output.subtasks) { 
-          return output;
+        if (output && output.subtasks) {
+          return { subtasks: output.subtasks, error: undefined };
         } else {
           lastError = new Error("AI returned an empty or malformed response for subtask suggestions.");
           console.warn(`[suggestTaskSubtasksFlow] Attempt ${attempts + 1}: ${lastError.message}`);
@@ -79,7 +80,7 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[suggestTaskSubtasksFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; 
+          throw error; // For non-retryable errors, we still throw
         }
       }
 
@@ -100,15 +101,13 @@ const suggestTaskSubtasksFlow = ai.defineFlow(
         String(lastError.message || lastError).toLowerCase().includes('timeout') ||
         String(lastError.message || lastError).toLowerCase().includes('malformed response')
     );
-    
+
     if (wasRetryableFailure) {
         console.warn(`[suggestTaskSubtasksFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
-         // Fallback to empty array if all retries fail for specific errors or AI consistently returns malformed/empty
-        return { subtasks: [] }; // Graceful fallback for UI
+        return { subtasks: [], error: finalErrorMessage }; // Return empty subtasks and error
     } else {
-        console.error(`[suggestTaskSubtasksFlow] ${finalErrorMessage}`);
+        console.error(`[suggestTaskSubtasksFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
+        throw lastError || new Error(finalErrorMessage);
     }
-
-    throw lastError || new Error(finalErrorMessage); 
   }
 );
