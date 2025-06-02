@@ -1,0 +1,42 @@
+
+{
+  "App": {
+    "name": "TaskGlide",
+    "description": "Herramienta integral de gestión de tareas."
+  },
+  "Header": {
+    "appName": "TaskGlide",
+    "newTask": "Nueva Tarea",
+    "filtersSort": "Filtros y Orden",
+    "profile": "Perfil",
+    "signOut": "Cerrar Sesión",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "searchTasks": "Buscar tareas..."
+  },
+  "BottomNavigation": {
+    "board": "Tablero",
+    "filters": "Filtros",
+    "addTask": "Añadir Tarea",
+    "search": "Buscar",
+    "profile": "Perfil",
+    "signIn": "Iniciar Sesión"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Cambiar idioma"
+  },
+  "AuthPages": {
+    "forgotPasswordTitle": "Contraseña Olvidada | {appName}",
+    "forgotPasswordTagline": "Restablece tu contraseña para recuperar el acceso a tu cuenta.",
+    "signInTitle": "Iniciar Sesión | {appName}",
+    "signInTagline": "¡Bienvenido de nuevo! Accede a tus tareas y continúa tu viaje de productividad.",
+    "signUpTitle": "Registrarse | {appName}",
+    "signUpTagline": "Únete a {appName} hoy para organizar tus tareas y aumentar la productividad. <br /> O haz clic en el logo para continuar como invitado."
+  },
+  "ProfilePage": {
+    "title": "Perfil y Configuración | {appName}",
+    "loadingText": "Cargando perfil...",
+    "pageTitle": "Perfil y Configuración",
+    "pageDescription": "Administra tu información personal, preferencias y configuraciones de seguridad de la cuenta."
+  }
+}

@@ -19,8 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { XCircle } from "lucide-react";
+import { useTranslations } from "next-intl"; // Added import
 
 export function BottomNavigation() {
+  const t = useTranslations('BottomNavigation'); // Initialize translation hook
+  const tHeader = useTranslations('Header'); // For search placeholder if needed
   const { dispatch, state: kanbanState } = useKanban();
   const { user, loading: authLoading } = useAuth();
   const pathname = usePathname();
@@ -35,8 +38,7 @@ export function BottomNavigation() {
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters?.searchTerm, isSearchModalOpen]);
+  }, [filters?.searchTerm, isSearchModalOpen, modalSearchTerm]);
 
 
   const handleOpenNewTaskModal = () => {
@@ -61,15 +63,15 @@ export function BottomNavigation() {
   };
 
   const navItemsBase = [
-    { href: "/", label: "Board", icon: Home, isActiveOverride: pathname === "/" },
-    { action: handleToggleFilterSidebar, label: "Filters", icon: SlidersHorizontal, isActiveOverride: kanbanState.isFilterSidebarOpen },
-    { action: handleOpenNewTaskModal, label: "Add Task", icon: Plus, isCentral: true, isActiveOverride: false },
+    { href: "/", labelKey: "board", icon: Home, isActiveOverride: pathname === "/" || pathname.endsWith(`/${useLocale()}`) },
+    { action: handleToggleFilterSidebar, labelKey: "filters", icon: SlidersHorizontal, isActiveOverride: kanbanState.isFilterSidebarOpen },
+    { action: handleOpenNewTaskModal, labelKey: "addTask", icon: Plus, isCentral: true, isActiveOverride: false },
     { 
       action: () => {
         setModalSearchTerm(filters.searchTerm ?? ""); 
         setIsSearchModalOpen(true);
       }, 
-      label: "Search", 
+      labelKey: "search", 
       icon: Search, 
       isActiveOverride: isSearchModalOpen || (!!filters.searchTerm && filters.searchTerm.length > 0) 
     },
@@ -79,9 +81,9 @@ export function BottomNavigation() {
   if (authLoading) {
     // Placeholder for loading state if needed
   } else if (user) {
-    navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
+    navItems.push({ href: "/profile", labelKey: "profile", icon: UserCircle2, isActiveOverride: pathname.includes("/profile") });
   } else {
-    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname.startsWith("/auth/") });
+    navItems.push({ href: "/auth/signin", labelKey: "signIn", icon: LogIn, isActiveOverride: pathname.includes("/auth/") });
   }
 
 
@@ -91,12 +93,13 @@ export function BottomNavigation() {
         <nav className="flex h-full items-center justify-around px-1">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const label = t(item.labelKey as any); // Use translated label
             const isActive = !!item.isActiveOverride;
 
             if (item.isCentral) {
               return (
                 <Button
-                  key={item.label}
+                  key={label}
                   variant="default"
                   className={cn(
                     "relative -top-3.5 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center",
@@ -104,7 +107,7 @@ export function BottomNavigation() {
                     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   )}
                   onClick={item.action}
-                  aria-label={item.label}
+                  aria-label={label}
                 >
                   <Icon className="h-7 w-7" />
                 </Button>
@@ -131,19 +134,19 @@ export function BottomNavigation() {
             const buttonContent = (
               <>
                 <Icon className={iconClasses} />
-                <span className={labelClasses}>{item.label}</span>
+                <span className={labelClasses}>{label}</span>
               </>
             );
 
 
             if (item.href) {
               return (
-                <Link key={item.label} href={item.href} passHref legacyBehavior>
+                <Link key={label} href={item.href} passHref legacyBehavior>
                   <Button
                     as="a" 
                     variant="ghost" 
                     className={itemWrapperClasses}
-                    aria-label={item.label}
+                    aria-label={label}
                   >
                     {buttonContent}
                   </Button>
@@ -153,11 +156,11 @@ export function BottomNavigation() {
 
             return (
               <Button
-                key={item.label}
+                key={label}
                 variant="ghost" 
                 className={itemWrapperClasses}
                 onClick={item.action}
-                aria-label={item.label}
+                aria-label={label}
               >
                 {buttonContent}
               </Button>
@@ -166,18 +169,17 @@ export function BottomNavigation() {
         </nav>
       </div>
 
-      {/* Search Modal for Bottom Navigation */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Search Tasks</DialogTitle>
+            <DialogTitle>{tHeader('searchTasks')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleModalSearchSubmit} className="space-y-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search by title, description, tags..."
+                placeholder={tHeader('searchTasks')}
                 className="pl-8 h-10 w-full"
                 value={modalSearchTerm}
                 onChange={handleModalSearchChange}

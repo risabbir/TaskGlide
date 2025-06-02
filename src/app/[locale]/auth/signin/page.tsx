@@ -1,18 +1,19 @@
+
 "use client";
 
-import { SignUpForm } from "@/components/auth/sign-up-form";
+import { SignInForm } from "@/components/auth/sign-in-form";
 import { APP_NAME } from "@/lib/constants";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
-export default function SignUpPage() {
+export default function SignInPage() {
   const t = useTranslations("AuthPages");
   const tApp = useTranslations("App");
 
   useEffect(() => {
-    document.title = t("signUpTitle", { appName: tApp("name") });
+    document.title = t("signInTitle", { appName: tApp("name") });
   }, [t, tApp]);
 
   return (
@@ -24,9 +25,11 @@ export default function SignUpPage() {
             {tApp("name")}
           </span>
         </Link>
-        <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: t("signUpTagline", { appName: tApp("name") }) }} />
+        <p className="text-muted-foreground">
+          {t("signInTagline")}
+        </p>
       </div>
-      <SignUpForm />
+      <SignInForm />
     </div>
   );
 }

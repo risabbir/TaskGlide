@@ -1,6 +1,5 @@
 
 "use client";
-import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -26,13 +25,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { LanguageSwitcher } from "./language-switcher"; // Added import
+import { useTranslations } from "next-intl"; // Added import
 
 interface HeaderProps {
   children?: ReactNode; 
 }
 
 export function Header({ children }: HeaderProps) {
+  const t = useTranslations('Header'); // Initialize translation hook
+  const tApp = useTranslations('App');
   const { dispatch, state } = useKanban();
   const filters = state.filters;
   const { user, signOut, loading: authLoading } = useAuth();
@@ -49,8 +51,7 @@ export function Header({ children }: HeaderProps) {
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters?.searchTerm, isSearchModalOpen]);
+  }, [filters?.searchTerm, isSearchModalOpen, desktopSearchTerm]);
 
 
   useEffect(() => {
@@ -78,7 +79,6 @@ export function Header({ children }: HeaderProps) {
     }
     debounceTimeoutRef.current = setTimeout(() => {
        if (modalSearchTerm !== filters.searchTerm) {
-        // dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
        }
     }, 300);
 
@@ -141,16 +141,15 @@ export function Header({ children }: HeaderProps) {
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center space-x-2">
               <LayoutDashboard className="h-6 w-6 text-primary" />
-              <span className="hidden sm:inline-block font-bold text-lg">{APP_NAME}</span>
+              <span className="hidden sm:inline-block font-bold text-lg">{tApp('name')}</span>
             </Link>
           </div>
 
-          {/* Desktop Search Form - Hidden on mobile */}
           <form onSubmit={(e) => e.preventDefault()} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search tasks..."
+              placeholder={t('searchTasks')}
               className="pl-8 pr-8 h-9 w-full"
               value={desktopSearchTerm}
               onChange={handleDesktopSearchChange}
@@ -170,22 +169,19 @@ export function Header({ children }: HeaderProps) {
           </form>
 
           <div className="flex items-center space-x-1">
-            {/* New Task Button - Hidden on mobile, visible md and up */}
             <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">New Task</span>
+              <span className="hidden sm:inline">{t('newTask')}</span>
             </Button>
             
-            {/* Desktop Filter Button - Hidden on mobile, visible md and up */}
             <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
-              <span className="sr-only">Filters & Sort</span>
+              <span className="sr-only">{t('filtersSort')}</span>
             </Button>
             
-            {/* Theme Toggle - Visible on all screen sizes */}
             <ThemeToggle />
+            <LanguageSwitcher /> 
 
-            {/* User Profile / Auth Buttons - Hidden on mobile, visible md and up */}
             <div className="hidden md:flex items-center space-x-1">
               {!authLoading && user ? (
                  <DropdownMenu>
@@ -210,22 +206,22 @@ export function Header({ children }: HeaderProps) {
                     <DropdownMenuItem asChild>
                       <Link href="/profile">
                         <UserCircle2 className="mr-2 h-4 w-4" />
-                        Profile
+                        {t('profile')}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={signOut}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
+                      {t('signOut')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : !authLoading && (
                 <div className="flex items-center space-x-1">
                   <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3">
-                    <Link href="/auth/signin">Sign In</Link>
+                    <Link href="/auth/signin">{t('signIn')}</Link>
                   </Button>
                   <Button size="sm" asChild className="px-2 sm:px-3">
-                    <Link href="/auth/signup">Sign Up</Link>
+                    <Link href="/auth/signup">{t('signUp')}</Link>
                   </Button>
                 </div>
               )}
@@ -234,20 +230,17 @@ export function Header({ children }: HeaderProps) {
         </div>
       </header>
 
-      {/* Header's own search modal (primarily for desktop or if mobile search icon in header is clicked) */}
-      {/* This modal is triggered by the desktop search if needed, or could be by a future desktop search icon. */}
-      {/* For now, it's mostly un-triggered on mobile since the mobile search icon in header is removed. */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Search Tasks</DialogTitle>
+            <DialogTitle>{t('searchTasks')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleModalSearchSubmit} className="space-y-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search by title, description, tags..."
+                placeholder={t('searchTasks')}
                 className="pl-8 h-10 w-full"
                 value={modalSearchTerm}
                 onChange={handleModalSearchChange}

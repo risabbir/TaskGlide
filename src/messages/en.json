@@ -1,0 +1,42 @@
+
+{
+  "App": {
+    "name": "TaskGlide",
+    "description": "Comprehensive Task Management Tool."
+  },
+  "Header": {
+    "appName": "TaskGlide",
+    "newTask": "New Task",
+    "filtersSort": "Filters & Sort",
+    "profile": "Profile",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "searchTasks": "Search tasks..."
+  },
+  "BottomNavigation": {
+    "board": "Board",
+    "filters": "Filters",
+    "addTask": "Add Task",
+    "search": "Search",
+    "profile": "Profile",
+    "signIn": "Sign In"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Change language"
+  },
+  "AuthPages": {
+    "forgotPasswordTitle": "Forgot Password | {appName}",
+    "forgotPasswordTagline": "Reset your password to regain access to your account.",
+    "signInTitle": "Sign In | {appName}",
+    "signInTagline": "Welcome back! Access your tasks and continue your productivity journey.",
+    "signUpTitle": "Sign Up | {appName}",
+    "signUpTagline": "Join {appName} today to organize your tasks and boost productivity. <br /> Or, click the logo to continue as a guest."
+  },
+  "ProfilePage": {
+    "title": "Profile & Settings | {appName}",
+    "loadingText": "Loading profile...",
+    "pageTitle": "Profile & Settings",
+    "pageDescription": "Manage your personal information, preferences, and account security settings."
+  }
+}
