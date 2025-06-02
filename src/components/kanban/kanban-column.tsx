@@ -12,7 +12,7 @@ interface KanbanColumnProps {
   allColumns: Column[]; 
 }
 
-export function KanbanColumn({ column, tasks, allColumns }: KanbanColumnProps) {
+const KanbanColumnComponent = ({ column, tasks, allColumns }: KanbanColumnProps) => {
   const ColumnIcon = column.icon;
 
   return (
@@ -40,3 +40,5 @@ export function KanbanColumn({ column, tasks, allColumns }: KanbanColumnProps) {
     </div>
   );
 }
+
+export const KanbanColumn = React.memo(KanbanColumnComponent);

@@ -5,16 +5,26 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { useKanban } from "@/lib/store";
-import { TaskModal } from "@/components/task/task-modal";
-import { FilterSidebar } from "@/components/filter-sort/filter-sidebar";
-import { Confetti } from "@/components/ui/confetti";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { FocusBatchModalContent } from "@/components/ai/focus-batch-modal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
+import dynamic from 'next/dynamic';
+
+const TaskModal = dynamic(() => import('@/components/task/task-modal').then(mod => mod.TaskModal), {
+  ssr: false,
+  loading: () => <p>Loading task editor...</p> 
+});
+const FilterSidebar = dynamic(() => import('@/components/filter-sort/filter-sidebar').then(mod => mod.FilterSidebar), { 
+  ssr: false,
+  loading: () => <p>Loading filters...</p>
+});
+const Confetti = dynamic(() => import('@/components/ui/confetti').then(mod => mod.Confetti), { 
+  ssr: false 
+});
 
 
 function QuickActionsBar() {
@@ -45,7 +55,7 @@ function QuickActionsBar() {
 
 function PageContent() {
   const { state, dispatch } = useKanban();
-  const { isFilterSidebarOpen } = state;
+  const { isFilterSidebarOpen, isTaskModalOpen } = state;
 
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
@@ -60,15 +70,15 @@ function PageContent() {
         <KanbanBoard />
       </main>
       <Footer />
-      <TaskModal />
+      {isTaskModalOpen && <Suspense fallback={<div>Loading task editor...</div>}><TaskModal /></Suspense>}
       {isFilterSidebarOpen && (
         <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
           <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
-              <FilterSidebar />
+              <Suspense fallback={<div>Loading filters...</div>}><FilterSidebar /></Suspense>
           </SheetContent>
         </Sheet>
       )}
-      <Confetti />
+      <Suspense fallback={null}><Confetti /></Suspense>
     </div>
   );
 }
@@ -78,3 +88,4 @@ export default function HomePage() {
       <PageContent />
   );
 }
+

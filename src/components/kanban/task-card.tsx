@@ -37,7 +37,7 @@ interface TaskCardProps {
 
 const MAX_WORDS_COLLAPSED_TITLE = 4;
 
-export function TaskCard({ task, columns }: TaskCardProps) {
+const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
   const { dispatch, state: { tasks: allTasks } } = useKanban();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -423,4 +423,6 @@ export function TaskCard({ task, columns }: TaskCardProps) {
     </AlertDialog>
   );
 }
+
+export const TaskCard = React.memo(TaskCardComponent);
 
