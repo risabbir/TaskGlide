@@ -3,9 +3,9 @@
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SheetTrigger } from "@/components/ui/sheet";
+// SheetTrigger removed as mobile filter button is now primarily in BottomNav
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, SlidersHorizontal, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2 } from "lucide-react"; // Changed to UserCircle2
+import { Search, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2, SlidersHorizontal } from "lucide-react"; 
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import Link from "next/link";
@@ -137,7 +137,7 @@ export function Header({ children }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container px-4 flex h-16 items-center justify-between gap-1 sm:gap-2">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center space-x-2">
@@ -146,6 +146,7 @@ export function Header({ children }: HeaderProps) {
             </Link>
           </div>
 
+          {/* Desktop Search Form */}
           <form onSubmit={(e) => e.preventDefault()} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -170,6 +171,7 @@ export function Header({ children }: HeaderProps) {
           </form>
 
           <div className="flex items-center space-x-1">
+            {/* Mobile Search Icon - kept for consistency, BottomNav also has search */}
             <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden" onClick={() => {
               setModalSearchTerm(filters.searchTerm ?? ""); 
               setIsSearchModalOpen(true);
@@ -178,16 +180,21 @@ export function Header({ children }: HeaderProps) {
               <span className="sr-only">Search</span>
             </Button>
 
-            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3">
+            {/* New Task Button - primarily for desktop, mobile has prominent add in BottomNav */}
+            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden sm:inline-flex">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">New Task</span>
             </Button>
             
+            {/* Desktop Filter Button */}
             <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Filters & Sort</span>
             </Button>
-            {children} 
+            
+            {/* For page-specific header actions like filter on mobile (if any) */}
+            {/* This children prop might not be needed if bottom nav is comprehensive */}
+            {/* {children}  */} 
             
             <ThemeToggle />
 
@@ -237,6 +244,7 @@ export function Header({ children }: HeaderProps) {
         </div>
       </header>
 
+      {/* Header's own search modal (primarily for desktop or if mobile search icon in header is clicked) */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -261,6 +269,7 @@ export function Header({ children }: HeaderProps) {
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                   onClick={() => {
                     setModalSearchTerm(""); 
+                    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
                   }}
                 >
                   <XCircle className="h-4 w-4" />

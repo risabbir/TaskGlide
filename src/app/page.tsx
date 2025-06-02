@@ -4,11 +4,10 @@
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
-import { KanbanProvider, useKanban } from "@/lib/store";
+import { KanbanProvider, useKanban } from "@/lib/store"; // KanbanProvider already here
 import { TaskModal } from "@/components/task/task-modal";
 import { FilterSidebar } from "@/components/filter-sort/filter-sidebar";
 import { Confetti } from "@/components/ui/confetti";
-// Toaster moved to RootLayout
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
@@ -54,37 +53,35 @@ function PageContent() {
 
 
   return (
-    <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
-      <div className="flex flex-col min-h-screen">
-        <Header>
-          {/* Mobile Filter Trigger */}
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 md:hidden">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="sr-only">Filters & Sort</span>
-            </Button>
-          </SheetTrigger>
-        </Header>
-        <QuickActionsBar />
-        <main className="flex-grow flex flex-col overflow-hidden">
-          <KanbanBoard />
-        </main>
-        <Footer />
-        <TaskModal />
-        <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
-            <FilterSidebar />
-        </SheetContent>
-        <Confetti />
-        {/* Toaster is now in RootLayout */}
-      </div>
-    </Sheet>
+    // Removed Sheet for filter sidebar from here as BottomNav will control it globally
+    // The FilterSidebar component itself will be rendered based on isFilterSidebarOpen from context
+    <div className="flex flex-col min-h-screen">
+      <Header>
+        {/* Mobile Filter Trigger in Header can be removed if BottomNav handles it, or kept for md screens if desired */}
+        {/* For now, let's remove it from here as BottomNav has a dedicated filter button. */}
+      </Header>
+      <QuickActionsBar />
+      <main className="flex-grow flex flex-col overflow-hidden">
+        <KanbanBoard />
+      </main>
+      <Footer />
+      <TaskModal />
+      {/* FilterSidebar is now controlled by BottomNavigation and KanbanContext state */}
+      {isFilterSidebarOpen && (
+        <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
+          <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
+              <FilterSidebar />
+          </SheetContent>
+        </Sheet>
+      )}
+      <Confetti />
+    </div>
   );
 }
 
 export default function HomePage() {
+  // KanbanProvider is already at RootLayout level now
   return (
-    <KanbanProvider>
       <PageContent />
-    </KanbanProvider>
   );
 }
