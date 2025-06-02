@@ -7,28 +7,21 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { Toaster } from '@/components/ui/toaster';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { KanbanProvider } from '@/lib/store';
-import {NextIntlClientProvider} from 'next-intl';
-import {getMessages, getTranslations} from 'next-intl/server';
-import { locales, defaultLocale } from '@/i18n-config'; // Import from new config file
-import { notFound } from 'next/navigation'; // Ensure this is from next/navigation
+import { APP_NAME } from '@/lib/constants'; // For metadata
+// Removed: import {NextIntlClientProvider} from 'next-intl';
+// Removed: import {getMessages, getTranslations} from 'next-intl/server';
+// Removed: import { locales, defaultLocale } from '@/i18n-config';
+import { notFound } from 'next/navigation'; // Keep for general use if needed, though locale validation is removed
 
-export function generateStaticParams() {
-  return locales.map((locale) => ({locale}));
-}
+// Removed: export function generateStaticParams() related to locales
 
 export async function generateMetadata({params}: {params: {locale: string}}): Promise<Metadata> {
-  const { locale: localeFromParams } = params; // Destructure locale immediately
+  // const { locale: localeFromParams } = params; // localeFromParams no longer used for i18n
 
-  if (typeof localeFromParams !== 'string' || !locales.includes(localeFromParams)) {
-    console.error(`[generateMetadata] Invalid or missing locale in params: "${localeFromParams}". Triggering notFound for metadata.`);
-    notFound();
-  }
-
-  // At this point, localeFromParams is a string and a valid locale.
-  const t = await getTranslations({locale: localeFromParams, namespace: 'App'});
+  // Basic metadata, not using next-intl
   return {
-    title: t('name'),
-    description: t('description'),
+    title: APP_NAME,
+    description: 'Comprehensive Task Management Tool.', // Hardcoded description
   };
 }
 
@@ -44,33 +37,25 @@ export default async function RootLayout({
   params
 }: Readonly<{
   children: React.ReactNode;
-  params: {locale: string}; // Type from Next.js
+  params: {locale: string}; // Param is still received due to directory structure
 }>) {
-  const { locale: localeFromParams } = params; // Destructure locale immediately
+  // const { locale: localeFromParams } = params; // localeFromParams no longer used for i18n
 
-  // Stricter validation
-  if (typeof localeFromParams !== 'string' || !locales.includes(localeFromParams)) {
-    console.error(`[RootLayout] Invalid or missing locale in params: "${localeFromParams}". Triggering notFound.`);
-    notFound();
-  }
-
-  // At this point, localeFromParams is a string and a valid locale.
-  const messages = await getMessages({locale: localeFromParams});
+  // Removed: locale validation and getMessages call
 
   return (
-    <html lang={localeFromParams} suppressHydrationWarning={true}>
+    <html lang="en" suppressHydrationWarning={true}> {/* Hardcoded lang to "en" */}
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`} suppressHydrationWarning={true}>
-        <NextIntlClientProvider locale={localeFromParams} messages={messages}>
-          <AuthProvider>
-            <KanbanProvider>
-              <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow pb-16 md:pb-0">
-                {children}
-              </div>
-              <Toaster />
-              <BottomNavigation />
-            </KanbanProvider>
-          </AuthProvider>
-        </NextIntlClientProvider>
+        {/* Removed: NextIntlClientProvider wrapper */}
+        <AuthProvider>
+          <KanbanProvider>
+            <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow pb-16 md:pb-0">
+              {children}
+            </div>
+            <Toaster />
+            <BottomNavigation />
+          </KanbanProvider>
+        </AuthProvider>
       </body>
     </html>
   );
