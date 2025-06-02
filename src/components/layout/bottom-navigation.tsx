@@ -87,13 +87,12 @@ export function BottomNavigation() {
   return (
     <>
       <div className="fixed md:hidden bottom-3 left-3 right-3 z-40 h-16 rounded-2xl bg-background/80 backdrop-blur-md shadow-lg border">
-        <nav className="flex h-full items-center justify-around px-2"> {/* Changed px-1 to px-2 */}
+        <nav className="flex h-full items-center justify-around px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const label = item.label;
             
             let isActive = item.isActiveOverride;
-            // Only calculate isActive based on href if isActiveOverride is not explicitly set to true or false
             if (item.isActiveOverride === undefined && item.href && !item.isCentral) {
                 isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             }
@@ -117,7 +116,7 @@ export function BottomNavigation() {
             }
             
             const itemWrapperClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1 rounded-lg", 
+              "group flex flex-col items-center justify-center h-full w-full p-1.5 rounded-lg", // Increased padding from p-1 to p-1.5
               "transition-all duration-150 ease-in-out",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
               isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30 active:scale-95"
