@@ -176,12 +176,6 @@ export function Header({ children }: HeaderProps) {
                 <Search className="h-5 w-5" />
                 <span className="sr-only">Search Tasks</span>
             </Button>
-
-            {/* Mobile New Task Button */}
-            <Button variant="ghost" size="icon" onClick={handleOpenNewTaskModal} className="md:hidden h-9 w-9">
-                <PlusCircle className="h-5 w-5" />
-                <span className="sr-only">New Task</span>
-            </Button>
             
             {/* Desktop New Task Button */}
             <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
