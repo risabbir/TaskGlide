@@ -69,7 +69,7 @@ export function ProfileForm() {
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
-  const [avatarKey, setAvatarKey] = useState(Date.now()); 
+  const [avatarKey, setAvatarKey] = useState(Date.now());
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,44 +78,54 @@ export function ProfileForm() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       displayName: "",
-      role: "", 
+      role: "",
       otherRole: "",
       bio: "",
       website: "",
     },
   });
-  
+
   const watchedRole = form.watch("role");
 
   useEffect(() => {
     if (user) {
+      // Preserve existing form values if they exist (e.g., from a previous edit session)
+      // but prioritize user data from context for initial load or after external changes.
       const currentFormValues = form.getValues();
-      form.reset({ 
+      form.reset({
         displayName: user.displayName || currentFormValues.displayName || "",
-        role: currentFormValues.role || "", 
-        otherRole: currentFormValues.otherRole || "", 
-        bio: currentFormValues.bio || "", 
-        website: currentFormValues.website || "", 
-      }, { keepDirty: false, keepValues: true });
+        // For role, bio, website - these are not in Firebase Auth user object, so we keep form state
+        // unless this is the first load. Firestore would be needed for these to persist.
+        role: currentFormValues.role || "", // Placeholder for actual data source
+        otherRole: currentFormValues.otherRole || "", // Placeholder
+        bio: currentFormValues.bio || "", // Placeholder
+        website: currentFormValues.website || "", // Placeholder
+      }, { keepDirty: form.formState.isDirty, keepValues: true }); // keepDirty only if form was already dirty
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); 
+  }, [user]);
 
+
+  // Effect 1: For local preview when a file is selected
   useEffect(() => {
     if (selectedFile) {
-      const objectUrl = URL.createObjectURL(selectedFile);
-      setPreviewURL(objectUrl);
-      setAvatarKey(Date.now()); 
-      return () => URL.revokeObjectURL(objectUrl);
-    } else if (user?.photoURL) {
-      setPreviewURL(user.photoURL);
-      setAvatarKey(Date.now()); 
-    } else {
-      setPreviewURL(null);
-      setAvatarKey(Date.now()); 
+        const objectUrl = URL.createObjectURL(selectedFile);
+        setPreviewURL(objectUrl); // Show local preview
+        setAvatarKey(Date.now()); // Change key to force re-render with local preview
+        return () => URL.revokeObjectURL(objectUrl);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFile, user?.photoURL]);
+    // If no file is selected (e.g., after upload or initially), Effect 2 will handle it.
+  }, [selectedFile]);
+
+  // Effect 2: To update preview from user.photoURL (when no local file selected) AND to update avatarKey on context changes
+  useEffect(() => {
+    if (!selectedFile) { // Only use user.photoURL if no local file is being previewed
+        setPreviewURL(user?.photoURL || null);
+    }
+    // Force Avatar re-render whenever user.photoURL changes (e.g. after context update from successful upload)
+    // OR when selectedFile is cleared (to switch back from local preview to user.photoURL)
+    setAvatarKey(Date.now());
+  }, [user?.photoURL, selectedFile]);
 
 
   async function onProfileSubmit(data: ProfileFormData) {
@@ -134,26 +144,13 @@ export function ProfileForm() {
 
     if (authUpdateSuccess) {
       const finalRole = data.role === 'other' ? data.otherRole : data.role;
-      
-      console.log("Simulating save of additional profile details to Firestore:", {
-        userId: user.uid,
-        role: finalRole,
-        bio: data.bio,
-        website: data.website,
+      console.log("Simulating save of additional profile details (role, bio, website):", {
+        userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
       });
-      
-      const hasAuthUpdates = Object.keys(profileAuthUpdates).length > 0;
-      const hasAdditionalUpdates = data.bio || data.website || finalRole || (form.getValues().role && data.role !== form.getValues().role) || (form.getValues().otherRole && data.otherRole !== form.getValues().otherRole);
-
-      if (hasAuthUpdates && !hasAdditionalUpdates) {
-        toast({ title: "Display Name Updated", description: "Your display name has been successfully updated." });
-      } else if (hasAuthUpdates || hasAdditionalUpdates) {
-         toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
-      }
-      
-      form.reset(data, { keepDirty: false }); 
+      toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
+      form.reset(data, { keepDirty: false });
     } else if (Object.keys(profileAuthUpdates).length > 0) {
-        toast({ title: "Update Failed", description: "Could not update your display name.", variant: "destructive"});
+      toast({ title: "Update Failed", description: "Could not update your display name.", variant: "destructive"});
     }
     setIsSavingDetails(false);
   }
@@ -174,37 +171,37 @@ export function ProfileForm() {
         return;
       }
       setSelectedFile(file);
+    } else {
+      setSelectedFile(null); // If no file is chosen (e.g., user cancels dialog)
     }
   };
 
   const handlePhotoUpload = async () => {
     if (!selectedFile || !user) return;
     setIsUploadingPhoto(true);
-    const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
-    if (uploadedPhotoURL) {
-      setSelectedFile(null); 
-      if(fileInputRef.current) fileInputRef.current.value = ""; 
-      // The useEffect for previewURL will pick up the change from user.photoURL via context update
+    const uploadedPhotoURL = await updateUserPhotoURL(selectedFile); // From context
+    if (uploadedPhotoURL !== null) { // Check for non-null to indicate success
+      // Success: user context will update via onAuthStateChanged or direct setUser in context
+      // which triggers the useEffect for user.photoURL
+      toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
     }
+    // Reset selection regardless of success/failure of upload itself, user context handles new URL
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setIsUploadingPhoto(false);
   };
 
   const triggerFileSelect = () => fileInputRef.current?.click();
 
   const getInitials = (name?: string | null, email?: string | null) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-    }
+    if (name) return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
     if (email) {
       const parts = email.split("@")[0];
-      if (parts) {
-          return parts.substring(0, 2).toUpperCase();
-      }
-      return email.substring(0,1).toUpperCase();
+      return parts ? parts.substring(0, 2).toUpperCase() : email.substring(0,1).toUpperCase();
     }
     return "??";
   };
-  
+
   const isFormBusy = isSavingDetails || isUploadingPhoto;
 
   return (
@@ -227,9 +224,7 @@ export function ProfileForm() {
                         </Avatar>
                         <div
                             className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                            onClick={triggerFileSelect}
-                            role="button"
-                            tabIndex={0}
+                            onClick={triggerFileSelect} role="button" tabIndex={0}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') triggerFileSelect();}}
                             aria-label="Change profile picture"
                         >
@@ -237,13 +232,10 @@ export function ProfileForm() {
                             <p className="mt-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">Change</p>
                         </div>
                         <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
+                            type="file" ref={fileInputRef} onChange={handleFileChange}
                             accept="image/jpeg,image/png,image/gif,image/webp"
-                            className="hidden"
-                            id="profile-picture-input"
-                            disabled={isFormBusy}
+                            className="hidden" id="profile-picture-input"
+                            disabled={isUploadingPhoto || isSavingDetails} // Disable if any form operation is busy
                         />
                     </div>
                     <div className="flex-grow text-center sm:text-left">
@@ -256,14 +248,14 @@ export function ProfileForm() {
                             </Button>
                         </div>
                         ) : (
-                            <Button type="button" variant="outline" onClick={triggerFileSelect} size="sm" disabled={isFormBusy}>
+                            <Button type="button" variant="outline" onClick={triggerFileSelect} size="sm" disabled={isUploadingPhoto || isSavingDetails}>
                                <UploadCloud className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">JPG, PNG, GIF, WebP. Max 5MB.</p>
                     </div>
                 </div>
-            
+
                 <FormField
                 control={form.control}
                 name="displayName"
@@ -280,7 +272,7 @@ export function ProfileForm() {
 
                 <FormField
                   control={form.control}
-                  name="role" 
+                  name="role"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base">Your Role</FormLabel>
@@ -306,7 +298,7 @@ export function ProfileForm() {
                 {watchedRole === 'other' && (
                   <FormField
                     control={form.control}
-                    name="otherRole" 
+                    name="otherRole"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base">Please specify your role</FormLabel>
@@ -332,7 +324,7 @@ export function ProfileForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="website"
@@ -359,9 +351,9 @@ export function ProfileForm() {
                 </FormItem>
             </CardContent>
             <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
-            <Button 
-                type="submit" 
-                className="w-full sm:w-auto" 
+            <Button
+                type="submit"
+                className="w-full sm:w-auto"
                 disabled={isSavingDetails || isUploadingPhoto || !form.formState.isDirty}
             >
                 {isSavingDetails && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
