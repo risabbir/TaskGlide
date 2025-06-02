@@ -31,7 +31,7 @@ const changePasswordSchema = z.object({
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export function ChangePasswordForm() {
-  const { changePassword, authOpLoading } = useAuth(); // Use authOpLoading for password change
+  const { changePassword, authOpLoading } = useAuth(); 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
@@ -57,7 +57,7 @@ export function ChangePasswordForm() {
 
   return (
     <Card className="w-full shadow-xl overflow-hidden">
-      <CardHeader className="pt-8 pb-6 border-b">
+      <CardHeader className="p-6 border-b">
         <CardTitle className="text-2xl font-semibold">Change Password</CardTitle>
         <CardDescription className="text-base">Update your account password. For security, you will be asked for your current password.</CardDescription>
       </CardHeader>

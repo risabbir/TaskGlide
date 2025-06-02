@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React, { useEffect, useState, useRef } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 const profileSchema = z.object({
   displayName: z.string().min(1, "Display name is required.").max(50, "Display name is too long."),
@@ -45,42 +46,42 @@ export function ProfileForm() {
     },
   });
 
-  // Effect 1: Handle local file selection and preview
+  // Effect 1: Handles local file selection and creating/revoking object URLs for preview.
   useEffect(() => {
     let objectUrl: string | undefined;
     if (selectedFile) {
       objectUrl = URL.createObjectURL(selectedFile);
-      setPreviewURL(objectUrl); 
-      setAvatarKey(Date.now());   
+      setPreviewURL(objectUrl); // Show local preview
+      setAvatarKey(Date.now());   // Force avatar re-render for the new preview
     }
-    // No 'else' here, Effect 2 handles reverting to user.photoURL when selectedFile is cleared.
+    // If selectedFile becomes null (e.g., after successful upload or manual clearing),
+    // Effect 2 will take care of resetting previewURL to user.photoURL.
     return () => {
       if (objectUrl) {
-        URL.revokeObjectURL(objectUrl); 
+        URL.revokeObjectURL(objectUrl); // Clean up object URL
       }
     };
   }, [selectedFile]);
 
-  // Effect 2: Initialize and update previewURL from user.photoURL (when no local file is selected)
-  // Also resets form display name when user context changes.
+  // Effect 2: Syncs form display name and previewURL with user context when no local file is being previewed.
   useEffect(() => {
     if (user) {
-      form.reset({ displayName: user.displayName || "" });
-      if (!selectedFile) { // Only update from user.photoURL if not currently previewing a local file
-        const currentPhotoURL = user.photoURL || null;
-        if (previewURL !== currentPhotoURL) { // Only set if different to avoid potential minor re-renders
-          setPreviewURL(currentPhotoURL);
-          setAvatarKey(Date.now()); 
+      form.reset({ displayName: user.displayName || "" }); // Reset display name
+      if (!selectedFile) { // If no local file is being previewed
+        const currentAuthPhotoURL = user.photoURL || null;
+        if (previewURL !== currentAuthPhotoURL) { // Only update if different
+          setPreviewURL(currentAuthPhotoURL); // Sync previewURL with actual user photo
+          setAvatarKey(Date.now());      // Force avatar re-render
         }
       }
-    } else { 
+    } else { // User logged out or not available
       form.reset({ displayName: "" });
-      setSelectedFile(null); 
-      setPreviewURL(null);   
-      setAvatarKey(Date.now()); 
+      setPreviewURL(null); // Clear preview
+      if (selectedFile) setSelectedFile(null); // Clear selected file if any
+      setAvatarKey(Date.now()); // Force avatar re-render to fallback
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, form.reset]); // `selectedFile` and `previewURL` are intentionally omitted to prevent loops/race conditions with Effect 1.
+  }, [user, selectedFile, form.reset]); // form.reset is stable, selectedFile needed to re-evaluate
 
   async function onDisplayNameSubmit(data: ProfileFormData) {
     if (!user) return;
@@ -113,9 +114,8 @@ export function ProfileForm() {
     const success = await updateUserPhotoURL(selectedFile);
     if (success) {
       setSelectedFile(null); 
-      // user.photoURL will update via context, and Effect 2 should pick it up.
-      // Forcing avatarKey update here ensures immediate visual refresh if context update is slightly delayed.
-      setAvatarKey(Date.now()); 
+      // user.photoURL will update via context, Effect 2 will pick it up.
+      setAvatarKey(Date.now()); // Extra assurance for immediate visual refresh
     }
     setIsPhotoUploading(false);
   };
@@ -139,7 +139,7 @@ export function ProfileForm() {
   if (!user && !form.formState.isLoading) { 
     return (
       <Card className="w-full shadow-xl overflow-hidden">
-        <CardHeader className="items-center text-center bg-card pt-8 pb-6 border-b">
+        <CardHeader className="items-center text-center bg-card p-6 border-b">
           <CardTitle className="text-2xl font-semibold mt-4">Account Details</CardTitle>
         </CardHeader>
         <CardContent className="p-6 sm:p-8">
@@ -153,14 +153,14 @@ export function ProfileForm() {
 
   return (
     <Card className="w-full shadow-xl overflow-hidden">
-      <CardHeader className="items-center text-center bg-card pt-8 pb-6 border-b">
+      <CardHeader className="items-center text-center bg-card p-6 border-b">
         <div className="relative group mb-3">
           <Avatar key={avatarKey} className="h-32 w-32 cursor-pointer ring-4 ring-primary/20 ring-offset-4 ring-offset-card shadow-lg hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar">
             <AvatarImage src={previewURL || undefined} alt={user?.displayName || user?.email || "User"} />
             <AvatarFallback className="text-4xl">{getInitials(user?.displayName, user?.email)}</AvatarFallback>
           </Avatar>
           <div
-            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
             onClick={triggerFileSelect}
             role="button"
             tabIndex={0}
@@ -168,6 +168,7 @@ export function ProfileForm() {
             aria-label="Change profile picture"
           >
             <Edit3 className="h-10 w-10 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <p id="profile-picture-label" className="mt-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">Change Photo</p>
           </div>
         </div>
         <input
@@ -177,19 +178,15 @@ export function ProfileForm() {
             accept="image/jpeg,image/png,image/gif,image/webp"
             className="hidden"
             id="profile-picture-input"
-            aria-labelledby="profile-picture-label"
         />
         {selectedFile && (
           <div className="mt-3 flex flex-col items-center gap-2">
-            <p className="text-sm text-muted-foreground">New photo: {selectedFile.name}</p>
+            <p className="text-sm text-muted-foreground">New: {selectedFile.name}</p>
             <Button onClick={handlePhotoUpload} disabled={isPhotoUploading} size="sm">
               {isPhotoUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
               Save Photo
             </Button>
           </div>
-        )}
-         {!selectedFile && (
-            <p id="profile-picture-label" className="text-sm text-muted-foreground mt-2 group-hover:text-primary transition-colors">Click avatar to change photo</p>
         )}
         <CardTitle className="text-2xl font-semibold mt-4">Account Details</CardTitle>
         <CardDescription className="text-base">Manage your display name and view your email.</CardDescription>
