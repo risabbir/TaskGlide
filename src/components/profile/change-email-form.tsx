@@ -31,7 +31,8 @@ const changeEmailSchema = z.object({
 type ChangeEmailFormData = z.infer<typeof changeEmailSchema>;
 
 export function ChangeEmailForm() {
-  const { updateUserEmailWithVerification, authOpLoading, user } = useAuth();
+  const { updateUserEmailWithVerification, user } = useAuth();
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
   const form = useForm<ChangeEmailFormData>({
@@ -48,10 +49,15 @@ export function ChangeEmailForm() {
         form.setError("newEmail", { type: "manual", message: "New email cannot be the same as your current email." });
         return;
     }
-    const success = await updateUserEmailWithVerification(data.currentPassword, data.newEmail);
-    if (success) {
-      form.reset();
-      setShowCurrentPassword(false);
+    setIsUpdatingEmail(true);
+    try {
+      const success = await updateUserEmailWithVerification(data.currentPassword, data.newEmail);
+      if (success) {
+        form.reset();
+        setShowCurrentPassword(false);
+      }
+    } finally {
+      setIsUpdatingEmail(false);
     }
   }
 
@@ -76,7 +82,7 @@ export function ChangeEmailForm() {
                 <FormItem>
                   <FormLabel className="text-base">New Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="new.email@example.com" {...field} className="text-base" />
+                    <Input type="email" placeholder="new.email@example.com" {...field} className="text-base" disabled={isUpdatingEmail}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -89,7 +95,7 @@ export function ChangeEmailForm() {
                 <FormItem>
                   <FormLabel className="text-base">Confirm New Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Confirm new.email@example.com" {...field} className="text-base" />
+                    <Input type="email" placeholder="Confirm new.email@example.com" {...field} className="text-base" disabled={isUpdatingEmail}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,6 +114,7 @@ export function ChangeEmailForm() {
                         placeholder="••••••••" 
                         {...field} 
                         className="text-base pr-10"
+                        disabled={isUpdatingEmail}
                       />
                       <Button
                         type="button"
@@ -116,6 +123,7 @@ export function ChangeEmailForm() {
                         className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                         aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
+                        disabled={isUpdatingEmail}
                       >
                         {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -127,8 +135,8 @@ export function ChangeEmailForm() {
             />
           </CardContent>
           <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
-            <Button type="submit" className="w-full sm:w-auto" disabled={authOpLoading || !form.formState.isDirty}>
-              {authOpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full sm:w-auto" disabled={isUpdatingEmail || !form.formState.isDirty}>
+              {isUpdatingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Verification Email
             </Button>
           </CardFooter>

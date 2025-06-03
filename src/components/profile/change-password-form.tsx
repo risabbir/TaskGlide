@@ -31,7 +31,8 @@ const changePasswordSchema = z.object({
 type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 export function ChangePasswordForm() {
-  const { changePassword, authOpLoading } = useAuth(); 
+  const { changePassword } = useAuth(); 
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
@@ -46,12 +47,17 @@ export function ChangePasswordForm() {
   });
 
   async function onSubmit(data: ChangePasswordFormData) {
-    const success = await changePassword(data.currentPassword, data.newPassword);
-    if (success) {
-      form.reset();
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmNewPassword(false);
+    setIsUpdatingPassword(true);
+    try {
+      const success = await changePassword(data.currentPassword, data.newPassword);
+      if (success) {
+        form.reset();
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmNewPassword(false);
+      }
+    } finally {
+      setIsUpdatingPassword(false);
     }
   }
 
@@ -80,6 +86,7 @@ export function ChangePasswordForm() {
                         placeholder="••••••••" 
                         {...field} 
                         className="text-base pr-10"
+                        disabled={isUpdatingPassword}
                       />
                       <Button
                         type="button"
@@ -88,6 +95,7 @@ export function ChangePasswordForm() {
                         className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                         aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
+                        disabled={isUpdatingPassword}
                       >
                         {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -110,6 +118,7 @@ export function ChangePasswordForm() {
                         placeholder="••••••••" 
                         {...field} 
                         className="text-base pr-10"
+                        disabled={isUpdatingPassword}
                       />
                        <Button
                         type="button"
@@ -118,6 +127,7 @@ export function ChangePasswordForm() {
                         className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                         aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                        disabled={isUpdatingPassword}
                       >
                         {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -140,6 +150,7 @@ export function ChangePasswordForm() {
                         placeholder="••••••••" 
                         {...field} 
                         className="text-base pr-10"
+                        disabled={isUpdatingPassword}
                       />
                        <Button
                         type="button"
@@ -148,6 +159,7 @@ export function ChangePasswordForm() {
                         className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
                         aria-label={showConfirmNewPassword ? "Hide confirm new password" : "Show confirm new password"}
+                        disabled={isUpdatingPassword}
                       >
                         {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -159,8 +171,8 @@ export function ChangePasswordForm() {
             />
           </CardContent>
           <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
-            <Button type="submit" className="w-full sm:w-auto" disabled={authOpLoading || !form.formState.isDirty}>
-              {authOpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="w-full sm:w-auto" disabled={isUpdatingPassword || !form.formState.isDirty}>
+              {isUpdatingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Password
             </Button>
           </CardFooter>

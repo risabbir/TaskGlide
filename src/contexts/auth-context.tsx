@@ -24,7 +24,7 @@ import {
 } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebase'; 
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'; 
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { APP_NAME } from '@/lib/constants';
 
@@ -38,10 +38,10 @@ export interface OtherProfileData {
   otherRole?: string;
   bio?: string;
   website?: string;
-  firestoreUpdatedAt?: any; // To store Firestore server timestamp for reconciliation if needed
+  firestoreUpdatedAt?: Timestamp; 
 }
 
-const initialOtherProfileData: OtherProfileData = {
+const initialOtherProfileData: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
   role: "",
   otherRole: "",
   bio: "",
@@ -51,7 +51,7 @@ const initialOtherProfileData: OtherProfileData = {
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean; 
-  authOpLoading: boolean; 
+  // authOpLoading: boolean; // Removed, will be handled locally in components
   otherProfileData: OtherProfileData | null;
   otherProfileDataLoading: boolean;
   error: AuthError | null;
@@ -71,7 +71,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [authOpLoading, setAuthOpLoading] = useState(false); 
+  // const [authOpLoading, setAuthOpLoading] = useState(false); // Removed
   const [error, setError] = useState<AuthError | null>(null);
   const { toast } = useToast();
 
@@ -87,11 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (docSnap.exists()) {
         setOtherProfileData(docSnap.data() as OtherProfileData);
       } else {
-        setOtherProfileData(initialOtherProfileData); // Initialize if no doc exists
+        setOtherProfileData(initialOtherProfileData); 
       }
     } catch (err) {
       console.error("Error fetching other profile data:", err);
-      setOtherProfileData(initialOtherProfileData); // Fallback on error
+      setOtherProfileData(initialOtherProfileData); 
       toast({ title: "Profile Data Error", description: "Could not load additional profile details.", variant: "destructive" });
     } finally {
       setOtherProfileDataLoading(false);
@@ -113,21 +113,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchOtherProfileData]);
 
   const signUp = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user ? { ...userCredential.user } as FirebaseUser : null); 
-      if (userCredential.user) {
-        // Initialize basic profile in Firestore for new user
-        await setDoc(doc(db, "profiles", userCredential.user.uid), { 
+      const newUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
+      setUser(newUser); 
+      if (newUser) {
+        await setDoc(doc(db, "profiles", newUser.uid), { 
             ...initialOtherProfileData, 
             firestoreUpdatedAt: serverTimestamp() 
         });
-        await fetchOtherProfileData(userCredential.user.uid); // Fetch the newly created profile
+        await fetchOtherProfileData(newUser.uid); 
       }
       toast({ title: "Account Created!", description: `Welcome to ${APP_NAME}! You're all set.` });
-      return userCredential.user;
+      return newUser;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
@@ -140,21 +140,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sign Up Error", description: message, variant: "destructive" });
       return null;
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
   }, [toast, fetchOtherProfileData]);
 
   const signIn = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-      setUser(userCredential.user ? { ...userCredential.user } as FirebaseUser : null); 
-      if (userCredential.user) {
-        await fetchOtherProfileData(userCredential.user.uid);
+      const signedInUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
+      setUser(signedInUser); 
+      if (signedInUser) {
+        await fetchOtherProfileData(signedInUser.uid);
       }
       toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
-      return userCredential.user;
+      return signedInUser;
     } catch (e) {
       const authError = e as AuthError;
       setError(authError);
@@ -165,12 +166,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sign In Error", description: message, variant: "destructive" });
       return null;
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
   }, [toast, fetchOtherProfileData]);
 
   const signOut = useCallback(async () => {
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       await firebaseSignOut(auth);
@@ -182,12 +183,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(authError);
       toast({ title: "Sign Out Error", description: authError.message || "Failed to sign out.", variant: "destructive" });
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
   }, [toast]);
 
   const resetPassword = useCallback(async (email: string): Promise<boolean> => {
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       await sendPasswordResetEmail(auth, email);
@@ -199,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Password Reset Request", description: "If an account exists for this email, a reset link has been sent. If you don't receive it, please check your email address and try again.", variant: authError.code === 'auth/user-not-found' ? "default" : "destructive" });
       return false;
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
   }, [toast]);
 
@@ -208,12 +209,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
-    setAuthOpLoading(true); // Use authOpLoading for this operation
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
+      // Create a new object reference for the user to ensure React detects the change
       setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
-      // toast({ title: "Profile Updated", description: "Your display name/photo has been updated." });
       return true;
     } catch (e) {
       const authError = e as AuthError;
@@ -221,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Profile Update Error", description: authError.message || "Failed to update display name/photo.", variant: "destructive" });
       return false;
     } finally {
-       setAuthOpLoading(false);
+       // setAuthOpLoading(false); // Removed
     }
   }, [toast]);
 
@@ -230,7 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return null;
     }
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       const filePath = `profile-pictures/${auth.currentUser.uid}/${Date.now()}_${photoFile.name}`;
@@ -239,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const photoURL = await getDownloadURL(fileRef);
 
       await firebaseUpdateProfile(auth.currentUser, { photoURL });
+       // Create a new object reference for the user
       setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); 
       
       return photoURL;
@@ -254,9 +256,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Photo Update Error", description, variant: "destructive" });
       return null;
     } finally {
-        setAuthOpLoading(false);
+        // setAuthOpLoading(false); // Removed
     }
-  }, [toast, storage]);
+  }, [toast]);
 
 
   const saveOtherProfileData = useCallback(async (data: Omit<OtherProfileData, 'firestoreUpdatedAt'>): Promise<boolean> => {
@@ -264,16 +266,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to save profile details.", variant: "destructive" });
       return false;
     }
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       const profileDocRef = doc(db, "profiles", auth.currentUser.uid);
       const dataToSave = { ...data, firestoreUpdatedAt: serverTimestamp() };
       await setDoc(profileDocRef, dataToSave, { merge: true });
-      // Optimistically update local state, or re-fetch for server-generated timestamp
-      // For simplicity, we'll update local state directly. Firestore timestamp won't be reflected locally immediately.
-      setOtherProfileData(prev => ({...(prev || initialOtherProfileData), ...data}));
-      // toast({ title: "Profile Details Saved", description: "Your additional profile information has been updated." });
+      
+      // Fetch again to get the server timestamp and ensure consistency
+      await fetchOtherProfileData(auth.currentUser.uid);
       return true;
     } catch (e) {
       const err = e as Error;
@@ -281,16 +282,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Profile Save Error", description: err.message || "Failed to save additional profile details.", variant: "destructive" });
       return false;
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
-  }, [toast]);
+  }, [toast, fetchOtherProfileData]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     if (!auth.currentUser || !auth.currentUser.email) {
       toast({ title: "Not Authenticated", description: "You must be logged in to change your password.", variant: "destructive" });
       return false;
     }
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
@@ -310,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Password Change Error", description: errorMessage, variant: "destructive" });
       return false;
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
   }, [toast]);
 
@@ -319,7 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not Authenticated", description: "You must be logged in to change your email.", variant: "destructive" });
       return false;
     }
-    setAuthOpLoading(true);
+    // setAuthOpLoading(true); // Removed
     setError(null);
     try {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
@@ -345,14 +346,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Email Change Error", description: errorMessage, variant: "destructive" });
       return false;
     } finally {
-      setAuthOpLoading(false);
+      // setAuthOpLoading(false); // Removed
     }
   }, [toast]);
 
   const value = { 
     user, 
     loading: initialLoading,
-    authOpLoading, 
+    // authOpLoading, // Removed
     otherProfileData,
     otherProfileDataLoading,
     error, 

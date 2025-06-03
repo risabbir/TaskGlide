@@ -66,13 +66,6 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
-const initialOtherProfileData: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
-  role: "",
-  otherRole: "",
-  bio: "",
-  website: "",
-};
-
 export function ProfileForm() {
   const { 
     user, 
@@ -81,18 +74,18 @@ export function ProfileForm() {
     otherProfileData, 
     otherProfileDataLoading, 
     saveOtherProfileData,
-    authOpLoading 
   } = useAuth();
   const { toast } = useToast();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewURL, setPreviewURL] = useState<string | null>(null);
+  const [previewURL, setPreviewURL] = useState<string | null>(null); // For local file object preview
+  const [uploadedPhotoDisplayUrl, setUploadedPhotoDisplayUrl] = useState<string | null>(null); // For successfully uploaded photo
   const [avatarKey, setAvatarKey] = useState(Date.now());
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSavingProfileInfo, setIsSavingProfileInfo] = useState(false);
 
-  // This represents the "canonical" or "clean" state of the form.
-  // It's derived from the latest user data (displayName from auth, others from Firestore via context).
+
   const canonicalProfileData = useMemo(() => {
     return {
       displayName: user?.displayName || "",
@@ -111,15 +104,15 @@ export function ProfileForm() {
 
   const watchedRole = form.watch("role");
 
-  // Effect to synchronize form fields with canonicalProfileData, preserving dirty fields.
   useEffect(() => {
+    // This effect synchronizes the form with canonicalProfileData (from auth/Firestore)
+    // It respects "dirty" fields, meaning if a user is editing a field, it won't be overwritten.
     (Object.keys(canonicalProfileData) as Array<keyof ProfileFormData>).forEach(key => {
       const currentFieldValue = form.getValues(key);
       const canonicalValueForField = canonicalProfileData[key] === undefined || canonicalProfileData[key] === null 
                                      ? "" 
                                      : String(canonicalProfileData[key]);
 
-      // Only update the form field if it's not dirty and its current value differs from the canonical value
       if (!form.formState.dirtyFields[key] && currentFieldValue !== canonicalValueForField) {
         form.setValue(key, canonicalValueForField, {
           shouldDirty: false, 
@@ -127,21 +120,18 @@ export function ProfileForm() {
         });
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canonicalProfileData, form.setValue, form.getValues, form.formState.dirtyFields]);
+  }, [canonicalProfileData, form]); // form is now a dependency
 
-
-  // Effect to manage avatarKey for re-rendering Avatar on src changes
   useEffect(() => {
     setAvatarKey(Date.now());
-  }, [selectedFile, user?.photoURL, user?.email]); // Added user?.email to help ensure re-keying
+  }, [selectedFile, user?.photoURL, user?.email, uploadedPhotoDisplayUrl]); 
 
 
-  // Effect for local file preview
   useEffect(() => {
     if (selectedFile) {
       const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewURL(objectUrl);
+      setUploadedPhotoDisplayUrl(null); // Clear any previously uploaded URL if a new file is selected
       return () => URL.revokeObjectURL(objectUrl);
     } else {
       setPreviewURL(null);
@@ -151,56 +141,62 @@ export function ProfileForm() {
 
   async function onProfileSubmit(data: ProfileFormData) {
     if (!user) return;
+    setIsSavingProfileInfo(true);
 
     let displayNameUpdated = false;
     let otherDataUpdated = false;
+    let success = true;
 
     try {
         if (data.displayName !== (user.displayName || "")) {
             const authUpdateSuccess = await updateUserProfile({ displayName: data.displayName });
             if (!authUpdateSuccess) {
                  toast({ title: "Save Error", description: "Failed to update display name.", variant: "destructive" });
-                 return; 
+                 success = false;
+            } else {
+              displayNameUpdated = true;
             }
-            displayNameUpdated = true;
         }
-
-        const otherDataToSave: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
-            role: data.role,
-            otherRole: data.otherRole,
-            bio: data.bio,
-            website: data.website,
-        };
         
-        const hasOtherDataChanged = JSON.stringify(otherDataToSave) !== JSON.stringify({
-          role: otherProfileData?.role || "",
-          otherRole: otherProfileData?.otherRole || "",
-          bio: otherProfileData?.bio || "",
-          website: otherProfileData?.website || "",
-        });
+        if (success) { // Only proceed if display name update (if any) was successful
+          const otherDataToSave: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
+              role: data.role,
+              otherRole: data.otherRole,
+              bio: data.bio,
+              website: data.website,
+          };
+          
+          const hasOtherDataChanged = JSON.stringify(otherDataToSave) !== JSON.stringify({
+            role: otherProfileData?.role || "",
+            otherRole: otherProfileData?.otherRole || "",
+            bio: otherProfileData?.bio || "",
+            website: otherProfileData?.website || "",
+          });
 
 
-        if (hasOtherDataChanged) {
-            const otherProfileSaveSuccess = await saveOtherProfileData(otherDataToSave);
-            if (!otherProfileSaveSuccess) {
-                toast({ title: "Save Error", description: "Failed to save additional profile details.", variant: "destructive" });
-                return; 
-            }
-            otherDataUpdated = true;
+          if (hasOtherDataChanged) {
+              const otherProfileSaveSuccess = await saveOtherProfileData(otherDataToSave);
+              if (!otherProfileSaveSuccess) {
+                  toast({ title: "Save Error", description: "Failed to save additional profile details.", variant: "destructive" });
+                  success = false;
+              } else {
+                otherDataUpdated = true;
+              }
+          }
         }
 
-        if (displayNameUpdated || otherDataUpdated) {
+        if (success && (displayNameUpdated || otherDataUpdated)) {
             toast({ title: "Profile Saved", description: "Your profile information has been updated." });
-            // Reset form with the submitted data to make it the new "clean" state.
-            // The canonicalProfileData will update via context, and useEffect will align the form.
-            form.reset(data); 
-        } else if (!selectedFile) { 
+            form.reset(data); // Reset form with submitted data to make it new "clean" state
+        } else if (success && !selectedFile) { 
             toast({ title: "No Changes", description: "No information was changed.", variant: "default" });
         }
 
     } catch (error) {
         console.error("Error submitting profile details:", error);
         toast({ title: "Error", description: "An unexpected error occurred while saving.", variant: "destructive" });
+    } finally {
+      setIsSavingProfileInfo(false);
     }
   }
 
@@ -228,18 +224,19 @@ export function ProfileForm() {
   const handlePhotoUpload = async () => {
     if (!selectedFile || !user) return;
     setIsUploadingPhoto(true);
+    setUploadedPhotoDisplayUrl(null); // Clear previous uploaded URL immediately
     try {
-      const uploadedPhotoURL = await updateUserPhotoURL(selectedFile); 
-      if (uploadedPhotoURL) { 
+      const newUploadedPhotoURL = await updateUserPhotoURL(selectedFile); 
+      if (newUploadedPhotoURL) { 
+        setUploadedPhotoDisplayUrl(newUploadedPhotoURL); // Set display URL for immediate preview
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
         setSelectedFile(null); 
-        // previewURL is cleared by its own useEffect when selectedFile becomes null
         if (fileInputRef.current) fileInputRef.current.value = "";
-        // setAvatarKey(Date.now()); // Explicitly re-key Avatar after successful upload & context update - already handled by useEffect
+        setAvatarKey(Date.now()); // Force re-render of Avatar
       }
     } catch (error) {
         console.error("Error during photo upload process in ProfileForm:", error);
-        toast({ title: "Upload Error", description: "An unexpected error occurred during upload.", variant: "destructive" });
+        // Error toast is handled by updateUserPhotoURL in context
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -256,7 +253,8 @@ export function ProfileForm() {
     return "??";
   };
 
-  const isFormBusy = authOpLoading || isUploadingPhoto || otherProfileDataLoading;
+  const isFormBusy = isSavingProfileInfo || isUploadingPhoto || otherProfileDataLoading;
+  // Form is dirty if any field has changed OR if a new file is selected for upload
   const isFormDirty = form.formState.isDirty || !!selectedFile;
 
 
@@ -307,7 +305,7 @@ export function ProfileForm() {
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="relative group">
                         <Avatar key={avatarKey} className="h-28 w-28 sm:h-32 sm:w-32 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar">
-                            <AvatarImage src={previewURL || user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
+                            <AvatarImage src={uploadedPhotoDisplayUrl || previewURL || user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
                             <AvatarFallback className="text-3xl sm:text-4xl bg-muted">{getInitials(user?.displayName, user?.email)}</AvatarFallback>
                         </Avatar>
                         <div
@@ -323,20 +321,20 @@ export function ProfileForm() {
                             type="file" ref={fileInputRef} onChange={handleFileChange}
                             accept="image/jpeg,image/png,image/gif,image/webp"
                             className="hidden" id="profile-picture-input"
-                            disabled={isUploadingPhoto || authOpLoading}
+                            disabled={isUploadingPhoto || isSavingProfileInfo}
                         />
                     </div>
                     <div className="flex-grow text-center sm:text-left">
                         {selectedFile ? (
                         <div className="flex flex-col items-center sm:items-start gap-2">
                             <p className="text-sm text-muted-foreground truncate max-w-xs">New: {selectedFile.name}</p>
-                            <Button type="button" onClick={handlePhotoUpload} disabled={isUploadingPhoto || authOpLoading || !selectedFile} size="sm">
+                            <Button type="button" onClick={handlePhotoUpload} disabled={isUploadingPhoto || isSavingProfileInfo || !selectedFile} size="sm">
                             {isUploadingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                             Upload Photo
                             </Button>
                         </div>
                         ) : (
-                            <Button type="button" variant="outline" onClick={triggerFileSelect} size="sm" disabled={isUploadingPhoto || authOpLoading}>
+                            <Button type="button" variant="outline" onClick={triggerFileSelect} size="sm" disabled={isUploadingPhoto || isSavingProfileInfo}>
                                <UploadCloud className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         )}
@@ -351,7 +349,7 @@ export function ProfileForm() {
                     <FormItem>
                     <FormLabel className="text-base">Display Name</FormLabel>
                     <FormControl>
-                        <Input placeholder="Your Name" {...field} className="text-base" disabled={authOpLoading}/>
+                        <Input placeholder="Your Name" {...field} className="text-base" disabled={isSavingProfileInfo}/>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -364,7 +362,7 @@ export function ProfileForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base">Your Role</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={authOpLoading}>
+                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={isSavingProfileInfo}>
                         <FormControl>
                           <SelectTrigger className="text-base">
                             <SelectValue placeholder="Select your role..." />
@@ -391,7 +389,7 @@ export function ProfileForm() {
                       <FormItem>
                         <FormLabel className="text-base">Please specify your role</FormLabel>
                         <FormControl>
-                          <Input placeholder="E.g., UX Researcher" {...field} className="text-base" disabled={authOpLoading} />
+                          <Input placeholder="E.g., UX Researcher" {...field} className="text-base" disabled={isSavingProfileInfo} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -406,7 +404,7 @@ export function ProfileForm() {
                     <FormItem>
                       <FormLabel className="text-base">Bio / About Me</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-base min-h-[100px]" disabled={authOpLoading}/>
+                        <Textarea placeholder="Tell us a little about yourself..." {...field} className="text-base min-h-[100px]" disabled={isSavingProfileInfo}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -420,7 +418,7 @@ export function ProfileForm() {
                     <FormItem>
                       <FormLabel className="text-base">Website URL</FormLabel>
                       <FormControl>
-                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-base" disabled={authOpLoading}/>
+                        <Input type="url" placeholder="https://your-website.com" {...field} className="text-base" disabled={isSavingProfileInfo}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -444,7 +442,7 @@ export function ProfileForm() {
                 className="w-full sm:w-auto"
                 disabled={isFormBusy || !isFormDirty}
             >
-                {authOpLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSavingProfileInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
             </Button>
             </CardFooter>
