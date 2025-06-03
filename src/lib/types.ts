@@ -33,12 +33,30 @@ export interface Task {
   timerStartTime: number | null;
 }
 
+// New type for tasks when sending to Firestore (dates as strings)
+export interface TaskForFirestore extends Omit<Task, 'dueDate' | 'createdAt' | 'updatedAt' | 'subtasks' | 'recurrenceRule'> {
+  dueDate?: string; // ISO string
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  subtasks: Array<Pick<Subtask, 'id' | 'title' | 'completed'>>; // Ensure subtasks are plain
+  recurrenceRule?: Pick<RecurrenceRule, 'type'>; // Ensure recurrenceRule is plain
+}
+
+
 export interface Column {
   id: string;
   title: string;
   icon?: React.ElementType; // Lucide icon component
   taskIds: string[];
 }
+
+// New type for columns when sending to Firestore (no icon)
+export interface ColumnForFirestore {
+  id: string;
+  title: string;
+  taskIds: string[];
+}
+
 
 export interface FilterState {
   status: string[]; // array of column IDs
@@ -56,3 +74,4 @@ export interface SortState {
   criteria: SortCriteria;
   direction: SortDirection;
 }
+

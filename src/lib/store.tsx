@@ -1,10 +1,10 @@
 
 "use client";
 
-import type { Task, Column, FilterState, SortState, RecurrenceRule, Subtask } from "@/lib/types";
+import type { Task, Column, FilterState, SortState, RecurrenceRule, Subtask, TaskForFirestore, ColumnForFirestore } from "@/lib/types";
 import { DEFAULT_COLUMNS, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE, APP_NAME } from "@/lib/constants";
 import React, { createContext, useReducer, useContext, useEffect, ReactNode, useRef, useCallback } from "react";
-import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO, Timestamp } from "date-fns";
+import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns"; // Removed Timestamp type
 import { useAuth } from "@/contexts/auth-context";
 import { getUserKanbanData, saveUserKanbanData } from "@/services/kanban-service";
 
@@ -78,7 +78,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
         ...state,
         tasks: action.payload.tasks,
         columns: action.payload.columns.map(col => ({
-          ...col, // This should already include the icon from defaults or fetched data
+          ...col, 
           taskIds: action.payload.tasks.filter(t => t.columnId === col.id).map(t => t.id)
         })),
         isLoading: false,
@@ -343,6 +343,7 @@ const parseTaskForStorage = (task: any): Task => ({
     subtasks: task.subtasks || [],
     dependencies: task.dependencies || [],
     tags: task.tags || [],
+    recurrenceRule: task.recurrenceRule || undefined,
     timerActive: task.timerActive === undefined ? false : task.timerActive,
     timeSpentSeconds: task.timeSpentSeconds === undefined ? 0 : task.timeSpentSeconds,
     timerStartTime: task.timerStartTime === undefined ? null : task.timerStartTime,
@@ -353,34 +354,31 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
   const { user, loading: authLoading } = useAuth();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isMounted = useRef(false); // To track if component has mounted
+  const isMounted = useRef(false); 
 
-  // Effect for loading initial data based on auth state
   useEffect(() => {
     isMounted.current = true;
     if (authLoading) {
       dispatch({ type: "SET_LOADING", payload: true });
-      return; // Wait for auth state to be determined
+      return; 
     }
 
     const loadData = async () => {
       dispatch({ type: "SET_LOADING", payload: true });
-      if (user) { // Authenticated user
+      if (user) { 
         try {
           const firestoreData = await getUserKanbanData(user.uid);
           if (firestoreData) {
             dispatch({ type: "SET_INITIAL_DATA", payload: firestoreData });
           } else {
-            // New authenticated user, or no data in Firestore
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
           }
         } catch (error) {
-          console.error("Failed to load data from Firestore:", error);
+          console.error("[KanbanProvider] Failed to load data from Firestore:", error);
           dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
-          // Fallback to a clean state or show error
           dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
-      } else { // Guest user
+      } else { 
         if (typeof window !== 'undefined') {
             const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
             const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
@@ -397,14 +395,13 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                     });
                     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
                 } catch (e) {
-                    console.error("Failed to parse guest data from localStorage", e);
+                    console.error("[KanbanProvider] Failed to parse guest data from localStorage", e);
                     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
                 }
             } else {
                  dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
             }
         } else {
-            // Should not happen in client-side useEffect, but as a fallback
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
       }
@@ -416,10 +413,9 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   }, [user, authLoading]);
 
 
-  // Effect for saving data based on auth state
   useEffect(() => {
     if (!isMounted.current || authLoading || !state.isDataInitialized) {
-      return; // Don't save if not mounted, auth is loading, or initial data isn't set yet
+      return; 
     }
 
     if (debounceTimeoutRef.current) {
@@ -427,38 +423,52 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     }
 
     debounceTimeoutRef.current = setTimeout(async () => {
-      if (user) { // Authenticated user: Save to Firestore
+      if (user) { 
         try {
-          // console.log("Attempting to save to Firestore for user:", user.uid);
-          await saveUserKanbanData(user.uid, state.tasks, state.columns);
-          // console.log("Successfully saved to Firestore.");
+          const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
+            ...task,
+            dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
+            createdAt: formatISO(task.createdAt),
+            updatedAt: formatISO(task.updatedAt),
+            subtasks: task.subtasks.map(st => ({ id: st.id, title: st.title, completed: st.completed })),
+            recurrenceRule: task.recurrenceRule ? { type: task.recurrenceRule.type } : undefined,
+          }));
+
+          const sanitizedColumnsForFirestore: ColumnForFirestore[] = state.columns.map(col => ({
+            id: col.id,
+            title: col.title,
+            taskIds: col.taskIds,
+          }));
+
+          console.log("[KanbanProvider] Attempting to save to Firestore for user:", user.uid);
+          await saveUserKanbanData(user.uid, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
+          console.log("[KanbanProvider] Successfully saved to Firestore for user:", user.uid);
         } catch (error) {
-          console.error("Failed to save data to Firestore:", error);
-          // Optionally dispatch an error to UI
+          console.error("[KanbanProvider] Failed to save data to Firestore:", error);
         }
-      } else { // Guest user: Save to localStorage
+      } else { 
         if (typeof window !== 'undefined') {
             try {
-                const tasksToSave = state.tasks.map(task => ({
+                const tasksToSaveForGuest = state.tasks.map(task => ({
                     ...task,
                     dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
                     createdAt: formatISO(task.createdAt),
                     updatedAt: formatISO(task.updatedAt),
                 }));
-                localStorage.setItem(GUEST_TASKS_STORAGE_KEY, JSON.stringify(tasksToSave));
+                localStorage.setItem(GUEST_TASKS_STORAGE_KEY, JSON.stringify(tasksToSaveForGuest));
 
-                const columnsStateToSave = state.columns.map(col => ({
+                const columnsStateToSaveForGuest = state.columns.map(col => ({
                     id: col.id,
                     title: col.title, 
                     taskIds: col.taskIds,
                 }));
-                localStorage.setItem(GUEST_COLUMNS_STORAGE_KEY, JSON.stringify(columnsStateToSave));
+                localStorage.setItem(GUEST_COLUMNS_STORAGE_KEY, JSON.stringify(columnsStateToSaveForGuest));
             } catch(e) {
-                console.error("Failed to save guest data to localStorage", e);
+                console.error("[KanbanProvider] Failed to save guest data to localStorage", e);
             }
         }
       }
-    }, 1000); // Debounce save operations
+    }, 1000); 
 
     return () => {
       if (debounceTimeoutRef.current) {
@@ -478,3 +488,4 @@ export function useKanban() {
   }
   return context;
 }
+
