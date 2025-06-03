@@ -44,6 +44,7 @@ const AvatarImage = React.forwardRef<
         // sizes attribute can be added for further optimization if avatars have varied known sizes across the app
         // e.g., sizes="(max-width: 480px) 28px, 32px" (if used in multiple places with different CSS sizes)
         // For now, 'fill' with parent sizing from Avatar component is a good start for typical avatar usage.
+        key={src} // Add key prop based on src to force re-render on src change
       />
     );
   }
