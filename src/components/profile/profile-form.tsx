@@ -85,6 +85,7 @@ export function ProfileForm() {
   } = useAuth();
   const { toast } = useToast();
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState(Date.now());
@@ -120,12 +121,13 @@ export function ProfileForm() {
 
       if (!form.formState.dirtyFields[key] && currentFormFieldValue !== canonicalValueForField) {
         form.setValue(key, canonicalValueForField, {
-          shouldDirty: false, // Don't mark as dirty if updated programmatically from canonical source
-          shouldValidate: true, // Re-validate if needed
+          shouldDirty: false, 
+          shouldValidate: false, // Avoid re-validating on programmatic set if not dirty
         });
       }
     });
-  }, [canonicalProfileData, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonicalProfileData, form.setValue, form.getValues, form.formState.dirtyFields]);
 
 
   useEffect(() => {
@@ -140,7 +142,7 @@ export function ProfileForm() {
     if (!selectedFile) {
         setPreviewURL(user?.photoURL || null);
     }
-    setAvatarKey(Date.now());
+    setAvatarKey(Date.now()); // Re-key avatar on photoURL change OR selectedFile clearing
   }, [user?.photoURL, selectedFile]);
 
 
@@ -151,17 +153,16 @@ export function ProfileForm() {
     let otherDataUpdated = false;
 
     try {
-        // Update display name if changed
+        // Update display name if changed in auth
         if (data.displayName !== (user.displayName || "")) {
             const authUpdateSuccess = await updateUserProfile({ displayName: data.displayName });
             if (!authUpdateSuccess) {
                  toast({ title: "Save Error", description: "Failed to update display name.", variant: "destructive" });
-                 return; // Stop if display name update fails
+                 return; 
             }
             displayNameUpdated = true;
         }
 
-        // Prepare other data for saving
         const otherDataToSave: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
             role: data.role,
             otherRole: data.otherRole,
@@ -169,20 +170,19 @@ export function ProfileForm() {
             website: data.website,
         };
         
-        // Check if other data has changed
+        const currentOtherDataForComparison = otherProfileData || initialOtherProfileValues;
         const hasOtherDataChanged = JSON.stringify(otherDataToSave) !== JSON.stringify({
-            role: canonicalProfileData.role,
-            otherRole: canonicalProfileData.otherRole,
-            bio: canonicalProfileData.bio,
-            website: canonicalProfileData.website,
+            role: currentOtherDataForComparison.role || "",
+            otherRole: currentOtherDataForComparison.otherRole || "",
+            bio: currentOtherDataForComparison.bio || "",
+            website: currentOtherDataForComparison.website || "",
         });
+
 
         if (hasOtherDataChanged) {
             const otherProfileSaveSuccess = await saveOtherProfileData(otherDataToSave);
             if (!otherProfileSaveSuccess) {
                 toast({ title: "Save Error", description: "Failed to save additional profile details.", variant: "destructive" });
-                // If displayName was updated but other data failed, we might need to decide on overall success
-                // For now, let's assume if this fails, the overall operation is problematic.
                 return; 
             }
             otherDataUpdated = true;
@@ -190,7 +190,7 @@ export function ProfileForm() {
 
         if (displayNameUpdated || otherDataUpdated) {
             toast({ title: "Profile Saved", description: "Your profile information has been updated." });
-            form.reset(data); // Makes the submitted data the new "clean" state for the form.
+            form.reset(data); 
         } else {
             toast({ title: "No Changes", description: "No information was changed.", variant: "default" });
         }
@@ -232,7 +232,6 @@ export function ProfileForm() {
       }
     } catch (error) {
         console.error("Error during photo upload process in ProfileForm:", error);
-        // Toast for error is handled in updateUserPhotoURL
     } finally {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -254,7 +253,7 @@ export function ProfileForm() {
   const isFormBusy = authOpLoading || isUploadingPhoto || otherProfileDataLoading;
   const isFormDirty = form.formState.isDirty;
 
-  if (otherProfileDataLoading) {
+  if (otherProfileDataLoading && !otherProfileData) { // Show skeleton only on initial load of otherProfileData
     return (
       <Card className="w-full shadow-xl overflow-hidden">
         <CardHeader className="p-6 border-b">
@@ -446,3 +445,4 @@ export function ProfileForm() {
     </Card>
   );
 }
+
