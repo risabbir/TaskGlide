@@ -22,30 +22,27 @@ export function ProfilePictureUploader(props: ProfilePictureUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
-  // This state will hold the URL of the photo that this component knows has been uploaded successfully.
-  // It's used for immediate display update. The auth context's user.photoURL will be the ultimate source of truth.
-  const [currentDisplayPhotoUrl, setCurrentDisplayPhotoUrl] = useState<string | null | undefined>(user?.photoURL);
+  const [avatarRenderKey, setAvatarRenderKey] = useState(Date.now());
 
-  useEffect(() => {
-    // Sync local display URL with the user context if it changes externally
-    // and we are not in a local preview/upload cycle.
-    if (user?.photoURL !== currentDisplayPhotoUrl && !selectedFile && !isUploading) {
-      setCurrentDisplayPhotoUrl(user?.photoURL);
-    }
-  }, [user?.photoURL, currentDisplayPhotoUrl, selectedFile, isUploading]);
 
   useEffect(() => {
     if (selectedFile) {
       const objectUrl = URL.createObjectURL(selectedFile);
       setPreviewURL(objectUrl);
-      // When a new file is selected, it takes precedence for display over any existing photo.
-      setCurrentDisplayPhotoUrl(null); 
       return () => URL.revokeObjectURL(objectUrl);
     } else {
       setPreviewURL(null);
     }
   }, [selectedFile]);
+
+  // This effect ensures that if the user.photoURL changes externally (e.g. another device),
+  // and we are not in a local preview/upload cycle, the avatar key is updated to reflect it.
+  useEffect(() => {
+    if (!selectedFile && !isUploading) {
+        setAvatarRenderKey(Date.now());
+    }
+  }, [user?.photoURL, selectedFile, isUploading]);
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -72,18 +69,15 @@ export function ProfilePictureUploader(props: ProfilePictureUploaderProps) {
     if (!selectedFile || !user) return;
     setIsUploading(true);
     try {
-      const newFirebasePhotoURL = await updateUserPhotoURL(selectedFile);
+      const newFirebasePhotoURL = await updateUserPhotoURL(selectedFile); // This updates context
       if (newFirebasePhotoURL) {
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
-        setCurrentDisplayPhotoUrl(newFirebasePhotoURL); // Update local display immediately
-        setSelectedFile(null);
+        setSelectedFile(null); // Clear local preview
         if (fileInputRef.current) fileInputRef.current.value = "";
-        // The user object in AuthContext will be updated by updateUserPhotoURL,
-        // which should trigger re-renders in ProfileForm if needed.
+        setAvatarRenderKey(Date.now()); // Force Avatar to re-render with new context value
       }
       // Error toasts are handled by updateUserPhotoURL in context
     } catch (error) {
-      // Catch any unexpected errors not handled by the context's toast
       console.error("Error during photo upload process in Uploader:", error);
       toast({ title: "Upload Failed", description: "An unexpected error occurred.", variant: "destructive" });
     } finally {
@@ -102,15 +96,14 @@ export function ProfilePictureUploader(props: ProfilePictureUploaderProps) {
     return "??";
   };
 
-  // Determine the source for the AvatarImage. Prioritize local preview, then current display URL, then user context URL.
-  const avatarSrc = previewURL || currentDisplayPhotoUrl || user?.photoURL || undefined;
+  const avatarSrc = previewURL || user?.photoURL || undefined;
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-6">
       <div className="relative group">
-        <Avatar 
-          key={avatarSrc} // Force re-render of Avatar if src changes significantly
-          className="h-28 w-28 sm:h-32 sm:w-32 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300" 
+        <Avatar
+          key={avatarRenderKey} // Force re-render of Avatar if key changes
+          className="h-28 w-28 sm:h-32 sm:w-32 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300"
           onClick={!isUploading ? triggerFileSelect : undefined}
           data-ai-hint="user avatar"
         >
@@ -136,7 +129,7 @@ export function ProfilePictureUploader(props: ProfilePictureUploaderProps) {
         <input
           type="file" ref={fileInputRef} onChange={handleFileChange}
           accept="image/jpeg,image/png,image/gif,image/webp"
-          className="hidden" id="profile-picture-input-uploader"
+          className="hidden" id="profile-picture-input-uploader" // Ensure ID is unique if multiple instances or similar inputs exist
           disabled={isUploading}
         />
       </div>
