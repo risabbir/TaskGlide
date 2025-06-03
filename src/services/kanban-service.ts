@@ -24,6 +24,7 @@ const parseTaskDateFromFirestore = (dateValue?: string | Date | Timestamp): Date
     const numDate = new Date(Number(dateValue));
     if (!isNaN(numDate.getTime())) return numDate;
   }
+  console.warn(`[KanbanService] parseTaskDateFromFirestore: Could not parse date value:`, dateValue);
   return undefined;
 };
 
@@ -59,21 +60,30 @@ export async function getUserKanbanData(userId: string): Promise<UserKanbanData 
     if (docSnap.exists()) {
       const data = docSnap.data();
       const tasks = (data.tasks || []).map(parseTaskFromFirestore);
+      // Rehydrate full column objects with icons from defaults
       const columns = DEFAULT_COLUMNS.map(defaultCol => {
         const storedCol = (data.columns || []).find((c: any) => c.id === defaultCol.id);
         return {
-          ...defaultCol,
+          ...defaultCol, // This includes the icon from DEFAULT_COLUMNS
+          title: storedCol?.title || defaultCol.title, // Allow stored title to override if exists
           taskIds: storedCol ? storedCol.taskIds : [],
         };
       });
       console.log(`[KanbanService] Successfully fetched Kanban data for user: ${userId}`);
       return { tasks, columns, firestoreLastUpdated: data.firestoreLastUpdated };
     }
-    console.log(`[KanbanService] No Kanban data found for user: ${userId}.`);
-    return null; // No data for this user yet
+    console.log(`[KanbanService] No Kanban data found for user: ${userId}. Returning default structure.`);
+    // If no data, return the default column structure with empty taskIds
+    return {
+        tasks: [],
+        columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })),
+        firestoreLastUpdated: undefined
+    };
   } catch (error) {
     console.error(`[KanbanService] Firestore error in getUserKanbanData for user ${userId}:`, error);
-    throw error;
+    // It's often better to throw the error so the caller can handle it,
+    // or return a state indicating failure, rather than returning null which might be ambiguous.
+    throw error; // Or return { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})), error: "Failed to load" };
   }
 }
 
@@ -95,10 +105,12 @@ export async function saveUserKanbanData(
       createdAt: formatISO(task.createdAt),
       updatedAt: formatISO(task.updatedAt),
     }));
+    // Ensure only serializable data is saved for columns
     const columnsToSave = columns.map(col => ({
       id: col.id,
       title: col.title,
       taskIds: col.taskIds,
+      // DO NOT include col.icon here
     }));
 
     await setDoc(docRef, {
@@ -112,5 +124,3 @@ export async function saveUserKanbanData(
     throw error;
   }
 }
-
-    
