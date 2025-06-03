@@ -48,27 +48,32 @@ interface UserKanbanData {
 }
 
 export async function getUserKanbanData(userId: string): Promise<UserKanbanData | null> {
-  if (!userId) return null;
+  if (!userId) {
+    console.warn("[KanbanService] getUserKanbanData called with no userId.");
+    return null;
+  }
+  console.log(`[KanbanService] Attempting to fetch Kanban data for user: ${userId}`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
       const tasks = (data.tasks || []).map(parseTaskFromFirestore);
-      // Hydrate full column data from defaults, merging stored taskIds
       const columns = DEFAULT_COLUMNS.map(defaultCol => {
         const storedCol = (data.columns || []).find((c: any) => c.id === defaultCol.id);
         return {
-          ...defaultCol, // Includes icon
+          ...defaultCol,
           taskIds: storedCol ? storedCol.taskIds : [],
         };
       });
+      console.log(`[KanbanService] Successfully fetched Kanban data for user: ${userId}`);
       return { tasks, columns, firestoreLastUpdated: data.firestoreLastUpdated };
     }
+    console.log(`[KanbanService] No Kanban data found for user: ${userId}.`);
     return null; // No data for this user yet
   } catch (error) {
-    console.error("Error fetching user Kanban data from Firestore:", error);
-    throw error; // Or handle more gracefully
+    console.error(`[KanbanService] Firestore error in getUserKanbanData for user ${userId}:`, error);
+    throw error;
   }
 }
 
@@ -77,7 +82,11 @@ export async function saveUserKanbanData(
   tasks: Task[],
   columns: ColumnType[]
 ): Promise<void> {
-  if (!userId) return;
+  if (!userId) {
+    console.warn("[KanbanService] saveUserKanbanData called with no userId.");
+    return;
+  }
+  console.log(`[KanbanService] Attempting to save Kanban data for user: ${userId}`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
     const tasksToSave = tasks.map(task => ({
@@ -97,8 +106,11 @@ export async function saveUserKanbanData(
       columns: columnsToSave,
       firestoreLastUpdated: serverTimestamp(),
     });
+    console.log(`[KanbanService] Successfully saved Kanban data for user: ${userId}`);
   } catch (error) {
-    console.error("Error saving user Kanban data to Firestore:", error);
-    throw error; // Or handle more gracefully
+    console.error(`[KanbanService] Firestore error in saveUserKanbanData for user ${userId}:`, error);
+    throw error;
   }
 }
+
+    
