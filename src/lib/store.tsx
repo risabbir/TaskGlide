@@ -4,8 +4,9 @@
 import type { Task, Column, FilterState, SortState, RecurrenceRule, Subtask, TaskForFirestore, ColumnForFirestore } from "@/lib/types";
 import { DEFAULT_COLUMNS, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE, APP_NAME } from "@/lib/constants";
 import React, { createContext, useReducer, useContext, useEffect, ReactNode, useRef, useCallback } from "react";
-import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns"; // Removed Timestamp type
+import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
+import { auth } from "@/lib/firebase"; // Import auth directly for SDK check
 import { getUserKanbanData, saveUserKanbanData } from "@/services/kanban-service";
 
 interface KanbanState {
@@ -18,7 +19,7 @@ interface KanbanState {
   activeTaskModal: Task | null; 
   isTaskModalOpen: boolean;
   isFilterSidebarOpen: boolean;
-  isDataInitialized: boolean; // To track if initial data load (guest or auth) is complete
+  isDataInitialized: boolean;
 }
 
 const initialState: KanbanState = {
@@ -26,7 +27,7 @@ const initialState: KanbanState = {
   columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })), 
   filters: DEFAULT_FILTER_STATE,
   sort: DEFAULT_SORT_STATE,
-  isLoading: true, // Start with loading true until initial data is determined
+  isLoading: true,
   error: null,
   activeTaskModal: null,
   isTaskModalOpen: false,
@@ -352,7 +353,7 @@ const parseTaskForStorage = (task: any): Task => ({
 
 export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // user from AuthContext
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(false); 
 
@@ -365,7 +366,10 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
     const loadData = async () => {
       dispatch({ type: "SET_LOADING", payload: true });
-      if (user) { 
+      const currentAuthUserFromSDK = auth.currentUser; // Direct SDK check
+
+      if (user && currentAuthUserFromSDK && user.uid === currentAuthUserFromSDK.uid) { 
+        console.log(`[KanbanProvider] loadData: Context user ID: ${user.uid}, auth.currentUser ID: ${currentAuthUserFromSDK.uid}. Loading from Firestore.`);
         try {
           const firestoreData = await getUserKanbanData(user.uid);
           if (firestoreData) {
@@ -378,7 +382,13 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
           dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
-      } else { 
+      } else {
+        if (user || currentAuthUserFromSDK) { // Log if there's a mismatch or only one is present
+            console.warn(`[KanbanProvider] loadData: Auth state inconsistency. Context user ID: ${user?.uid}, auth.currentUser ID: ${currentAuthUserFromSDK?.uid}. Defaulting to guest data.`);
+        } else {
+            console.log("[KanbanProvider] loadData: No authenticated user. Loading guest data from localStorage.");
+        }
+        // Load guest data
         if (typeof window !== 'undefined') {
             const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
             const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
@@ -401,7 +411,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             } else {
                  dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
             }
-        } else {
+        } else { // Should not happen on client, but good for completeness
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
       }
@@ -423,7 +433,10 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     }
 
     debounceTimeoutRef.current = setTimeout(async () => {
-      if (user) { 
+      const currentAuthUserFromSDK = auth.currentUser; // Direct SDK check
+
+      if (user && currentAuthUserFromSDK && user.uid === currentAuthUserFromSDK.uid) { 
+        console.log(`[KanbanProvider] saveData: Context user ID: ${user.uid}, auth.currentUser ID: ${currentAuthUserFromSDK.uid}. Saving to Firestore.`);
         try {
           const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
             ...task,
@@ -440,13 +453,18 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             taskIds: col.taskIds,
           }));
 
-          console.log("[KanbanProvider] Attempting to save to Firestore for user:", user.uid);
           await saveUserKanbanData(user.uid, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
-          console.log("[KanbanProvider] Successfully saved to Firestore for user:", user.uid);
         } catch (error) {
           console.error("[KanbanProvider] Failed to save data to Firestore:", error);
+          // Optionally: dispatch({ type: "SET_ERROR", payload: "Failed to save tasks to cloud." });
         }
-      } else { 
+      } else {
+        if (user || currentAuthUserFromSDK) {
+             console.warn(`[KanbanProvider] saveData: Auth state inconsistency. Context user ID: ${user?.uid}, auth.currentUser ID: ${currentAuthUserFromSDK?.uid}. Not saving to Firestore.`);
+        } else {
+             console.log("[KanbanProvider] saveData: No authenticated user. Saving guest data to localStorage.");
+        }
+        // Save guest data
         if (typeof window !== 'undefined') {
             try {
                 const tasksToSaveForGuest = state.tasks.map(task => ({
