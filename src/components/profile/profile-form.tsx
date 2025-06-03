@@ -82,40 +82,48 @@ export function ProfileForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State to hold the last successfully submitted "other" profile data
-  // In a production app, this would be loaded from Firestore.
   const [lastSavedOtherData, setLastSavedOtherData] = useState<OtherProfileData>({
-    role: "",
+    role: "", // Initialize with defaults or load from Firestore in a real app
     otherRole: "",
     bio: "",
     website: "",
   });
 
-  const memoizedDefaultValues = useMemo(() => ({
-    displayName: user?.displayName || "",
-    role: lastSavedOtherData.role || "",
-    otherRole: lastSavedOtherData.otherRole || "",
-    bio: lastSavedOtherData.bio || "",
-    website: lastSavedOtherData.website || "",
-  }), [user?.displayName, lastSavedOtherData]);
-
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: memoizedDefaultValues,
+    // Initial default values will be set in the useEffect on mount
   });
 
   const watchedRole = form.watch("role");
 
-  // Effect to reset the form with new defaults when user or lastSavedOtherData changes,
-  // while preserving dirty field values.
+  // Effect 1: Initialize the form once on mount with combined auth and local saved data
   useEffect(() => {
-    // This reset updates the form's default values.
-    // If a field is dirty (user has changed it from its current default),
-    // its current input value will be preserved due to keepDirtyValues: true.
-    // If a field is not dirty, it will be updated to the new default value from memoizedDefaultValues.
-    form.reset(memoizedDefaultValues, {
-      keepDirtyValues: true,
-    });
-  }, [memoizedDefaultValues, form.reset]);
+    if (user) { // Ensure user data is available for displayName
+      form.reset({
+        displayName: user.displayName || "",
+        role: lastSavedOtherData.role || "",
+        otherRole: lastSavedOtherData.otherRole || "",
+        bio: lastSavedOtherData.bio || "",
+        website: lastSavedOtherData.website || "",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]); // Re-run if user ID changes (login/logout), effectively re-initializing for new user
+
+  // Effect 2: Synchronize displayName field with auth context, unless user is actively editing it
+  useEffect(() => {
+    if (user?.displayName !== undefined) {
+      const currentFormDisplayName = form.getValues("displayName");
+      const isDisplayNameDirty = form.formState.dirtyFields.displayName;
+
+      if (!isDisplayNameDirty && currentFormDisplayName !== (user.displayName || "")) {
+        form.setValue("displayName", user.displayName || "", {
+          shouldDirty: false, // This programmatic change should not mark the field as dirty
+          shouldValidate: true, // Optionally validate after setting
+        });
+      }
+    }
+  }, [user?.displayName, form]);
 
 
   useEffect(() => {
@@ -150,8 +158,7 @@ export function ProfileForm() {
         }
 
         if (authUpdateSuccess) {
-            // In a production app, save data.role, data.otherRole, data.bio, data.website to Firestore here.
-            // For this example, we update the local state `lastSavedOtherData`.
+            // Update lastSavedOtherData with the submitted values for non-auth fields
             setLastSavedOtherData({
               role: data.role,
               otherRole: data.otherRole,
@@ -159,9 +166,8 @@ export function ProfileForm() {
               website: data.website,
             });
             
-            // After successful save and updating lastSavedOtherData,
-            // reset the form with the submitted 'data'. This makes the form "clean"
-            // and sets these values as the new defaults.
+            // Reset the form with the successfully submitted data.
+            // This makes the current form state "clean".
             form.reset(data); 
             toast({ title: "Profile Details Saved", description: "Your profile information has been updated." });
         } else if (Object.keys(profileAuthUpdates).length > 0) {
@@ -202,7 +208,6 @@ export function ProfileForm() {
     try {
       const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
       if (uploadedPhotoURL) {
-        // The user.photoURL update will trigger the useEffect for avatarKey and previewURL
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       }
     } catch (error) {
@@ -390,5 +395,6 @@ export function ProfileForm() {
     </Card>
   );
 }
+    
 
     
