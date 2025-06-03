@@ -23,13 +23,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth, type OtherProfileData } from "@/contexts/auth-context";
-import { Loader2, UploadCloud, Edit3, Info, UserCircle as UserIcon } from "lucide-react";
+import { Loader2, Info, UserCircle as UserIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProfilePictureUploader } from "./profile-picture-uploader";
 
 
 const OCCUPATIONS = [
@@ -70,21 +70,13 @@ export function ProfileForm() {
   const { 
     user, 
     updateUserProfile, 
-    updateUserPhotoURL, 
     otherProfileData, 
     otherProfileDataLoading, 
     saveOtherProfileData,
   } = useAuth();
   const { toast } = useToast();
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewURL, setPreviewURL] = useState<string | null>(null); // For local file object preview
-  const [uploadedPhotoDisplayUrl, setUploadedPhotoDisplayUrl] = useState<string | null>(null); // For successfully uploaded photo
-  const [avatarKey, setAvatarKey] = useState(Date.now());
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isSavingProfileInfo, setIsSavingProfileInfo] = useState(false);
-
 
   const canonicalProfileData = useMemo(() => {
     return {
@@ -96,7 +88,6 @@ export function ProfileForm() {
     };
   }, [user?.displayName, otherProfileData]);
 
-
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: canonicalProfileData, 
@@ -105,38 +96,22 @@ export function ProfileForm() {
   const watchedRole = form.watch("role");
 
   useEffect(() => {
-    // This effect synchronizes the form with canonicalProfileData (from auth/Firestore)
+    // This effect synchronizes the form with canonicalProfileData from auth/Firestore
     // It respects "dirty" fields, meaning if a user is editing a field, it won't be overwritten.
     (Object.keys(canonicalProfileData) as Array<keyof ProfileFormData>).forEach(key => {
-      const currentFieldValue = form.getValues(key);
+      const currentFieldValueInForm = form.getValues(key);
       const canonicalValueForField = canonicalProfileData[key] === undefined || canonicalProfileData[key] === null 
                                      ? "" 
                                      : String(canonicalProfileData[key]);
 
-      if (!form.formState.dirtyFields[key] && currentFieldValue !== canonicalValueForField) {
+      if (!form.formState.dirtyFields[key] && currentFieldValueInForm !== canonicalValueForField) {
         form.setValue(key, canonicalValueForField, {
           shouldDirty: false, 
           shouldValidate: true, 
         });
       }
     });
-  }, [canonicalProfileData, form]); // form is now a dependency
-
-  useEffect(() => {
-    setAvatarKey(Date.now());
-  }, [selectedFile, user?.photoURL, user?.email, uploadedPhotoDisplayUrl]); 
-
-
-  useEffect(() => {
-    if (selectedFile) {
-      const objectUrl = URL.createObjectURL(selectedFile);
-      setPreviewURL(objectUrl);
-      setUploadedPhotoDisplayUrl(null); // Clear any previously uploaded URL if a new file is selected
-      return () => URL.revokeObjectURL(objectUrl);
-    } else {
-      setPreviewURL(null);
-    }
-  }, [selectedFile]);
+  }, [canonicalProfileData, form]);
 
 
   async function onProfileSubmit(data: ProfileFormData) {
@@ -148,7 +123,8 @@ export function ProfileForm() {
     let success = true;
 
     try {
-        if (data.displayName !== (user.displayName || "")) {
+        const currentAuthDisplayName = user.displayName || "";
+        if (data.displayName !== currentAuthDisplayName) {
             const authUpdateSuccess = await updateUserProfile({ displayName: data.displayName });
             if (!authUpdateSuccess) {
                  toast({ title: "Save Error", description: "Failed to update display name.", variant: "destructive" });
@@ -158,7 +134,7 @@ export function ProfileForm() {
             }
         }
         
-        if (success) { // Only proceed if display name update (if any) was successful
+        if (success) { 
           const otherDataToSave: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
               role: data.role,
               otherRole: data.otherRole,
@@ -166,15 +142,14 @@ export function ProfileForm() {
               website: data.website,
           };
           
-          const hasOtherDataChanged = JSON.stringify(otherDataToSave) !== JSON.stringify({
+          const currentOtherProfileDataForCompare = {
             role: otherProfileData?.role || "",
             otherRole: otherProfileData?.otherRole || "",
             bio: otherProfileData?.bio || "",
             website: otherProfileData?.website || "",
-          });
+          };
 
-
-          if (hasOtherDataChanged) {
+          if (JSON.stringify(otherDataToSave) !== JSON.stringify(currentOtherProfileDataForCompare)) {
               const otherProfileSaveSuccess = await saveOtherProfileData(otherDataToSave);
               if (!otherProfileSaveSuccess) {
                   toast({ title: "Save Error", description: "Failed to save additional profile details.", variant: "destructive" });
@@ -188,8 +163,8 @@ export function ProfileForm() {
         if (success && (displayNameUpdated || otherDataUpdated)) {
             toast({ title: "Profile Saved", description: "Your profile information has been updated." });
             form.reset(data); // Reset form with submitted data to make it new "clean" state
-        } else if (success && !selectedFile) { 
-            toast({ title: "No Changes", description: "No information was changed.", variant: "default" });
+        } else if (success) { 
+            toast({ title: "No Changes", description: "No information was changed to save.", variant: "default" });
         }
 
     } catch (error) {
@@ -199,63 +174,9 @@ export function ProfileForm() {
       setIsSavingProfileInfo(false);
     }
   }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
-        toast({title: "Invalid File Type", description: "Please select an image (JPEG, PNG, GIF, WebP).", variant: "destructive"});
-        setSelectedFile(null);
-        if(fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({title: "File Too Large", description: "Maximum photo size is 5MB.", variant: "destructive"});
-        setSelectedFile(null);
-        if(fileInputRef.current) fileInputRef.current.value = "";
-        return;
-      }
-      setSelectedFile(file);
-    } else {
-      setSelectedFile(null);
-    }
-  };
-
-  const handlePhotoUpload = async () => {
-    if (!selectedFile || !user) return;
-    setIsUploadingPhoto(true);
-    setUploadedPhotoDisplayUrl(null); // Clear previous uploaded URL immediately
-    try {
-      const newUploadedPhotoURL = await updateUserPhotoURL(selectedFile); 
-      if (newUploadedPhotoURL) { 
-        setUploadedPhotoDisplayUrl(newUploadedPhotoURL); // Set display URL for immediate preview
-        toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
-        setSelectedFile(null); 
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        setAvatarKey(Date.now()); // Force re-render of Avatar
-      }
-    } catch (error) {
-        console.error("Error during photo upload process in ProfileForm:", error);
-        // Error toast is handled by updateUserPhotoURL in context
-    } finally {
-      setIsUploadingPhoto(false);
-    }
-  };
-
-  const triggerFileSelect = () => fileInputRef.current?.click();
-
-  const getInitials = (name?: string | null, email?: string | null) => {
-    if (name) return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-    if (email) {
-      const parts = email.split("@")[0];
-      return parts ? parts.substring(0, 2).toUpperCase() : email.substring(0,1).toUpperCase();
-    }
-    return "??";
-  };
-
-  const isFormBusy = isSavingProfileInfo || isUploadingPhoto || otherProfileDataLoading;
-  // Form is dirty if any field has changed OR if a new file is selected for upload
-  const isFormDirty = form.formState.isDirty || !!selectedFile;
+  
+  const isFormBusy = isSavingProfileInfo || otherProfileDataLoading;
+  const isFormDirty = form.formState.isDirty;
 
 
   if (otherProfileDataLoading && !form.formState.isDirty) { 
@@ -289,7 +210,6 @@ export function ProfileForm() {
     );
   }
 
-
   return (
     <Card className="w-full shadow-xl overflow-hidden">
       <CardHeader className="p-6 border-b">
@@ -302,45 +222,7 @@ export function ProfileForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onProfileSubmit)}>
             <CardContent className="space-y-6 p-6 sm:p-8">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <div className="relative group">
-                        <Avatar key={avatarKey} className="h-28 w-28 sm:h-32 sm:w-32 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300" onClick={triggerFileSelect} data-ai-hint="user avatar">
-                            <AvatarImage src={uploadedPhotoDisplayUrl || previewURL || user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
-                            <AvatarFallback className="text-3xl sm:text-4xl bg-muted">{getInitials(user?.displayName, user?.email)}</AvatarFallback>
-                        </Avatar>
-                        <div
-                            className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                            onClick={triggerFileSelect} role="button" tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') triggerFileSelect();}}
-                            aria-label="Change profile picture"
-                        >
-                            <Edit3 className="h-7 w-7 sm:h-8 sm:w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <p className="mt-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">Change</p>
-                        </div>
-                        <input
-                            type="file" ref={fileInputRef} onChange={handleFileChange}
-                            accept="image/jpeg,image/png,image/gif,image/webp"
-                            className="hidden" id="profile-picture-input"
-                            disabled={isUploadingPhoto || isSavingProfileInfo}
-                        />
-                    </div>
-                    <div className="flex-grow text-center sm:text-left">
-                        {selectedFile ? (
-                        <div className="flex flex-col items-center sm:items-start gap-2">
-                            <p className="text-sm text-muted-foreground truncate max-w-xs">New: {selectedFile.name}</p>
-                            <Button type="button" onClick={handlePhotoUpload} disabled={isUploadingPhoto || isSavingProfileInfo || !selectedFile} size="sm">
-                            {isUploadingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                            Upload Photo
-                            </Button>
-                        </div>
-                        ) : (
-                            <Button type="button" variant="outline" onClick={triggerFileSelect} size="sm" disabled={isUploadingPhoto || isSavingProfileInfo}>
-                               <UploadCloud className="mr-2 h-4 w-4" /> Change Photo
-                            </Button>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">JPG, PNG, GIF, WebP. Max 5MB.</p>
-                    </div>
-                </div>
+                <ProfilePictureUploader />
 
                 <FormField
                 control={form.control}
