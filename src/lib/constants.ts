@@ -2,7 +2,7 @@
 import type { Column, Priority, FilterState, SortState } from "@/lib/types";
 import { ListTodo, Flame, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
-export const APP_NAME = "TaskGlide"; // This remains as a fallback or for parts not yet translated
+export const APP_NAME = "TaskGlide"; 
 export const DEVELOPER_NAME = "R.Sabbir";
 export const DEVELOPER_URL = "https://rsabbir.com";
 
@@ -30,7 +30,7 @@ export const DEFAULT_SORT_STATE: SortState = {
 };
 
 export const DEFAULT_FILTER_STATE: FilterState = {
-  status: DEFAULT_COLUMNS.map(col => col.id),
+  status: DEFAULT_COLUMNS.map(col => col.id), // Default to all statuses (columns) selected
   priority: undefined,
   dueDate: undefined,
   dueDateStart: undefined,
