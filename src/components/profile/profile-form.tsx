@@ -81,7 +81,8 @@ export function ProfileForm() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State to store the last successfully saved "other" profile data
+  // State to hold the last successfully submitted "other" profile data
+  // In a production app, this would be loaded from Firestore.
   const [lastSavedOtherData, setLastSavedOtherData] = useState<OtherProfileData>({
     role: "",
     otherRole: "",
@@ -107,29 +108,16 @@ export function ProfileForm() {
   // Effect to reset the form with new defaults when user or lastSavedOtherData changes,
   // while preserving dirty field values.
   useEffect(() => {
-    // Get current form values to preserve dirty inputs
-    const currentFormValues = form.getValues();
-    const newResetValues = { ...memoizedDefaultValues };
-
-    // If a field is dirty, its current input value should be used for the reset,
-    // otherwise, the new default from memoizedDefaultValues is used.
-    (Object.keys(form.formState.dirtyFields) as Array<keyof ProfileFormData>).forEach(key => {
-      if (form.formState.dirtyFields[key]) {
-        // Ensure currentFormValues[key] is not undefined before assigning
-        if (currentFormValues[key] !== undefined) {
-          newResetValues[key] = currentFormValues[key] as any;
-        }
-      }
+    // This reset updates the form's default values.
+    // If a field is dirty (user has changed it from its current default),
+    // its current input value will be preserved due to keepDirtyValues: true.
+    // If a field is not dirty, it will be updated to the new default value from memoizedDefaultValues.
+    form.reset(memoizedDefaultValues, {
+      keepDirtyValues: true,
     });
-    form.reset(newResetValues);
-
-  // It's important that form.reset is stable or included here carefully.
-  // form itself contains form.reset, so including form is okay.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memoizedDefaultValues, form.reset]); // Rely on RHF to manage form.reset stability
+  }, [memoizedDefaultValues, form.reset]);
 
 
-  // Effect for local preview when a file is selected
   useEffect(() => {
     if (selectedFile) {
         const objectUrl = URL.createObjectURL(selectedFile);
@@ -138,8 +126,6 @@ export function ProfileForm() {
     }
   }, [selectedFile]);
 
-  // Effect to update preview from user.photoURL (when no local file selected)
-  // AND to update avatarKey on context changes to force re-render of AvatarImage
   useEffect(() => {
     if (!selectedFile) {
         setPreviewURL(user?.photoURL || null);
@@ -164,12 +150,8 @@ export function ProfileForm() {
         }
 
         if (authUpdateSuccess) {
-            const finalRole = data.role === 'other' ? data.otherRole : data.role;
-            console.log("Simulating save of additional profile details:", {
-                userId: user.uid, role: finalRole, bio: data.bio, website: data.website,
-            });
-
-            // Update the state for last saved "other" data
+            // In a production app, save data.role, data.otherRole, data.bio, data.website to Firestore here.
+            // For this example, we update the local state `lastSavedOtherData`.
             setLastSavedOtherData({
               role: data.role,
               otherRole: data.otherRole,
@@ -177,10 +159,11 @@ export function ProfileForm() {
               website: data.website,
             });
             
-            // Reset the form with the newly submitted data as the new "clean" defaults.
-            // This includes displayName which should be in sync.
-            form.reset(data, { keepDirty: false }); // keepDirty: false to make form clean
-            toast({ title: "Profile Details Saved", description: "Your profile information has been submitted." });
+            // After successful save and updating lastSavedOtherData,
+            // reset the form with the submitted 'data'. This makes the form "clean"
+            // and sets these values as the new defaults.
+            form.reset(data); 
+            toast({ title: "Profile Details Saved", description: "Your profile information has been updated." });
         } else if (Object.keys(profileAuthUpdates).length > 0) {
             // Error toast for auth update is handled by updateUserProfile in context
         }
@@ -219,6 +202,7 @@ export function ProfileForm() {
     try {
       const uploadedPhotoURL = await updateUserPhotoURL(selectedFile);
       if (uploadedPhotoURL) {
+        // The user.photoURL update will trigger the useEffect for avatarKey and previewURL
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
       }
     } catch (error) {
@@ -243,6 +227,7 @@ export function ProfileForm() {
   };
 
   const isFormBusy = isSavingDetails || isUploadingPhoto;
+  const isFormDirty = form.formState.isDirty;
 
   return (
     <Card className="w-full shadow-xl overflow-hidden">
@@ -394,7 +379,7 @@ export function ProfileForm() {
             <Button
                 type="submit"
                 className="w-full sm:w-auto"
-                disabled={isSavingDetails || isUploadingPhoto || !form.formState.isDirty}
+                disabled={isFormBusy || !isFormDirty}
             >
                 {isSavingDetails && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
@@ -405,3 +390,5 @@ export function ProfileForm() {
     </Card>
   );
 }
+
+    
