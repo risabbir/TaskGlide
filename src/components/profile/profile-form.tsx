@@ -81,49 +81,48 @@ export function ProfileForm() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State to hold the last successfully submitted "other" profile data
   const [lastSavedOtherData, setLastSavedOtherData] = useState<OtherProfileData>({
-    role: "", // Initialize with defaults or load from Firestore in a real app
+    role: "",
     otherRole: "",
     bio: "",
     website: "",
   });
 
+  const canonicalProfileData = useMemo(() => {
+    return {
+      displayName: user?.displayName || "",
+      role: lastSavedOtherData.role || "",
+      otherRole: lastSavedOtherData.otherRole || "",
+      bio: lastSavedOtherData.bio || "",
+      website: lastSavedOtherData.website || "",
+    };
+  }, [user?.displayName, lastSavedOtherData]);
+
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    // Initial default values will be set in the useEffect on mount
+    defaultValues: canonicalProfileData,
   });
 
   const watchedRole = form.watch("role");
 
-  // Effect 1: Initialize the form once on mount with combined auth and local saved data
   useEffect(() => {
-    if (user) { // Ensure user data is available for displayName
-      form.reset({
-        displayName: user.displayName || "",
-        role: lastSavedOtherData.role || "",
-        otherRole: lastSavedOtherData.otherRole || "",
-        bio: lastSavedOtherData.bio || "",
-        website: lastSavedOtherData.website || "",
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]); // Re-run if user ID changes (login/logout), effectively re-initializing for new user
+    // This effect synchronizes the form with the canonicalProfileData.
+    // For each field, if it's not dirty (user hasn't edited it since last reset/load)
+    // and its current value differs from the canonical value, update it.
+    (Object.keys(canonicalProfileData) as Array<keyof ProfileFormData>).forEach(key => {
+      const currentFormFieldValue = form.getValues(key);
+      const canonicalValueForField = canonicalProfileData[key] === undefined || canonicalProfileData[key] === null 
+                                     ? "" 
+                                     : String(canonicalProfileData[key]); // Ensure string for comparison
 
-  // Effect 2: Synchronize displayName field with auth context, unless user is actively editing it
-  useEffect(() => {
-    if (user?.displayName !== undefined) {
-      const currentFormDisplayName = form.getValues("displayName");
-      const isDisplayNameDirty = form.formState.dirtyFields.displayName;
-
-      if (!isDisplayNameDirty && currentFormDisplayName !== (user.displayName || "")) {
-        form.setValue("displayName", user.displayName || "", {
-          shouldDirty: false, // This programmatic change should not mark the field as dirty
-          shouldValidate: true, // Optionally validate after setting
+      if (!form.formState.dirtyFields[key] && currentFormFieldValue !== canonicalValueForField) {
+        form.setValue(key, canonicalValueForField, {
+          shouldDirty: false,
+          shouldValidate: true, 
         });
       }
-    }
-  }, [user?.displayName, form]);
+    });
+  }, [canonicalProfileData, form]);
 
 
   useEffect(() => {
@@ -158,7 +157,6 @@ export function ProfileForm() {
         }
 
         if (authUpdateSuccess) {
-            // Update lastSavedOtherData with the submitted values for non-auth fields
             setLastSavedOtherData({
               role: data.role,
               otherRole: data.otherRole,
@@ -166,9 +164,7 @@ export function ProfileForm() {
               website: data.website,
             });
             
-            // Reset the form with the successfully submitted data.
-            // This makes the current form state "clean".
-            form.reset(data); 
+            form.reset(data); // This makes the submitted data the new "clean" state.
             toast({ title: "Profile Details Saved", description: "Your profile information has been updated." });
         } else if (Object.keys(profileAuthUpdates).length > 0) {
             // Error toast for auth update is handled by updateUserProfile in context
@@ -395,6 +391,4 @@ export function ProfileForm() {
     </Card>
   );
 }
-    
-
     
