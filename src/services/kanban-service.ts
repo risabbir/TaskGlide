@@ -44,14 +44,16 @@ const parseTaskFromFirestore = (taskData: any): Task => ({
 
 
 interface UserKanbanDataFromFirestore {
-  tasks: TaskForFirestore[]; // Tasks as stored in Firestore
-  columns: ColumnForFirestore[]; // Columns as stored in Firestore
+  tasks: TaskForFirestore[];
+  columns: ColumnForFirestore[];
   firestoreLastUpdated?: Timestamp;
 }
 
 export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]; columns: ColumnType[] } | null> {
-  if (!userId) {
-    console.warn("[KanbanService] getUserKanbanData called with no userId.");
+  if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+    console.error("[KanbanService] getUserKanbanData critical error: Called with invalid userId.", { userId });
+    // Optionally throw an error or return a specific error indicator if preferred over null
+    // throw new Error("getUserKanbanData: userId is invalid.");
     return null;
   }
   const docPath = `userKanbanData/${userId}`;
@@ -65,7 +67,7 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
       const columns: ColumnType[] = DEFAULT_COLUMNS.map(defaultCol => {
         const storedColData = (data.columns || []).find(c => c.id === defaultCol.id);
         return {
-          ...defaultCol, // this provides the icon
+          ...defaultCol,
           title: storedColData?.title || defaultCol.title,
           taskIds: storedColData ? storedColData.taskIds : (defaultCol.taskIds || []),
         };
@@ -80,6 +82,7 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
     };
   } catch (error: any) {
     console.error(`[KanbanService] Firestore error in GET operation for ${docPath} (User: ${userId}):`, error.message, error.code, error);
+    // Re-throw the error so the caller (KanbanProvider) can handle it, e.g., by setting an error state.
     throw error;
   }
 }
@@ -89,27 +92,27 @@ export async function saveUserKanbanData(
   tasks: TaskForFirestore[],
   columns: ColumnForFirestore[]
 ): Promise<void> {
-  if (!userId) {
-    console.warn("[KanbanService] saveUserKanbanData called with no userId.");
+  if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+    console.error("[KanbanService] saveUserKanbanData critical error: Called with invalid userId.", { userId });
+    // Optionally throw an error or return a specific error indicator if preferred
+    // throw new Error("saveUserKanbanData: userId is invalid.");
     return;
   }
   const docPath = `userKanbanData/${userId}`;
   console.log(`[KanbanService] Attempting to SET doc: ${docPath} for user: ${userId}`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
-
-    // tasks and columns are now expected to be pre-sanitized by the client
     const dataToSave = {
       tasks: tasks,
       columns: columns,
       firestoreLastUpdated: serverTimestamp(),
     };
-    // console.log(`[KanbanService] Data being sent to Firestore for ${docPath}:`, JSON.stringify(dataToSave, null, 2)); // Deep log data
+    // console.log(`[KanbanService] Data being sent to Firestore for ${docPath}:`, JSON.stringify(dataToSave, null, 2));
     await setDoc(docRef, dataToSave);
     console.log(`[KanbanService] Successfully saved Kanban data for ${docPath} (User: ${userId})`);
   } catch (error: any) {
     console.error(`[KanbanService] Firestore error in SET operation for ${docPath} (User: ${userId}):`, error.message, error.code, error);
+    // Re-throw the error so the caller can handle it
     throw error;
   }
 }
-
