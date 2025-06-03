@@ -17,39 +17,54 @@ const ProfileForm = dynamic(() => import('@/components/profile/profile-form').th
   ssr: false
 });
 const ChangePasswordForm = dynamic(() => import('@/components/profile/change-password-form').then(mod => mod.ChangePasswordForm), {
-  loading: () => <FormSkeleton title="Change Password" fields={3} />,
+  loading: () => <FormSkeleton title="Change Password" fields={3} description="Update your account password for enhanced security." />,
   ssr: false
 });
 const ChangeEmailForm = dynamic(() => import('@/components/profile/change-email-form').then(mod => mod.ChangeEmailForm), {
-  loading: () => <FormSkeleton title="Change Email Address" fields={3} />,
+  loading: () => <FormSkeleton title="Change Email Address" fields={3} description="Update your login email. A verification link will be sent."/>,
   ssr: false
 });
 
 function ProfileFormSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center gap-6">
-        <Skeleton className="h-28 w-28 sm:h-32 sm:w-32 rounded-full" />
-        <div className="flex-grow space-y-2">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-4 w-48" />
+    <div className="w-full shadow-xl overflow-hidden border rounded-lg">
+      <div className="p-6 border-b">
+        <div className="flex items-center">
+          <UserCircle className="mr-3 h-6 w-6 text-primary" />
+          <Skeleton className="h-7 w-1/2" />
         </div>
+        <Skeleton className="h-4 w-3/4 mt-2" />
       </div>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-20 w-full" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-10 w-full" />
+      <div className="space-y-6 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          <Skeleton className="h-28 w-28 sm:h-32 sm:w-32 rounded-full" />
+          <div className="flex-grow space-y-3 text-center sm:text-left">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-4 w-52" />
+          </div>
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-10 w-full" />
+            {i === 4 && <Skeleton className="h-12 w-full mt-1" />} 
+          </div>
+        ))}
+      </div>
+      <div className="bg-muted/30 p-6 sm:p-8 border-t">
+        <Skeleton className="h-10 w-28" />
+      </div>
     </div>
   );
 }
 
-function FormSkeleton({ title, fields }: { title: string; fields: number }) {
+
+function FormSkeleton({ title, fields, description }: { title: string; fields: number; description: string }) {
   return (
-    <div className="w-full">
+    <div className="w-full shadow-xl overflow-hidden border rounded-lg">
       <div className="p-6 border-b">
-        <Skeleton className="h-6 w-3/4 mb-2" /> 
-        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-7 w-1/2 mb-2" /> 
+        <Skeleton className="h-4 w-3/4" />
       </div>
       <div className="space-y-6 p-6 sm:p-8">
         {Array.from({ length: fields }).map((_, i) => (
@@ -60,7 +75,7 @@ function FormSkeleton({ title, fields }: { title: string; fields: number }) {
         ))}
       </div>
       <div className="bg-muted/30 p-6 sm:p-8 border-t">
-        <Skeleton className="h-10 w-24" />
+        <Skeleton className="h-10 w-32" />
       </div>
     </div>
   );
@@ -145,11 +160,11 @@ export default function ProfilePage() {
             </TabsContent>
 
             <TabsContent value="account" className="space-y-10 mt-2 sm:mt-6">
-              <Suspense fallback={<FormSkeleton title="Change Email Address" fields={3} />}>
+              <Suspense fallback={<FormSkeleton title="Change Email Address" fields={3} description="Update your login email. A verification link will be sent." />}>
                 <ChangeEmailForm />
               </Suspense>
               <Separator className="my-6"/>
-              <Suspense fallback={<FormSkeleton title="Change Password" fields={3} />}>
+              <Suspense fallback={<FormSkeleton title="Change Password" fields={3} description="Update your account password for enhanced security." />}>
                 <ChangePasswordForm /> 
               </Suspense>
             </TabsContent>

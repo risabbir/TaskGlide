@@ -66,7 +66,7 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
-const initialOtherProfileValues: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
+const initialOtherProfileData: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
   role: "",
   otherRole: "",
   bio: "",
@@ -91,31 +91,17 @@ export function ProfileForm() {
   const [avatarKey, setAvatarKey] = useState(Date.now());
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
-  // This represents the "source of truth" for form fields not directly from `user` (Firebase Auth object)
-  // It's initialized from `otherProfileData` (from Firestore) or defaults.
-  const [lastSavedOtherData, setLastSavedOtherData] = useState<Omit<OtherProfileData, 'firestoreUpdatedAt'>>(
-    otherProfileData || initialOtherProfileValues
-  );
-
-  // Update lastSavedOtherData when otherProfileData from context changes (e.g., after initial load from Firestore)
-  useEffect(() => {
-    if (otherProfileData) {
-      setLastSavedOtherData(otherProfileData);
-    }
-  }, [otherProfileData]);
-
-
-  // This object represents the "canonical" or "clean" state of the form.
-  // It's derived from the latest `user.displayName` and `lastSavedOtherData`.
+  // This represents the "canonical" or "clean" state of the form.
+  // It's derived from the latest user data (displayName from auth, others from Firestore via context).
   const canonicalProfileData = useMemo(() => {
     return {
       displayName: user?.displayName || "",
-      role: lastSavedOtherData.role || "",
-      otherRole: lastSavedOtherData.otherRole || "",
-      bio: lastSavedOtherData.bio || "",
-      website: lastSavedOtherData.website || "",
+      role: otherProfileData?.role || "",
+      otherRole: otherProfileData?.otherRole || "",
+      bio: otherProfileData?.bio || "",
+      website: otherProfileData?.website || "",
     };
-  }, [user?.displayName, lastSavedOtherData]);
+  }, [user?.displayName, otherProfileData]);
 
 
   const form = useForm<ProfileFormData>({
@@ -133,10 +119,11 @@ export function ProfileForm() {
                                      ? "" 
                                      : String(canonicalProfileData[key]);
 
+      // Only update the form field if it's not dirty and its current value differs from the canonical value
       if (!form.formState.dirtyFields[key] && currentFieldValue !== canonicalValueForField) {
         form.setValue(key, canonicalValueForField, {
           shouldDirty: false, 
-          shouldValidate: true, // Validate on programmatic set if not dirty
+          shouldValidate: true, 
         });
       }
     });
@@ -144,21 +131,22 @@ export function ProfileForm() {
   }, [canonicalProfileData, form.setValue, form.getValues, form.formState.dirtyFields]);
 
 
-  // This useEffect is responsible for managing the preview URL and the Avatar's key
+  // Effect to manage avatarKey for re-rendering Avatar on src changes
+  useEffect(() => {
+    setAvatarKey(Date.now());
+  }, [selectedFile, user?.photoURL, user?.email]); // Added user?.email to help ensure re-keying
+
+
+  // Effect for local file preview
   useEffect(() => {
     if (selectedFile) {
       const objectUrl = URL.createObjectURL(selectedFile);
-      setPreviewURL(objectUrl); // Show local preview
-      setAvatarKey(Date.now());   // Force re-render for local preview
+      setPreviewURL(objectUrl);
       return () => URL.revokeObjectURL(objectUrl);
     } else {
-      // No file selected (e.g., after upload, or initially)
-      setPreviewURL(null); // Clear any local preview
-      // The key should update to reflect the new user.photoURL or fallback.
-      // This will be triggered by user?.photoURL changing in the dependency array.
-      setAvatarKey(Date.now());
+      setPreviewURL(null);
     }
-  }, [selectedFile, user?.photoURL]); // Key dependencies
+  }, [selectedFile]);
 
 
   async function onProfileSubmit(data: ProfileFormData) {
@@ -184,8 +172,13 @@ export function ProfileForm() {
             website: data.website,
         };
         
-        // Compare with lastSavedOtherData to see if actual changes were made
-        const hasOtherDataChanged = JSON.stringify(otherDataToSave) !== JSON.stringify(lastSavedOtherData);
+        const hasOtherDataChanged = JSON.stringify(otherDataToSave) !== JSON.stringify({
+          role: otherProfileData?.role || "",
+          otherRole: otherProfileData?.otherRole || "",
+          bio: otherProfileData?.bio || "",
+          website: otherProfileData?.website || "",
+        });
+
 
         if (hasOtherDataChanged) {
             const otherProfileSaveSuccess = await saveOtherProfileData(otherDataToSave);
@@ -193,14 +186,15 @@ export function ProfileForm() {
                 toast({ title: "Save Error", description: "Failed to save additional profile details.", variant: "destructive" });
                 return; 
             }
-            setLastSavedOtherData(otherDataToSave); // Update local "last saved" state
             otherDataUpdated = true;
         }
 
         if (displayNameUpdated || otherDataUpdated) {
             toast({ title: "Profile Saved", description: "Your profile information has been updated." });
-            form.reset(data); // Reset form to new clean state with submitted data
-        } else if (!selectedFile) { // Only show "No Changes" if no file was pending upload either
+            // Reset form with the submitted data to make it the new "clean" state.
+            // The canonicalProfileData will update via context, and useEffect will align the form.
+            form.reset(data); 
+        } else if (!selectedFile) { 
             toast({ title: "No Changes", description: "No information was changed.", variant: "default" });
         }
 
@@ -239,9 +233,9 @@ export function ProfileForm() {
       if (uploadedPhotoURL) { 
         toast({ title: "Profile Picture Updated", description: "Your new profile picture has been saved." });
         setSelectedFile(null); 
-        setPreviewURL(null);   
+        // previewURL is cleared by its own useEffect when selectedFile becomes null
         if (fileInputRef.current) fileInputRef.current.value = "";
-        setAvatarKey(Date.now()); // Explicitly re-key Avatar after successful upload & context update
+        // setAvatarKey(Date.now()); // Explicitly re-key Avatar after successful upload & context update - already handled by useEffect
       }
     } catch (error) {
         console.error("Error during photo upload process in ProfileForm:", error);
@@ -263,11 +257,10 @@ export function ProfileForm() {
   };
 
   const isFormBusy = authOpLoading || isUploadingPhoto || otherProfileDataLoading;
-  // Form is dirty if any field is dirty OR if a file is selected for upload
   const isFormDirty = form.formState.isDirty || !!selectedFile;
 
 
-  if (otherProfileDataLoading && !otherProfileData && !user) { 
+  if (otherProfileDataLoading && !form.formState.isDirty) { 
     return (
       <Card className="w-full shadow-xl overflow-hidden">
         <CardHeader className="p-6 border-b">
@@ -280,15 +273,16 @@ export function ProfileForm() {
         <CardContent className="space-y-6 p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <Skeleton className="h-28 w-28 sm:h-32 sm:w-32 rounded-full" />
-            <div className="flex-grow space-y-2">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-40" />
+            <div className="flex-grow space-y-3 text-center sm:text-left">
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-4 w-52" />
             </div>
           </div>
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
+          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
+          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-24 w-full" /></div>
+          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
+          <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
         </CardContent>
         <CardFooter className="bg-muted/30 p-6 sm:p-8 border-t">
           <Skeleton className="h-10 w-28" />
@@ -459,5 +453,4 @@ export function ProfileForm() {
     </Card>
   );
 }
-
     
