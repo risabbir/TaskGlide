@@ -44,7 +44,7 @@ const parseTaskFromFirestore = (taskData: any): Task => ({
 
 interface UserKanbanData {
   tasks: Task[];
-  columns: Array<Pick<ColumnType, 'id' | 'title' | 'taskIds'>>; // Store only essential column data
+  columns: Array<Pick<ColumnType, 'id' | 'title' | 'taskIds'>>; 
   firestoreLastUpdated?: Timestamp;
 }
 
@@ -53,37 +53,34 @@ export async function getUserKanbanData(userId: string): Promise<UserKanbanData 
     console.warn("[KanbanService] getUserKanbanData called with no userId.");
     return null;
   }
-  console.log(`[KanbanService] Attempting to fetch Kanban data for user: ${userId}`);
+  const docPath = `userKanbanData/${userId}`;
+  console.log(`[KanbanService] Attempting to GET doc: ${docPath}`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
       const tasks = (data.tasks || []).map(parseTaskFromFirestore);
-      // Rehydrate full column objects with icons from defaults
       const columns = DEFAULT_COLUMNS.map(defaultCol => {
         const storedCol = (data.columns || []).find((c: any) => c.id === defaultCol.id);
         return {
-          ...defaultCol, // This includes the icon from DEFAULT_COLUMNS
-          title: storedCol?.title || defaultCol.title, // Allow stored title to override if exists
+          ...defaultCol,
+          title: storedCol?.title || defaultCol.title,
           taskIds: storedCol ? storedCol.taskIds : [],
         };
       });
-      console.log(`[KanbanService] Successfully fetched Kanban data for user: ${userId}`);
+      console.log(`[KanbanService] Successfully fetched Kanban data from ${docPath}`);
       return { tasks, columns, firestoreLastUpdated: data.firestoreLastUpdated };
     }
-    console.log(`[KanbanService] No Kanban data found for user: ${userId}. Returning default structure.`);
-    // If no data, return the default column structure with empty taskIds
+    console.log(`[KanbanService] No Kanban data found at ${docPath}. Returning default structure.`);
     return {
         tasks: [],
-        columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })),
+        columns: DEFAULT_COLUMNS.map(col => ({ id: col.id, title: col.title, taskIds: [] })), // Return plain objects for columns
         firestoreLastUpdated: undefined
     };
-  } catch (error) {
-    console.error(`[KanbanService] Firestore error in getUserKanbanData for user ${userId}:`, error);
-    // It's often better to throw the error so the caller can handle it,
-    // or return a state indicating failure, rather than returning null which might be ambiguous.
-    throw error; // Or return { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})), error: "Failed to load" };
+  } catch (error: any) {
+    console.error(`[KanbanService] Firestore error in GET operation for ${docPath}:`, error.message, error.code, error);
+    throw error;
   }
 }
 
@@ -96,7 +93,8 @@ export async function saveUserKanbanData(
     console.warn("[KanbanService] saveUserKanbanData called with no userId.");
     return;
   }
-  console.log(`[KanbanService] Attempting to save Kanban data for user: ${userId}`);
+  const docPath = `userKanbanData/${userId}`;
+  console.log(`[KanbanService] Attempting to SET doc: ${docPath}`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
     const tasksToSave = tasks.map(task => ({
@@ -105,22 +103,22 @@ export async function saveUserKanbanData(
       createdAt: formatISO(task.createdAt),
       updatedAt: formatISO(task.updatedAt),
     }));
-    // Ensure only serializable data is saved for columns
     const columnsToSave = columns.map(col => ({
       id: col.id,
       title: col.title,
       taskIds: col.taskIds,
-      // DO NOT include col.icon here
     }));
 
-    await setDoc(docRef, {
+    const dataToSave = {
       tasks: tasksToSave,
       columns: columnsToSave,
       firestoreLastUpdated: serverTimestamp(),
-    });
-    console.log(`[KanbanService] Successfully saved Kanban data for user: ${userId}`);
-  } catch (error) {
-    console.error(`[KanbanService] Firestore error in saveUserKanbanData for user ${userId}:`, error);
+    };
+    // console.log(`[KanbanService] Data being sent to Firestore for ${docPath}:`, JSON.stringify(dataToSave, null, 2)); // Deep log data
+    await setDoc(docRef, dataToSave);
+    console.log(`[KanbanService] Successfully saved Kanban data for ${docPath}`);
+  } catch (error: any) {
+    console.error(`[KanbanService] Firestore error in SET operation for ${docPath}:`, error.message, error.code, error);
     throw error;
   }
 }
