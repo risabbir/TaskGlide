@@ -5,11 +5,10 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { useKanban } from "@/lib/store";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"; // Added SheetHeader, SheetTitle, SheetDescription
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
-// Removed direct import of FocusBatchModalContent
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import React, { useState, Suspense } from "react";
 import dynamic from 'next/dynamic';
@@ -27,7 +26,6 @@ const Confetti = dynamic(() => import('@/components/ui/confetti').then(mod => mo
 });
 const FocusBatchModalContent = dynamic(() => import('@/components/ai/focus-batch-modal').then(mod => mod.FocusBatchModalContent), {
   ssr: false,
-  // Basic loading state, Dialog's own structure will provide some framing
   loading: () => <div className="p-6 text-center">Loading AI suggestions...</div> 
 });
 
@@ -50,7 +48,6 @@ function QuickActionsBar() {
               Suggest Focus Batch
             </Button>
           </DialogTrigger>
-          {/* Conditionally render Suspense and FocusBatchModalContent only when dialog is open */}
           {isFocusBatchModalOpen && (
             <Suspense fallback={<div className="p-6 text-center">Loading AI suggestions...</div>}>
               <FocusBatchModalContent onClose={() => setIsFocusBatchModalOpen(false)} />
@@ -84,6 +81,12 @@ function PageContent() {
       {isFilterSidebarOpen && (
         <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
           <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col">
+              <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
+                <SheetTitle>Filters & Sort</SheetTitle>
+                <SheetDescription>
+                  Refine your view of tasks on the board.
+                </SheetDescription>
+              </SheetHeader>
               <Suspense fallback={<div className="p-6 text-center"><p>Loading filters...</p></div>}><FilterSidebar /></Suspense>
           </SheetContent>
         </Sheet>

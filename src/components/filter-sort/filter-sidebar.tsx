@@ -2,7 +2,7 @@
 "use client";
 
 import { useKanban } from "@/lib/store";
-import { SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { SheetFooter } from "@/components/ui/sheet"; // Removed SheetHeader, SheetTitle, SheetDescription
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,13 +61,8 @@ export function FilterSidebar() {
 
   return (
     <>
-      <SheetHeader className="p-6 pb-4 border-b">
-        <SheetTitle>Filters & Sort</SheetTitle>
-        <SheetDescription>
-          Refine your view of tasks on the board.
-        </SheetDescription>
-      </SheetHeader>
-      <ScrollArea className="flex-grow">
+      {/* SheetHeader is now in page.tsx */}
+      <ScrollArea className="flex-grow min-h-0"> {/* Ensure ScrollArea can grow and shrink */}
         <div className="p-6 space-y-6">
           {/* Status Filter */}
           <div>
@@ -238,7 +233,7 @@ export function FilterSidebar() {
           </div>
         </div>
       </ScrollArea>
-      <SheetFooter className="p-6 border-t">
+      <SheetFooter className="p-6 border-t flex-shrink-0"> {/* Added flex-shrink-0 */}
         <Button variant="outline" onClick={handleClearFilters} className="w-full">
           Clear All Filters & Sort
         </Button>
