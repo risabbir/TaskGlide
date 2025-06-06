@@ -2,6 +2,7 @@
 "use client";
 
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer"; // Added Footer import
 import { APP_NAME } from "@/lib/constants";
 import type { Metadata } from "next";
 import { useEffect } from "react";
@@ -19,7 +20,7 @@ export default function PrivacyPolicyPage() {
   return (
     <>
       <Header />
-      <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 flex-grow">
         <div className="max-w-3xl mx-auto bg-card text-card-foreground p-6 sm:p-8 rounded-lg shadow-lg">
           <h1 className="text-3xl font-bold mb-6 text-primary border-b pb-3">Privacy Policy</h1>
           
@@ -38,7 +39,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc list-inside text-muted-foreground leading-relaxed mt-2 space-y-1 pl-4">
               <li><strong>Account Information:</strong> If you register for an account, we collect your email address and password. You may optionally provide a display name and profile picture.</li>
               <li><strong>Task Data:</strong> We store the tasks, descriptions, due dates, priorities, tags, subtasks, and any other related data you create within the application.</li>
-              <li><strong>Guest Data:</strong> If you use the "Continue as Guest" feature, your task data is stored locally in your browser's localStorage and is not transmitted to our servers.</li>
+              <li><strong>Guest Data:</strong> If you use the "Continue as Guest" feature, your task data is stored locally in your browser's localStorage and is not transmitted to our servers. Your Guest ID is also stored locally.</li>
               <li><strong>Usage Data:</strong> We may collect information about how you use our application, such as features accessed and time spent on the app, to improve our services. This data is typically anonymized or aggregated.</li>
             </ul>
           </section>
@@ -64,7 +65,7 @@ export default function PrivacyPolicyPage() {
               <strong>Registered Users:</strong> Your data (account information and task data) is stored on secure Firebase servers (Firestore, Firebase Authentication, Firebase Storage for profile pictures). We implement a variety of security measures to maintain the safety of your personal information.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-2">
-              <strong>Guest Users:</strong> Your task data is stored locally in your browser's localStorage. This data is not sent to our servers and is only accessible through your browser. Clearing your browser data will remove this information.
+              <strong>Guest Users:</strong> Your task data and Guest ID are stored locally in your browser's localStorage. This data is not sent to our servers and is only accessible through your browser. Clearing your browser data will remove this information.
             </p>
           </section>
           
@@ -93,6 +94,7 @@ export default function PrivacyPolicyPage() {
           </section>
         </div>
       </main>
+      <Footer />
     </>
   );
 }
