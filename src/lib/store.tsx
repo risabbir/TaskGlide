@@ -6,17 +6,18 @@ import { DEFAULT_COLUMNS, DEFAULT_FILTER_STATE, DEFAULT_SORT_STATE, APP_NAME } f
 import React, { createContext, useReducer, useContext, useEffect, ReactNode, useRef, useCallback } from "react";
 import { addDays, addMonths, addWeeks, formatISO, parseISO as dateFnsParseISO } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
-import { auth } from "@/lib/firebase"; // Import auth directly for SDK check
+import { auth as firebaseAuthInstance } from "@/lib/firebase"; // Renamed for clarity
 import { getUserKanbanData, saveUserKanbanData } from "@/services/kanban-service";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface KanbanState {
   tasks: Task[];
   columns: Column[];
   filters: FilterState;
   sort: SortState;
-  isLoading: boolean; 
-  error: string | null; 
-  activeTaskModal: Task | null; 
+  isLoading: boolean;
+  error: string | null;
+  activeTaskModal: Task | null;
   isTaskModalOpen: boolean;
   isFilterSidebarOpen: boolean;
   isDataInitialized: boolean;
@@ -24,7 +25,7 @@ interface KanbanState {
 
 const initialState: KanbanState = {
   tasks: [],
-  columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })), 
+  columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })),
   filters: DEFAULT_FILTER_STATE,
   sort: DEFAULT_SORT_STATE,
   isLoading: true,
@@ -39,7 +40,7 @@ type KanbanAction =
   | { type: "SET_INITIAL_DATA"; payload: { tasks: Task[]; columns: Column[] } }
   | { type: "ADD_TASK"; payload: Task }
   | { type: "UPDATE_TASK"; payload: Task }
-  | { type: "DELETE_TASK"; payload: string } 
+  | { type: "DELETE_TASK"; payload: string }
   | { type: "MOVE_TASK"; payload: { taskId: string; newColumnId: string; newIndex?: number } }
   | { type: "SET_COLUMNS"; payload: Column[] }
   | { type: "SET_FILTERS"; payload: Partial<FilterState> }
@@ -48,15 +49,15 @@ type KanbanAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_DATA_INITIALIZED"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "OPEN_TASK_MODAL"; payload: Task | null } 
+  | { type: "OPEN_TASK_MODAL"; payload: Task | null }
   | { type: "CLOSE_TASK_MODAL" }
   | { type: "TOGGLE_FILTER_SIDEBAR" }
   | { type: "ADD_SUBTASK"; payload: { taskId: string; subtask: Subtask } }
   | { type: "TOGGLE_SUBTASK"; payload: { taskId: string; subtaskId: string } }
   | { type: "UPDATE_SUBTASK"; payload: { taskId: string; subtask: Subtask } }
   | { type: "DELETE_SUBTASK"; payload: { taskId: string; subtaskId: string } }
-  | { type: "START_TIMER"; payload: string } 
-  | { type: "STOP_TIMER"; payload: string }; 
+  | { type: "START_TIMER"; payload: string }
+  | { type: "STOP_TIMER"; payload: string };
 
 
 function getNextDueDate(currentDueDate: Date, rule: RecurrenceRule): Date {
@@ -79,11 +80,12 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
         ...state,
         tasks: action.payload.tasks,
         columns: action.payload.columns.map(col => ({
-          ...col, 
+          ...col,
           taskIds: action.payload.tasks.filter(t => t.columnId === col.id).map(t => t.id)
         })),
         isLoading: false,
         isDataInitialized: true,
+        error: null, // Clear previous errors on successful data load
       };
     case "ADD_TASK": {
       const newTasks = [...state.tasks, action.payload];
@@ -105,10 +107,10 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
 
       if (oldTask && oldTask.columnId !== taskBeingUpdated.columnId) {
         newColumns = state.columns.map(col => {
-          if (col.id === oldTask.columnId) { 
+          if (col.id === oldTask.columnId) {
             return { ...col, taskIds: col.taskIds.filter(id => id !== taskBeingUpdated.id) };
           }
-          if (col.id === taskBeingUpdated.columnId) { 
+          if (col.id === taskBeingUpdated.columnId) {
             return { ...col, taskIds: [...col.taskIds, taskBeingUpdated.id] };
           }
           return col;
@@ -141,17 +143,17 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
         finalTimerStartTime = null;
       }
 
-      const updatedTask = { 
-        ...taskToMove, 
-        columnId: newColumnId, 
+      const updatedTask = {
+        ...taskToMove,
+        columnId: newColumnId,
         updatedAt: new Date(),
         timeSpentSeconds: finalTimeSpentSeconds,
         timerActive: finalTimerActive,
         timerStartTime: finalTimerStartTime,
       };
-      
+
       let newTasks = state.tasks.map(t => t.id === taskId ? updatedTask : t);
-      
+
       let newColumns = state.columns.map(column => {
         if (column.taskIds.includes(taskId)) {
           return { ...column, taskIds: column.taskIds.filter(id => id !== taskId) };
@@ -171,14 +173,14 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
         }
         return column;
       });
-      
+
       if (taskToMove.recurrenceRule && taskToMove.dueDate && newColumnId === "done") {
         const nextDueDate = getNextDueDate(taskToMove.dueDate instanceof Date ? taskToMove.dueDate : dateFnsParseISO(taskToMove.dueDate as any), taskToMove.recurrenceRule);
         const newTask: Task = {
           ...taskToMove,
           id: crypto.randomUUID(),
           dueDate: nextDueDate,
-          columnId: DEFAULT_COLUMNS[0].id, 
+          columnId: DEFAULT_COLUMNS[0].id,
           subtasks: taskToMove.subtasks.map(st => ({ ...st, completed: false })),
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -210,7 +212,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
     case "SET_DATA_INITIALIZED":
       return { ...state, isDataInitialized: action.payload, isLoading: !action.payload };
     case "SET_ERROR":
-      return { ...state, error: action.payload };
+      return { ...state, error: action.payload, isLoading: false };
     case "OPEN_TASK_MODAL":
       return { ...state, isTaskModalOpen: true, activeTaskModal: action.payload };
     case "CLOSE_TASK_MODAL":
@@ -226,8 +228,8 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
         }
         return task;
       });
-      const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId 
-                           ? newTasks.find(t => t.id === taskId) || null 
+      const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId
+                           ? newTasks.find(t => t.id === taskId) || null
                            : state.activeTaskModal;
       return { ...state, tasks: newTasks, activeTaskModal: newActiveModal };
     }
@@ -243,7 +245,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
         }
         return task;
       });
-      const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId 
+      const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId
                            ? newTasks.find(t => t.id === taskId) || null
                            : state.activeTaskModal;
       return { ...state, tasks: newTasks, activeTaskModal: newActiveModal };
@@ -262,7 +264,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
             }
             return task;
         });
-        const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId 
+        const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId
                              ? newTasks.find(t => t.id === taskId) || null
                              : state.activeTaskModal;
         return { ...state, tasks: newTasks, activeTaskModal: newActiveModal };
@@ -279,7 +281,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
             }
             return task;
         });
-        const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId 
+        const newActiveModal = state.activeTaskModal && state.activeTaskModal.id === taskId
                              ? newTasks.find(t => t.id === taskId) || null
                              : state.activeTaskModal;
         return { ...state, tasks: newTasks, activeTaskModal: newActiveModal };
@@ -321,7 +323,6 @@ const KanbanContext = createContext<{ state: KanbanState; dispatch: React.Dispat
 const GUEST_TASKS_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_tasks`;
 const GUEST_COLUMNS_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_columns`;
 
-
 const parseTaskDateForStorage = (dateString?: string | Date): Date | undefined => {
     if (!dateString) return undefined;
     if (dateString instanceof Date) return dateString;
@@ -333,14 +334,14 @@ const parseTaskDateForStorage = (dateString?: string | Date): Date | undefined =
         const numDate = new Date(Number(dateString));
         if(!isNaN(numDate.getTime())) return numDate;
     }
-    return undefined; 
+    return undefined;
 };
-  
+
 const parseTaskForStorage = (task: any): Task => ({
     ...task,
     dueDate: parseTaskDateForStorage(task.dueDate),
-    createdAt: parseTaskDateForStorage(task.createdAt) || new Date(), 
-    updatedAt: parseTaskDateForStorage(task.updatedAt) || new Date(), 
+    createdAt: parseTaskDateForStorage(task.createdAt) || new Date(),
+    updatedAt: parseTaskDateForStorage(task.updatedAt) || new Date(),
     subtasks: task.subtasks || [],
     dependencies: task.dependencies || [],
     tags: task.tags || [],
@@ -353,38 +354,54 @@ const parseTaskForStorage = (task: any): Task => ({
 
 export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
-  const { user, loading: authLoading } = useAuth(); 
+  const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast(); // Get toast function
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isMounted = useRef(false); 
+  const isMounted = useRef(false);
+
+  const handlePermissionDeniedError = (operation: string, path: string, error: any) => {
+    dispatch({ type: "SET_ERROR", payload: `Failed to ${operation} board data.` });
+    toast({
+      title: `Board Data Access Error (${operation})`,
+      description: `Could not ${operation} board data. This is likely due to Firestore security rules. Please ensure rules allow access to "${path}" for authenticated users. (Error code: ${error.code || 'UNKNOWN'})`,
+      variant: "destructive",
+      duration: 15000, // Longer duration for critical errors
+    });
+  };
+
 
   useEffect(() => {
     isMounted.current = true;
     if (authLoading) {
-      console.log("[KanbanProvider] Auth loading. Waiting for auth state to resolve.");
+      console.log("[KanbanProvider] Auth loading. Waiting for auth state to resolve before loading board data.");
       dispatch({ type: "SET_LOADING", payload: true });
-      return; 
+      return;
     }
 
     const loadData = async () => {
       dispatch({ type: "SET_LOADING", payload: true });
-      const currentAuthUserFromSDK = auth.currentUser; 
-      console.log(`[KanbanProvider] loadData: AuthContext user: ${user?.uid}, SDK auth.currentUser: ${currentAuthUserFromSDK?.uid}`);
+      const currentSdkUser = firebaseAuthInstance.currentUser;
+      console.log(`[KanbanProvider] loadData: AuthContext user: ${user?.uid}, SDK auth.currentUser: ${currentSdkUser?.uid}`);
 
-
-      if (user && currentAuthUserFromSDK && user.uid === currentAuthUserFromSDK.uid) { 
-        console.log(`[KanbanProvider] Logged-in user mode. UID: ${user.uid}. Initializing from Firestore.`);
+      if (user && currentSdkUser && user.uid === currentSdkUser.uid) {
+        console.log(`[KanbanProvider] Logged-in user mode. UID: ${user.uid}. Attempting to initialize from Firestore.`);
         try {
           const firestoreData = await getUserKanbanData(user.uid);
           if (firestoreData) {
             console.log("[KanbanProvider] Firestore data fetched for logged-in user:", firestoreData);
             dispatch({ type: "SET_INITIAL_DATA", payload: firestoreData });
           } else {
-            console.log(`[KanbanProvider] No data in Firestore for user ${user.uid}. Initializing with default empty state.`);
+            console.log(`[KanbanProvider] No data in Firestore for user ${user.uid}, or service returned null. Initializing with default empty state.`);
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
           }
-        } catch (error) {
-          console.error("[KanbanProvider] Failed to load data from Firestore:", error);
-          dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
+        } catch (error: any) {
+          console.error("[KanbanProvider] Failed to load data from Firestore:", error.message, error.code, error);
+          if (error.code === 'permission-denied' || error.code === 7) {
+            handlePermissionDeniedError('load', `userKanbanData/${user.uid}`, error);
+          } else {
+            dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
+            toast({ title: "Load Error", description: `Failed to load tasks from cloud. Error: ${error.message}`, variant: "destructive" });
+          }
           dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
       } else {
@@ -393,7 +410,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             try {
                 const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
                 const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
-                
+
                 console.log("[KanbanProvider] Guest data from localStorage - Tasks:", storedTasks ? "Found" : "Not Found", "Columns:", storedColumnsState ? "Found" : "Not Found");
 
                 if (storedTasks && storedColumnsState) {
@@ -411,11 +428,12 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                     console.log("[KanbanProvider] No guest data in localStorage. Initializing with default empty state.");
                     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error("[KanbanProvider] Failed to parse guest data from localStorage:", e);
+                toast({ title: "Local Data Error", description: "Could not load tasks from your browser's storage. Starting fresh.", variant: "destructive" });
                 dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
             }
-        } else { 
+        } else {
             console.log("[KanbanProvider] Window undefined (SSR or non-browser). Initializing with default empty state for guest.");
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
@@ -423,15 +441,16 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     };
 
     loadData();
-    
+
     return () => { isMounted.current = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
 
   useEffect(() => {
     if (!isMounted.current || authLoading || !state.isDataInitialized) {
       console.log(`[KanbanProvider] Save effect skipped: isMounted=${isMounted.current}, authLoading=${authLoading}, isDataInitialized=${state.isDataInitialized}`);
-      return; 
+      return;
     }
 
     if (debounceTimeoutRef.current) {
@@ -444,11 +463,11 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const currentAuthUserFromSDK = auth.currentUser; 
-      console.log(`[KanbanProvider] Debounced save: AuthContext user: ${user?.uid}, SDK auth.currentUser: ${currentAuthUserFromSDK?.uid}`);
+      const currentSdkUser = firebaseAuthInstance.currentUser;
+      console.log(`[KanbanProvider] Debounced save: AuthContext user: ${user?.uid}, SDK auth.currentUser: ${currentSdkUser?.uid}. Current mode: ${user && currentSdkUser && user.uid === currentSdkUser.uid ? 'Logged-in (Firestore)' : 'Guest (localStorage)'}`);
 
-      if (user && currentAuthUserFromSDK && user.uid === currentAuthUserFromSDK.uid) { 
-        console.log(`[KanbanProvider] Logged-in user mode (UID: ${user.uid}). Saving to Firestore.`);
+      if (user && currentSdkUser && user.uid === currentSdkUser.uid) {
+        console.log(`[KanbanProvider] Logged-in user mode (UID: ${user.uid}). Preparing to save to Firestore.`);
         try {
           const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
             ...task,
@@ -464,17 +483,23 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             title: col.title,
             taskIds: col.taskIds,
           }));
-          
-          console.log(`[KanbanProvider] CRITICAL CHECK before Firestore save for user ${user.uid}: SDK auth.currentUser is:`, currentAuthUserFromSDK ? currentAuthUserFromSDK.uid : 'null');
-          if (!currentAuthUserFromSDK || currentAuthUserFromSDK.uid !== user.uid) {
-            console.error(`[KanbanProvider] CRITICAL ERROR: Mismatch or null SDK user before Firestore save. Context user: ${user.uid}, SDK user: ${currentAuthUserFromSDK?.uid}. Aborting save.`);
+
+          console.log(`[KanbanProvider] CRITICAL CHECK before Firestore save for user ${user.uid}: SDK auth.currentUser is:`, currentSdkUser ? currentSdkUser.uid : 'null');
+          if (!currentSdkUser || currentSdkUser.uid !== user.uid) {
+            console.error(`[KanbanProvider] CRITICAL ERROR: Mismatch or null SDK user before Firestore save. Context user: ${user.uid}, SDK user: ${currentSdkUser?.uid}. Aborting save.`);
+            toast({ title: "Save Error", description: "Authentication state mismatch. Could not save data. Please try refreshing.", variant: "destructive" });
             return;
           }
 
           await saveUserKanbanData(user.uid, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
           console.log(`[KanbanProvider] Successfully saved data to Firestore for user ${user.uid}`);
-        } catch (error) {
-          console.error("[KanbanProvider] Failed to save data to Firestore:", error);
+        } catch (error: any) {
+          console.error("[KanbanProvider] Failed to save data to Firestore:", error.message, error.code, error);
+          if (error.code === 'permission-denied' || error.code === 7) {
+            handlePermissionDeniedError('save', `userKanbanData/${user.uid}`, error);
+          } else {
+            toast({ title: "Save Error", description: `Failed to save tasks to cloud. Error: ${error.message}`, variant: "destructive" });
+          }
         }
       } else {
         console.log("[KanbanProvider] Guest user mode. Saving to localStorage.");
@@ -490,23 +515,25 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
                 const columnsStateToSaveForGuest = state.columns.map(col => ({
                     id: col.id,
-                    title: col.title, 
+                    title: col.title,
                     taskIds: col.taskIds,
                 }));
                 localStorage.setItem(GUEST_COLUMNS_STORAGE_KEY, JSON.stringify(columnsStateToSaveForGuest));
                 console.log("[KanbanProvider] Successfully saved guest data to localStorage.");
-            } catch(e) {
+            } catch(e: any) {
                 console.error("[KanbanProvider] Failed to save guest data to localStorage:", e);
+                toast({ title: "Local Save Error", description: "Could not save tasks to your browser's storage.", variant: "destructive" });
             }
         }
       }
-    }, 1500); // Increased debounce slightly for stability during rapid changes
+    }, 1500);
 
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.tasks, state.columns, user, authLoading, state.isDataInitialized]);
 
 
@@ -520,4 +547,3 @@ export function useKanban() {
   }
   return context;
 }
-
