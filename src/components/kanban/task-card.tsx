@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock, Play, Pause } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock, Play, Pause, Repeat, Link2 } from "lucide-react"; // Added Repeat, Link2
 import { useKanban } from "@/lib/store";
 import { format, isPast, isToday, formatDistanceToNow, parseISO } from "date-fns";
 import { cn, formatTime } from "@/lib/utils";
@@ -99,13 +99,14 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
     return depTask && depTask.columnId !== 'done';
   });
 
-  const isInWorkingColumn = task.columnId === 'inprogress' || task.columnId === 'review';
+  const isInProgressColumn = task.columnId === 'inprogress';
+  const isInReviewColumn = task.columnId === 'review';
+  const isInWorkingColumn = isInProgressColumn || isInReviewColumn;
 
 
   const toggleExpand = (e?: React.MouseEvent) => {
      if (e) {
         const target = e.target as HTMLElement;
-        // Check if the click originated from an element that should not trigger expansion
         if (target.closest('.no-expand, [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="dialog"], [role="alertdialog"], button, a, input[type="checkbox"], label, [data-radix-collection-item]')) {
             return;
         }
@@ -132,7 +133,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
     }
   };
 
-  const titleWords = task.title.split(/\s+/); // Split by any whitespace
+  const titleWords = task.title.split(/\s+/);
   const isTitleProgrammaticallyTruncated = !isExpanded && titleWords.length > MAX_WORDS_COLLAPSED_TITLE;
   let displayTitleContent = task.title;
 
@@ -156,14 +157,14 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
           <div className="flex justify-between items-start gap-2">
             <div
               className={cn(
-                "text-base font-semibold leading-normal pr-1 flex-grow min-w-0", // Base styles for the title container
+                "text-base font-semibold leading-normal pr-1 flex-grow min-w-0", 
                 isExpanded
-                  ? "break-words whitespace-normal" // When expanded, allow words to break and wrap. Height will be auto.
-                  : "line-clamp-2 break-words"      // When collapsed, limit to 2 lines, allow breaks within those lines.
+                  ? "break-words whitespace-normal" 
+                  : "line-clamp-2 break-words"      
               )}
               title={task.title} 
             >
-              {displayTitleContent} {/* This will be task.title when isExpanded is true */}
+              {displayTitleContent}
             </div>
             
             <div className="flex items-center shrink-0 no-expand">
@@ -196,26 +197,29 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
         <CardContent className={cn("p-3 pt-0", !isExpanded ? "pb-2.5" : "pb-3")}>
           {!isExpanded && (
             <div className="space-y-2 text-xs">
-              {/* Row 1: Priority & Key Date */}
               <div className="flex items-center justify-between text-muted-foreground">
                 <div className="flex items-center gap-1" title={`Priority: ${PRIORITY_STYLES[task.priority].label}`}>
                   <PriorityIcon className={cn("h-3.5 w-3.5", priorityColor)} />
                   <span className={cn(priorityColor, "font-medium")}>{PRIORITY_STYLES[task.priority].label}</span>
                 </div>
-                {parsedDueDate ? (
-                    <div className="flex items-center gap-1" title={`Due: ${format(parsedDueDate, "PPP")}`}>
-                        <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
-                        <span className={cn(isOverdue && "text-destructive font-semibold", "font-medium")}>
-                            Due {format(parsedDueDate, "MMM d")}
-                        </span>
-                        {isOverdue && <Badge variant="destructive" className="text-xs ml-1 py-0 px-1 h-auto">Overdue</Badge>}
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>Created: {format(task.createdAt, "MMM d")}</span>
-                    </div>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {task.recurrenceRule && <Repeat className="h-3.5 w-3.5 text-muted-foreground" title={getRecurrenceText(task.recurrenceRule) || "Recurring task"} />}
+                  {task.dependencies && task.dependencies.length > 0 && <Link2 className="h-3.5 w-3.5 text-muted-foreground" title="Has prerequisites" />}
+                  {parsedDueDate ? (
+                      <div className="flex items-center gap-1" title={`Due: ${format(parsedDueDate, "PPP")}`}>
+                          <CalendarDays className={cn("h-3.5 w-3.5", isOverdue && "text-destructive")} />
+                          <span className={cn(isOverdue && "text-destructive font-semibold", "font-medium")}>
+                              Due {format(parsedDueDate, "MMM d")}
+                          </span>
+                          {isOverdue && <Badge variant="destructive" className="text-xs ml-1 py-0 px-1 h-auto">Overdue</Badge>}
+                      </div>
+                  ) : (
+                      <div className="flex items-center gap-1" title={`Created: ${format(task.createdAt, "PPP")}`}>
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>Created: {format(task.createdAt, "MMM d")}</span>
+                      </div>
+                  )}
+                </div>
               </div>
 
               {task.tags.length > 0 && (
@@ -237,13 +241,13 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
                 </div>
               )}
               
-              {(task.columnId === 'inprogress' || ((task.columnId === 'review' || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
+              {(isInProgressColumn || ((isInReviewColumn || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{formatTime(displayTime)}</span>
                   </div>
-                  {task.columnId === 'inprogress' && ( 
+                  {isInProgressColumn && ( 
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -276,7 +280,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
                 </div>
               </div>
               
-              {(task.columnId === 'inprogress' || ((task.columnId === 'review' || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
+              {(isInProgressColumn || ((isInReviewColumn || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
                 <div className="pt-2 pb-1 border-b border-dashed">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
@@ -285,7 +289,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
                           <Clock className="h-4 w-4" />
                           <span className="font-medium text-foreground">{formatTime(displayTime)}</span>
                         </div>
-                        {task.columnId === 'inprogress' && ( 
+                        {isInProgressColumn && ( 
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -425,4 +429,3 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
 }
 
 export const TaskCard = React.memo(TaskCardComponent);
-
