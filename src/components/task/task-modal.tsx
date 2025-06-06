@@ -19,15 +19,16 @@ import { Badge } from "@/components/ui/badge";
 import { useKanban } from "@/lib/store";
 import type { Task, Priority, RecurrenceRule, RecurrenceType, Subtask } from "@/lib/types";
 import { PRIORITIES, PRIORITY_STYLES, DEFAULT_COLUMNS } from "@/lib/constants";
-import { CalendarIcon, PlusCircle, Trash2, Sparkles, Loader2 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { CalendarIcon, PlusCircle, Trash2, Sparkles, Loader2, Lightbulb, AlertTriangle, X } from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description";
 import { suggestTaskTags } from "@/ai/flows/suggest-task-tags";
 import { suggestTaskSubtasks } from "@/ai/flows/suggest-task-subtasks";
-// Removed: import { suggestTaskPriority } from "@/ai/flows/suggest-task-priority"; 
+import { suggestTaskInsights } from "@/ai/flows/suggest-task-insights";
 import { SubtaskItem } from "./subtask-item";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 
 const taskSchema = z.object({
@@ -60,10 +61,12 @@ export function TaskModal() {
   const [isAiDescriptionLoading, setIsAiDescriptionLoading] = useState(false);
   const [isAiTagsLoading, setIsAiTagsLoading] = useState(false);
   const [isAiSubtasksLoading, setIsAiSubtasksLoading] = useState(false);
-  // Removed: const [isAiPriorityLoading, setIsAiPriorityLoading] = useState(false); 
+  const [isAiInsightsLoading, setIsAiInsightsLoading] = useState(false);
+  const [aiInsights, setAiInsights] = useState<string[] | null>(null);
+  const [aiInsightsError, setAiInsightsError] = useState<string | null>(null);
 
 
-  const { control, register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TaskFormData>({
+  const { control, register, handleSubmit, reset, watch, setValue, formState: { errors, dirtyFields } } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: "",
@@ -84,7 +87,10 @@ export function TaskModal() {
 
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
-  // Removed: const watchedDueDate = watch("dueDate"); 
+  const watchedDueDate = watch("dueDate");
+  const watchedPriority = watch("priority");
+  const watchedColumnId = watch("columnId");
+
 
   useEffect(() => {
     if (activeTaskModal) {
@@ -105,6 +111,9 @@ export function TaskModal() {
         priority: "medium", tags: "", subtasks: [], dependencies: [], recurrenceType: "", dueDate: undefined,
       });
     }
+    // Clear AI insights when modal opens/task changes
+    setAiInsights(null);
+    setAiInsightsError(null);
   }, [activeTaskModal, reset]);
 
   const onSubmit = (data: TaskFormData) => {
@@ -151,7 +160,9 @@ export function TaskModal() {
     setIsAiDescriptionLoading(false);
     setIsAiTagsLoading(false);
     setIsAiSubtasksLoading(false);
-    // Removed: setIsAiPriorityLoading(false); 
+    setIsAiInsightsLoading(false);
+    setAiInsights(null);
+    setAiInsightsError(null);
   };
 
   const handleAiError = (flowName: string, errorMsg?: string) => {
@@ -170,6 +181,10 @@ export function TaskModal() {
         }
     }
     toast({ title: `AI ${flowName} Error`, description: toastDescription, variant: "destructive" });
+    if (flowName === "Task Insights") {
+        setAiInsightsError(toastDescription);
+        setAiInsights(null);
+    }
   };
 
 
@@ -179,12 +194,13 @@ export function TaskModal() {
         return;
     }
     setIsAiDescriptionLoading(true);
+    setAiInsights(null); setAiInsightsError(null); // Clear previous insights
     try {
         const result = await enhanceTaskDescription({ title: watchedTitle, existingDescription: watchedDescription || "" });
         if (result.error) {
             handleAiError("Description Enhancement", result.error);
         } else if (result.enhancedDescription) {
-            setValue("description", result.enhancedDescription);
+            setValue("description", result.enhancedDescription, { shouldDirty: true });
             toast({ title: "Description Enhanced", description: "AI has enhanced the task description." });
         } else { 
              toast({ title: "Enhancement Unclear", description: "AI couldn't provide an enhancement this time.", variant: "default" });
@@ -202,12 +218,13 @@ export function TaskModal() {
         return;
     }
     setIsAiTagsLoading(true);
+    setAiInsights(null); setAiInsightsError(null);
     try {
         const result = await suggestTaskTags({ title: watchedTitle, description: watchedDescription || "" });
         if (result.error) {
             handleAiError("Tag Suggestion", result.error);
         } else if (result.tags && result.tags.length > 0) {
-            setValue("tags", result.tags.join(", "));
+            setValue("tags", result.tags.join(", "), { shouldDirty: true });
             toast({ title: "Tags Suggested", description: "AI has suggested tags for your task." });
         } else {
             toast({ title: "No Tags Found", description: "AI couldn't find relevant tags for this task.", variant: "default" });
@@ -225,6 +242,7 @@ export function TaskModal() {
         return;
     }
     setIsAiSubtasksLoading(true);
+    setAiInsights(null); setAiInsightsError(null);
     try {
         const result = await suggestTaskSubtasks({ title: watchedTitle, description: watchedDescription || "" });
         if (result.error) {
@@ -233,6 +251,7 @@ export function TaskModal() {
             result.subtasks.forEach(subtaskTitle => {
                 appendSubtask({ id: crypto.randomUUID(), title: subtaskTitle, completed: false });
             });
+            setValue("subtasks", [...subtaskFields, ...result.subtasks.map(st => ({id: crypto.randomUUID(), title: st, completed: false}))], { shouldDirty: true });
             toast({ title: "Subtasks Suggested", description: "AI has suggested subtasks." });
         } else {
             toast({ title: "No Subtasks Found", description: "AI couldn't break this task into subtasks.", variant: "default" });
@@ -243,34 +262,75 @@ export function TaskModal() {
         setIsAiSubtasksLoading(false);
     }
   };
+  
+  const handleSuggestInsights = async () => {
+    if (!watchedTitle) {
+      toast({ title: "Title Needed", description: "Please provide a title to get AI insights.", variant: "destructive" });
+      return;
+    }
+    setIsAiInsightsLoading(true);
+    setAiInsights(null);
+    setAiInsightsError(null);
+    try {
+      const currentDueDate = watch("dueDate");
+      const insightInput = {
+        title: watchedTitle,
+        description: watchedDescription || "",
+        priority: watchedPriority || "medium",
+        dueDate: currentDueDate && isValid(currentDueDate) ? format(currentDueDate, "yyyy-MM-dd") : undefined,
+        subtaskCount: subtaskFields.length,
+        tagCount: watch("tags")?.split(",").map(t => t.trim()).filter(t => t).length || 0,
+        dependencyCount: watch("dependencies")?.length || 0,
+        status: columns.find(c => c.id === watchedColumnId)?.title || watchedColumnId,
+      };
+      const result = await suggestTaskInsights(insightInput);
+      if (result.error) {
+        handleAiError("Task Insights", result.error);
+      } else if (result.insights && result.insights.length > 0) {
+        setAiInsights(result.insights);
+        toast({ title: "AI Insights Generated", description: "Review the suggestions below." });
+      } else {
+        setAiInsights(["AI found no specific insights for this task at the moment."]);
+      }
+    } catch (error: any) {
+      handleAiError("Task Insights", String(error.message || "An unexpected error occurred."));
+    } finally {
+      setIsAiInsightsLoading(false);
+    }
+  };
 
-  // Removed handleSuggestPriority function
 
   const handleAddSubtask = () => {
     appendSubtask({ id: crypto.randomUUID(), title: "", completed: false });
+    setValue("subtasks", [...subtaskFields, {id: crypto.randomUUID(), title: "", completed: false}], { shouldDirty: true });
   };
 
   const handleToggleSubtask = useCallback((subtaskId: string) => {
     const subtaskIndex = subtaskFields.findIndex(sf => sf.id === subtaskId);
     if (subtaskIndex !== -1) {
         const currentSubtask = subtaskFields[subtaskIndex];
-        updateSubtaskField(subtaskIndex, { ...currentSubtask, completed: !currentSubtask.completed });
+        const updatedSubtasks = [...subtaskFields];
+        updatedSubtasks[subtaskIndex] = { ...currentSubtask, completed: !currentSubtask.completed };
+        setValue("subtasks", updatedSubtasks, { shouldDirty: true });
     }
-  }, [subtaskFields, updateSubtaskField]);
+  }, [subtaskFields, setValue]);
 
   const handleUpdateSubtask = useCallback((updatedSubtask: Subtask) => {
     const subtaskIndex = subtaskFields.findIndex(sf => sf.id === updatedSubtask.id);
     if (subtaskIndex !== -1) {
-      updateSubtaskField(subtaskIndex, updatedSubtask);
+      const updatedSubtasks = [...subtaskFields];
+      updatedSubtasks[subtaskIndex] = updatedSubtask;
+      setValue("subtasks", updatedSubtasks, { shouldDirty: true });
     }
-  }, [subtaskFields, updateSubtaskField]);
+  }, [subtaskFields, setValue]);
 
   const handleDeleteSubtask = useCallback((subtaskId: string) => {
     const subtaskIndex = subtaskFields.findIndex(sf => sf.id === subtaskId);
     if (subtaskIndex !== -1) {
-      removeSubtask(subtaskIndex);
+      const updatedSubtasks = subtaskFields.filter(sf => sf.id !== subtaskId);
+      setValue("subtasks", updatedSubtasks, { shouldDirty: true });
     }
-  }, [subtaskFields, removeSubtask]);
+  }, [subtaskFields, setValue]);
 
 
   if (!isTaskModalOpen) return null;
@@ -305,6 +365,58 @@ export function TaskModal() {
               <Textarea id="description" {...register("description")} placeholder="Add more details about the task..." rows={4} />
             </div>
 
+            {/* AI Insights Section */}
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                onClick={handleSuggestInsights}
+                disabled={isAiInsightsLoading || !watchedTitle}
+              >
+                {isAiInsightsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+                Get AI Task Insights
+              </Button>
+              {aiInsightsError && !isAiInsightsLoading && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>AI Insights Error</AlertTitle>
+                  <AlertDescription>{aiInsightsError}</AlertDescription>
+                </Alert>
+              )}
+              {aiInsights && !isAiInsightsLoading && !aiInsightsError && (
+                <Alert variant="default" className="mt-2 bg-accent/30 border-accent/50">
+                   <div className="flex justify-between items-start">
+                    <div>
+                        <div className="flex items-center">
+                            <Lightbulb className="h-4 w-4 mr-2 text-primary" />
+                            <AlertTitle className="text-primary/90 font-semibold">AI Task Insights</AlertTitle>
+                        </div>
+                        <AlertDescription className="mt-1 text-accent-foreground">
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                            {aiInsights.map((insight, index) => (
+                            <li key={index}>{insight}</li>
+                            ))}
+                        </ul>
+                        </AlertDescription>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 -mr-2 -mt-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => { setAiInsights(null); setAiInsightsError(null);}}
+                        aria-label="Dismiss insights"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                   </div>
+                </Alert>
+              )}
+            </div>
+
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Column */}
               <div>
@@ -313,7 +425,7 @@ export function TaskModal() {
                   name="columnId"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={(value) => field.onChange(value)} value={field.value || DEFAULT_COLUMNS[0].id}>
                       <SelectTrigger><SelectValue placeholder="Select column" /></SelectTrigger>
                       <SelectContent>
                         {columns.map(col => <SelectItem key={col.id} value={col.id}>{col.title}</SelectItem>)}
@@ -337,11 +449,11 @@ export function TaskModal() {
                           className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          {field.value && isValid(field.value) ? format(field.value, "PPP") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                        <Calendar mode="single" selected={field.value} onSelect={(date) => field.onChange(date)} initialFocus />
                       </PopoverContent>
                     </Popover>
                   )}
@@ -352,20 +464,19 @@ export function TaskModal() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                     <Label htmlFor="priority">Priority</Label>
-                    {/* Removed AI Suggest Priority Button */}
                 </div>
                 <Controller
                   name="priority"
                   control={control}
                   render={({ field }) => {
-                    const currentPriorityValue = field.value as Priority;
+                    const currentPriorityValue = field.value as Priority || "medium";
                     const selectedStyleInfo = PRIORITY_STYLES[currentPriorityValue];
                     const IconComponent = selectedStyleInfo?.icon;
                     const label = selectedStyleInfo?.label;
                     const colorClass = selectedStyleInfo?.colorClass;
 
                     return (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={(value) => field.onChange(value as Priority)} value={currentPriorityValue}>
                         <SelectTrigger>
                           {IconComponent && label && colorClass ? (
                             <div className="flex items-center gap-2">
@@ -528,7 +639,7 @@ export function TaskModal() {
           <DialogClose asChild>
             <Button type="button" variant="outline" onClick={closeModal}>Cancel</Button>
           </DialogClose>
-          <Button type="submit" onClick={handleSubmit(onSubmit)}>
+          <Button type="submit" onClick={handleSubmit(onSubmit)} disabled={!Object.keys(dirtyFields).length && !!activeTaskModal}>
             {activeTaskModal ? "Save Changes" : "Create Task"}
           </Button>
         </DialogFooter>

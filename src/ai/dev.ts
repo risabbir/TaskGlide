@@ -11,4 +11,5 @@ import '@/ai/flows/suggest-task-tags.ts';
 import '@/ai/flows/enhance-task-description.ts';
 import '@/ai/flows/suggest-task-subtasks.ts';
 import '@/ai/flows/suggest-focus-batch.ts';
-import '@/ai/flows/suggest-task-priority.ts'; // Added new flow
+import '@/ai/flows/suggest-task-priority.ts';
+import '@/ai/flows/suggest-task-insights.ts'; // Added new flow
