@@ -35,6 +35,7 @@ This application uses Firebase for backend services including Authentication, Fi
     ```
     *   **Replace `your_project_id_here` with your actual Firebase Project ID (e.g., `taskglide-app`).**
     *   Replace the other placeholder values with your actual credentials.
+    *   **Important:** After creating or modifying the `.env` file, you **must restart your Next.js development server** for the changes to take effect (`npm run dev`).
 
 3.  **Enable Sign-In Providers:**
     *   In the Firebase console, go to **Authentication** -> **Sign-in method**.
@@ -42,12 +43,12 @@ This application uses Firebase for backend services including Authentication, Fi
     *   **Google:**
         *   Click on "Google" in the list of providers.
         *   Enable the provider.
-        *   You might need to provide a project support email.
+        *   You **must** select a **Project support email**. If this is not set, Google Sign-In will fail.
         *   Save the changes.
 
 4.  **Security Rules:**
     *   **Firestore:** Set appropriate security rules for your Firestore database. Go to Firestore Database -> Rules in the Firebase console.
-        *Example (allow read/write if authenticated):*
+        *Example (allow read/write if authenticated for specific paths):*
         ```rules
         rules_version = '2';
         service cloud.firestore {
@@ -60,10 +61,6 @@ This application uses Firebase for backend services including Authentication, Fi
               allow read: if request.auth != null; // Or more restrictive if needed
               allow write: if request.auth != null && request.auth.uid == userId;
             }
-            // Other rules as needed
-            // match /{document=**} { // Broader rule, be careful
-            //   allow read, write: if request.auth != null;
-            // }
           }
         }
         ```
@@ -100,7 +97,43 @@ This application uses Genkit to power its AI features (like suggesting task deta
     GOOGLE_API_KEY=YOUR_GOOGLE_AI_API_KEY_HERE
     ```
     *   Replace `YOUR_GOOGLE_AI_API_KEY_HERE` with the actual key you obtained.
+    *   Restart your Next.js development server if it was running.
     *   The Genkit `googleAI` plugin will automatically use this environment variable.
+
+## Troubleshooting Google Sign-In Errors
+
+If you encounter errors specifically with Google Sign-In (e.g., "auth/operation-not-allowed", popup errors, or other "auth/..." codes):
+
+1.  **Check Firebase Console Configuration:**
+    *   Go to your Firebase Project -> Authentication -> Sign-in method.
+    *   Ensure **Google** is **Enabled**.
+    *   Crucially, make sure a **Project support email** is selected and saved for the Google provider. If it's empty, Google Sign-In will often fail.
+2.  **Check Google Cloud Console (GCP) OAuth Consent Screen:**
+    *   Firebase projects are typically linked to Google Cloud projects. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+    *   Select the Google Cloud project that is associated with your Firebase project.
+    *   Navigate to "APIs & Services" -> "OAuth consent screen".
+    *   **Publishing status:** Ensure your OAuth consent screen is **Published**. If it's in "Testing," only explicitly listed test users can sign in. For general access, it must be published.
+    *   **User type:** For most apps, this will be "External".
+    *   **Authorized domains:** While `signInWithPopup` doesn't always strictly require this for `localhost`, ensure your app's actual domain (if deployed) is listed. For Firebase Hosting, it typically adds `your-project-id.firebaseapp.com` and `your-project-id.web.app` automatically when you set up the Google provider in Firebase.
+    *   **Scopes:** The default Firebase scopes for Google Sign-In (`email`, `profile`, `openid`) are usually sufficient.
+3.  **Check API Key Restrictions (if any):**
+    *   In Google Cloud Console -> APIs & Services -> Credentials.
+    *   Find the API key used by your web app (usually named "Browser key (auto created by Firebase)").
+    *   If you have applied restrictions to this key:
+        *   Ensure "Firebase Authentication API" is enabled under "API restrictions".
+        *   Under "Application restrictions", ensure `*.firebaseapp.com` is allowed if using Firebase Hosting. For local development, you might need to add `http://localhost:<YOUR_PORT>` (e.g., `http://localhost:9002`).
+4.  **Verify `.env` Variables:**
+    *   Double-check that all `NEXT_PUBLIC_FIREBASE_...` variables in your `.env` file are correct and correspond to the Firebase project where you enabled Google Sign-In.
+    *   **Restart your Next.js development server** (`npm run dev`) after any changes to `.env`.
+5.  **Browser Issues:**
+    *   Ensure your browser is not blocking pop-ups from `localhost` or your Firebase auth domain (`<YOUR_PROJECT_ID>.firebaseapp.com`).
+    *   Try clearing your browser's cache and cookies for the site.
+    *   Test in an incognito window to rule out extension conflicts.
+6.  **Firebase Project Billing:**
+    *   While basic Firebase Auth is free, ensure your Firebase project is in good standing (e.g., if linked to a GCP project, billing is active if you're using paid services, though Auth itself doesn't usually require this unless you hit high usage quotas not typical for development). This is a less common cause for basic auth issues but worth noting.
+
+If errors persist after checking these, inspect the browser's developer console for more detailed error messages from Firebase, which often provide specific error codes (like `auth/operation-not-allowed`).
+
 
 ## Development
 
@@ -133,5 +166,4 @@ If you have switched from an old Firebase project to a new one (e.g., from "kanv
 *   **Storage Files:** Manually download/upload or use `gsutil` to transfer files between buckets.
 
 Remember to update security rules and email templates in the new Firebase project as well.
-
     

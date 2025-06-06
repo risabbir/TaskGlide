@@ -265,7 +265,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [toast, fetchOtherProfileData]);
 
-  const handleSocialSignIn = async (provider: GoogleAuthProvider): Promise<FirebaseUser | null> => {
+  const signInWithGoogle = useCallback(async (): Promise<FirebaseUser | null> => {
+    console.log("[AuthContext] Attempting Google sign-in.");
+    const provider = new GoogleAuthProvider();
     setInitialLoading(true);
     try {
       const result: UserCredential = await signInWithPopup(auth, provider);
@@ -277,39 +279,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const additionalUserInfo = getAdditionalUserInfo(result);
         if (additionalUserInfo?.isNewUser) {
-          console.log(`[AuthContext] New user signed in with ${provider.providerId}. Ensuring profile document.`);
+          console.log(`[AuthContext] New user signed in with Google. Ensuring profile document.`);
           await ensureUserProfileDocument(socialUser);
         } else {
-          console.log(`[AuthContext] Existing user signed in with ${provider.providerId}. Fetching profile.`);
+          console.log(`[AuthContext] Existing user signed in with Google. Fetching profile.`);
           await fetchOtherProfileData(socialUser.uid);
         }
         toast({ title: "Signed In Successfully!", description: `Welcome to ${APP_NAME}!` });
         router.push("/");
         return socialUser;
       }
-      return null;
+      return null; // Should not happen if result.user is present
     } catch (e) {
       const authError = e as AuthError;
-      console.error(`[AuthContext] Social sign in error with ${provider.providerId}:`, authError.message, authError.code, authError);
-      let message = `Failed to sign in with Google. Please try again.`;
+      console.error(`[AuthContext] Google sign-in error:`, authError.message, authError.code, authError);
+      let message = `Failed to sign in with Google. Please try again. (Code: ${authError.code || 'unknown'})`;
       if (authError.code === 'auth/account-exists-with-different-credential') {
         message = `An account already exists with this email address using a different sign-in method. Try signing in with that method.`;
       } else if (authError.code === 'auth/popup-closed-by-user') {
         message = `Sign-in popup was closed before completion. Please try again.`;
       } else if (authError.code === 'auth/cancelled-popup-request') {
          message = `Multiple sign-in attempts detected. Please try again.`;
+      } else if (authError.code === 'auth/popup-blocked-by-browser') {
+        message = `The sign-in popup was blocked by your browser. Please allow popups for this site and try again.`;
+      } else if (authError.code === 'auth/operation-not-allowed') {
+        message = `Google Sign-In is not enabled for this app. Please ensure it's configured correctly in the Firebase console.`;
       }
-      toast({ title: "Google Sign-In Error", description: message, variant: "destructive" });
+      toast({ title: "Google Sign-In Error", description: message, variant: "destructive", duration: 8000 });
       return null;
     } finally {
       setInitialLoading(false);
     }
-  };
-
-  const signInWithGoogle = useCallback(async (): Promise<FirebaseUser | null> => {
-    console.log("[AuthContext] Attempting Google sign-in.");
-    const provider = new GoogleAuthProvider();
-    return handleSocialSignIn(provider);
   }, [ensureUserProfileDocument, fetchOtherProfileData, toast, router]);
 
 
