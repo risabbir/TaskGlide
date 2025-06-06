@@ -353,7 +353,7 @@ const parseTaskForStorage = (task: any): Task => ({
 
 export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
-  const { user, loading: authLoading } = useAuth(); // user from AuthContext
+  const { user, loading: authLoading } = useAuth(); 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(false); 
 
@@ -366,15 +366,16 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
     const loadData = async () => {
       dispatch({ type: "SET_LOADING", payload: true });
-      const currentAuthUserFromSDK = auth.currentUser; // Direct SDK check
+      const currentAuthUserFromSDK = auth.currentUser; 
 
       if (user && currentAuthUserFromSDK && user.uid === currentAuthUserFromSDK.uid) { 
-        console.log(`[KanbanProvider] loadData: Context user ID: ${user.uid}, auth.currentUser ID: ${currentAuthUserFromSDK.uid}. Loading from Firestore.`);
+        console.log(`[KanbanProvider] Auth state: Logged-in user (Context UID: ${user.uid}, SDK UID: ${currentAuthUserFromSDK.uid}). Initializing from Firestore.`);
         try {
           const firestoreData = await getUserKanbanData(user.uid);
           if (firestoreData) {
             dispatch({ type: "SET_INITIAL_DATA", payload: firestoreData });
           } else {
+            console.log(`[KanbanProvider] No data in Firestore for user ${user.uid}. Initializing with default empty state.`);
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
           }
         } catch (error) {
@@ -383,35 +384,36 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
       } else {
-        if (user || currentAuthUserFromSDK) { // Log if there's a mismatch or only one is present
-            console.warn(`[KanbanProvider] loadData: Auth state inconsistency. Context user ID: ${user?.uid}, auth.currentUser ID: ${currentAuthUserFromSDK?.uid}. Defaulting to guest data.`);
+        if (user || currentAuthUserFromSDK) { 
+            console.warn(`[KanbanProvider] Auth state: Potential inconsistency or no logged-in user (Context User: ${user?.uid}, SDK User: ${currentAuthUserFromSDK?.uid}). Defaulting to guest data mode.`);
         } else {
-            console.log("[KanbanProvider] loadData: No authenticated user. Loading guest data from localStorage.");
+            console.log("[KanbanProvider] Auth state: Guest user. Initializing from localStorage.");
         }
-        // Load guest data
         if (typeof window !== 'undefined') {
-            const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
-            const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
-            if (storedTasks && storedColumnsState) {
-                try {
+            try {
+                const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
+                const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
+                if (storedTasks && storedColumnsState) {
                     const tasks: Task[] = JSON.parse(storedTasks).map(parseTaskForStorage);
                     const parsedStoredColumns: Array<{ id: string; title: string; taskIds: string[] }> = JSON.parse(storedColumnsState);
                     const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
-                    const storedColData = parsedStoredColumns.find(sc => sc.id === defaultCol.id);
-                    return {
-                        ...defaultCol,
-                        taskIds: storedColData ? storedColData.taskIds : defaultCol.taskIds || [],
-                    };
+                        const storedColData = parsedStoredColumns.find(sc => sc.id === defaultCol.id);
+                        return {
+                            ...defaultCol,
+                            taskIds: storedColData ? storedColData.taskIds : (defaultCol.taskIds || []),
+                        };
                     });
                     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
-                } catch (e) {
-                    console.error("[KanbanProvider] Failed to parse guest data from localStorage", e);
+                } else {
+                    console.log("[KanbanProvider] No guest data in localStorage. Initializing with default empty state.");
                     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
                 }
-            } else {
-                 dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
+            } catch (e) {
+                console.error("[KanbanProvider] Failed to parse guest data from localStorage:", e);
+                dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
             }
-        } else { // Should not happen on client, but good for completeness
+        } else { 
+            console.log("[KanbanProvider] Window undefined (SSR or non-browser). Initializing with default empty state.");
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
         }
       }
@@ -433,10 +435,12 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     }
 
     debounceTimeoutRef.current = setTimeout(async () => {
-      const currentAuthUserFromSDK = auth.currentUser; // Direct SDK check
+      if (!isMounted.current || !state.isDataInitialized) return; 
+
+      const currentAuthUserFromSDK = auth.currentUser; 
 
       if (user && currentAuthUserFromSDK && user.uid === currentAuthUserFromSDK.uid) { 
-        console.log(`[KanbanProvider] saveData: Context user ID: ${user.uid}, auth.currentUser ID: ${currentAuthUserFromSDK.uid}. Saving to Firestore.`);
+        console.log(`[KanbanProvider] Data change detected for logged-in user (UID: ${user.uid}). Saving to Firestore.`);
         try {
           const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
             ...task,
@@ -456,15 +460,13 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           await saveUserKanbanData(user.uid, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
         } catch (error) {
           console.error("[KanbanProvider] Failed to save data to Firestore:", error);
-          // Optionally: dispatch({ type: "SET_ERROR", payload: "Failed to save tasks to cloud." });
         }
       } else {
-        if (user || currentAuthUserFromSDK) {
-             console.warn(`[KanbanProvider] saveData: Auth state inconsistency. Context user ID: ${user?.uid}, auth.currentUser ID: ${currentAuthUserFromSDK?.uid}. Not saving to Firestore.`);
+        if (user || currentAuthUserFromSDK) { 
+             console.warn(`[KanbanProvider] Data change detected with auth inconsistency (Context User: ${user?.uid}, SDK User: ${currentAuthUserFromSDK?.uid}). Saving to localStorage (guest mode).`);
         } else {
-             console.log("[KanbanProvider] saveData: No authenticated user. Saving guest data to localStorage.");
+             console.log("[KanbanProvider] Data change detected for guest user. Saving to localStorage.");
         }
-        // Save guest data
         if (typeof window !== 'undefined') {
             try {
                 const tasksToSaveForGuest = state.tasks.map(task => ({
@@ -482,7 +484,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                 }));
                 localStorage.setItem(GUEST_COLUMNS_STORAGE_KEY, JSON.stringify(columnsStateToSaveForGuest));
             } catch(e) {
-                console.error("[KanbanProvider] Failed to save guest data to localStorage", e);
+                console.error("[KanbanProvider] Failed to save guest data to localStorage:", e);
             }
         }
       }
