@@ -44,19 +44,6 @@ This application uses Firebase for backend services including Authentication, Fi
         *   Enable the provider.
         *   You might need to provide a project support email.
         *   Save the changes.
-    *   **Facebook:**
-        *   Click on "Facebook" in the list of providers.
-        *   Enable the provider.
-        *   You will need a **Facebook App ID** and **App Secret**.
-            *   Go to the [Facebook Developer Portal](https://developers.facebook.com/) and create a new app if you haven't already.
-            *   From your Facebook App's dashboard, get the App ID and App Secret.
-            *   Enter these into the Firebase console.
-            *   **Crucially**, copy the **OAuth redirect URI** provided by Firebase (it looks like `https://<YOUR_PROJECT_ID>.firebaseapp.com/__/auth/handler`).
-            *   Go back to your Facebook App settings on the Facebook Developer Portal.
-            *   Find the "Facebook Login" product and go to its "Settings".
-            *   Add the copied URI to the "Valid OAuth Redirect URIs" field.
-            *   Save changes on the Facebook Developer Portal.
-            *   Save changes in the Firebase console.
 
 4.  **Security Rules:**
     *   **Firestore:** Set appropriate security rules for your Firestore database. Go to Firestore Database -> Rules in the Firebase console.
@@ -146,3 +133,5 @@ If you have switched from an old Firebase project to a new one (e.g., from "kanv
 *   **Storage Files:** Manually download/upload or use `gsutil` to transfer files between buckets.
 
 Remember to update security rules and email templates in the new Firebase project as well.
+
+    

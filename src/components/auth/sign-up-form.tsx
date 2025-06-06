@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, Chrome, Facebook } from "lucide-react";
+import { Loader2, Eye, EyeOff, Chrome } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -34,7 +34,7 @@ const signUpSchema = z.object({
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
-  const { signUp, signInWithGoogle, signInWithFacebook, loading } = useAuth();
+  const { signUp, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -62,18 +62,11 @@ export function SignUpForm() {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    const user = await signInWithFacebook();
-    if (user) {
-      router.push("/");
-    }
-  };
-
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Create an Account</CardTitle>
-        <CardDescription>Enter your details or use a social login to get started.</CardDescription>
+        <CardDescription>Enter your details or use Google Sign-Up to get started.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -164,15 +157,10 @@ export function SignUpForm() {
                 OR
               </span>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 w-full">
-              <Button type="button" variant="outline" onClick={handleGoogleSignIn} disabled={loading}>
-                <Chrome className="mr-2 h-4 w-4" /> Google
-              </Button>
-              <Button type="button" variant="outline" onClick={handleFacebookSignIn} disabled={loading}>
-                <Facebook className="mr-2 h-4 w-4" /> Facebook
-              </Button>
-            </div>
+            
+            <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
+                <Chrome className="mr-2 h-4 w-4" /> Sign up with Google
+            </Button>
 
             <div className="text-center text-sm text-muted-foreground mt-2">
               Already have an account?{" "}
@@ -186,3 +174,5 @@ export function SignUpForm() {
     </Card>
   );
 }
+
+    

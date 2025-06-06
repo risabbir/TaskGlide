@@ -22,7 +22,6 @@ import {
   updatePassword as firebaseUpdatePassword,
   verifyBeforeUpdateEmail,
   GoogleAuthProvider,
-  FacebookAuthProvider,
   signInWithPopup,
   getAdditionalUserInfo
 } from 'firebase/auth';
@@ -63,7 +62,6 @@ interface AuthContextType {
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signInWithGoogle: () => Promise<FirebaseUser | null>;
-  signInWithFacebook: () => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
   startNewGuestSession: () => void;
   resetPassword: (email: string) => Promise<boolean>;
@@ -111,10 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           firestoreUpdatedAt: serverTimestamp()
         });
         console.log(`[AuthContext] ensureUserProfileDocument: Initial profile document created for ${profileDocPath}.`);
-        return initialOtherProfileData; // Return the newly created (empty) data
+        return initialOtherProfileData; 
       } else {
         console.log(`[AuthContext] ensureUserProfileDocument: Profile document already exists for ${profileDocPath}.`);
-        return docSnap.data() as OtherProfileData; // Return existing data
+        return docSnap.data() as OtherProfileData; 
       }
     } catch (profileError: any) {
       if (profileError.code === 'permission-denied' || profileError.code === 7) {
@@ -123,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error(`[AuthContext] ensureUserProfileDocument: Firestore error for ${profileDocPath}:`, profileError.message, profileError.code, profileError);
         toast({ title: "Profile Sync Error", description: "Could not ensure user profile data exists.", variant: "destructive" });
       }
-      return null; // Indicate error or no data
+      return null; 
     }
   }, [toast]);
 
@@ -249,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (signedInUser) {
         setGuestId(null); 
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-        await fetchOtherProfileData(signedInUser.uid); // Ensure profile data is fetched/checked
+        await fetchOtherProfileData(signedInUser.uid); 
       }
       toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
       return signedInUser;
@@ -267,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [toast, fetchOtherProfileData]);
 
-  const handleSocialSignIn = async (provider: GoogleAuthProvider | FacebookAuthProvider): Promise<FirebaseUser | null> => {
+  const handleSocialSignIn = async (provider: GoogleAuthProvider): Promise<FirebaseUser | null> => {
     setInitialLoading(true);
     try {
       const result: UserCredential = await signInWithPopup(auth, provider);
@@ -293,7 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       const authError = e as AuthError;
       console.error(`[AuthContext] Social sign in error with ${provider.providerId}:`, authError.message, authError.code, authError);
-      let message = `Failed to sign in with ${provider.providerId === 'google.com' ? 'Google' : 'Facebook'}. Please try again.`;
+      let message = `Failed to sign in with Google. Please try again.`;
       if (authError.code === 'auth/account-exists-with-different-credential') {
         message = `An account already exists with this email address using a different sign-in method. Try signing in with that method.`;
       } else if (authError.code === 'auth/popup-closed-by-user') {
@@ -301,7 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (authError.code === 'auth/cancelled-popup-request') {
          message = `Multiple sign-in attempts detected. Please try again.`;
       }
-      toast({ title: "Social Sign-In Error", description: message, variant: "destructive" });
+      toast({ title: "Google Sign-In Error", description: message, variant: "destructive" });
       return null;
     } finally {
       setInitialLoading(false);
@@ -311,15 +309,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async (): Promise<FirebaseUser | null> => {
     console.log("[AuthContext] Attempting Google sign-in.");
     const provider = new GoogleAuthProvider();
-    return handleSocialSignIn(provider);
-  }, [ensureUserProfileDocument, fetchOtherProfileData, toast, router]);
-
-  const signInWithFacebook = useCallback(async (): Promise<FirebaseUser | null> => {
-    console.log("[AuthContext] Attempting Facebook sign-in.");
-    const provider = new FacebookAuthProvider();
-    // Facebook may require custom parameters like permissions
-    // provider.addScope('email');
-    // provider.setCustomParameters({ 'display': 'popup' });
     return handleSocialSignIn(provider);
   }, [ensureUserProfileDocument, fetchOtherProfileData, toast, router]);
 
@@ -530,7 +519,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signIn,
     signInWithGoogle,
-    signInWithFacebook,
     signOut,
     startNewGuestSession,
     resetPassword,
@@ -551,3 +539,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

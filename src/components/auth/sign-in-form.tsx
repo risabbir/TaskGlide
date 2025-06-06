@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, User, Chrome, Facebook } from "lucide-react"; 
+import { Loader2, Eye, EyeOff, User, Chrome } from "lucide-react"; 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -32,7 +32,7 @@ const signInSchema = z.object({
 type SignInFormData = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn, signInWithGoogle, signInWithFacebook, loading, startNewGuestSession } = useAuth();
+  const { signIn, signInWithGoogle, loading, startNewGuestSession } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -53,6 +53,7 @@ export function SignInForm() {
 
   const handleGuestLogin = () => {
     startNewGuestSession(); 
+    router.push("/"); 
   };
 
   const handleGoogleSignIn = async () => {
@@ -62,19 +63,11 @@ export function SignInForm() {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    const user = await signInWithFacebook();
-    if (user) {
-      router.push("/");
-    }
-  };
-
-
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Sign In</CardTitle>
-        <CardDescription>Enter your credentials to access your account, or use a social login.</CardDescription>
+        <CardDescription>Enter your credentials to access your account, or use Google Sign-In.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -141,14 +134,9 @@ export function SignInForm() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 w-full">
-              <Button type="button" variant="outline" onClick={handleGoogleSignIn} disabled={loading}>
-                <Chrome className="mr-2 h-4 w-4" /> Google
-              </Button>
-              <Button type="button" variant="outline" onClick={handleFacebookSignIn} disabled={loading}>
-                <Facebook className="mr-2 h-4 w-4" /> Facebook
-              </Button>
-            </div>
+            <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
+                <Chrome className="mr-2 h-4 w-4" /> Sign in with Google
+            </Button>
             
             <Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin} disabled={loading}>
               <User className="mr-2 h-4 w-4" />
@@ -167,3 +155,5 @@ export function SignInForm() {
     </Card>
   );
 }
+
+    
