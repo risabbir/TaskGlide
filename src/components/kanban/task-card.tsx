@@ -281,7 +281,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
               </div>
               
               {(isInProgressColumn || ((isInReviewColumn || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
-                <div className="pt-2 pb-1 border-b border-dashed">
+                <div className="pt-2 pb-1"> {/* Removed border-b border-dashed */}
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
                     <div className="flex items-center gap-2">
@@ -429,3 +429,4 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
 }
 
 export const TaskCard = React.memo(TaskCardComponent);
+
