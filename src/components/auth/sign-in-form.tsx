@@ -19,9 +19,10 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, User } from "lucide-react"; // Added User icon for guest
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
 
 const signInSchema = z.object({
   email: z.string().email("Invalid email address.").min(1, "Email is required."),
@@ -50,11 +51,15 @@ export function SignInForm() {
     }
   }
 
+  const handleGuestLogin = () => {
+    router.push("/");
+  };
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Sign In</CardTitle>
-        <CardDescription>Enter your credentials to access your account.</CardDescription>
+        <CardDescription>Enter your credentials to access your account, or continue as a guest.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -113,7 +118,17 @@ export function SignInForm() {
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="relative w-full my-2">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                OR
+              </span>
+            </div>
+            <Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin} disabled={loading}>
+              <User className="mr-2 h-4 w-4" />
+              Continue as Guest
+            </Button>
+            <div className="text-center text-sm text-muted-foreground mt-2">
               Don&apos;t have an account?{" "}
               <Link href="/auth/signup" passHref legacyBehavior>
                 <a className="text-primary hover:underline">Sign Up</a>
@@ -125,3 +140,5 @@ export function SignInForm() {
     </Card>
   );
 }
+
+    

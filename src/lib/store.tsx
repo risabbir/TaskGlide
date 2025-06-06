@@ -321,8 +321,9 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
 
 const KanbanContext = createContext<{ state: KanbanState; dispatch: React.Dispatch<KanbanAction> } | undefined>(undefined);
 
-const GUEST_TASKS_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_tasks`;
-const GUEST_COLUMNS_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_columns`;
+const GUEST_TASKS_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_tasks_v2`;
+const GUEST_COLUMNS_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_columns_v2`;
+
 
 const parseTaskDateForStorage = (dateString?: string | Date): Date | undefined => {
     if (!dateString) return undefined;
@@ -359,7 +360,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(false);
-  const lastAuthUserId = useRef<string | null | undefined>(null); // Track last auth user ID
+  const lastAuthUserId = useRef<string | null | undefined>(null);
 
   const handlePermissionDeniedError = useCallback((operation: string, path: string, error: any) => {
     dispatch({ type: "SET_ERROR", payload: `Failed to ${operation} board data due to permissions.` });
@@ -369,7 +370,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       variant: "destructive",
       duration: 15000,
     });
-  }, [toast, dispatch]);
+  }, [toast]);
 
 
   useEffect(() => {
@@ -378,16 +379,15 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
     if (authLoading) {
       console.log("[KanbanProvider] Auth loading. Waiting for auth state to resolve. Setting isLoading: true.");
-      dispatch({ type: "SET_LOADING", payload: true });
+      if (!state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
       return;
     }
 
     const hasUserChanged = user?.uid !== lastAuthUserId.current;
     if (hasUserChanged) {
       console.log(`[KanbanProvider] Auth user CHANGED. Previous: ${lastAuthUserId.current}, New: ${user?.uid}. Resetting data and flags.`);
-      lastAuthUserId.current = user?.uid; // Update lastAuthUserId immediately
-      dispatch({ type: "SET_DATA_INITIALIZED", payload: false });
-      dispatch({ type: "SET_LOADING", payload: true });
+      lastAuthUserId.current = user?.uid;
+      dispatch({ type: "SET_DATA_INITIALIZED", payload: false }); // This will set isLoading to true
       dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } }); // Clear old data
     }
 
@@ -399,7 +399,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           dispatch({ type: "SET_LOADING", payload: true });
       }
 
-      const currentSdkUser = firebaseAuthInstance.currentUser; // Re-check SDK user right before operation
+      const currentSdkUser = firebaseAuthInstance.currentUser;
 
       if (user && currentSdkUser && user.uid === currentSdkUser.uid) {
         console.log(`[KanbanProvider] Logged-in user mode (UID: ${user.uid}). Attempting to initialize from Firestore.`);
@@ -423,6 +423,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
               dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
               toast({ title: "Load Error", description: `Failed to load tasks from cloud. Error: ${error.message}`, variant: "destructive" });
             }
+             // Ensure state is reset to empty on error, and data initialization is marked complete
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
           }
         }
@@ -437,11 +438,14 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                 if (storedTasks && storedColumnsState) {
                     const tasks: Task[] = JSON.parse(storedTasks).map(parseTaskForStorage);
                     const parsedStoredColumns: Array<{ id: string; title: string; taskIds: string[] }> = JSON.parse(storedColumnsState);
+                    
+                    const hydratedColumnsMap = new Map(parsedStoredColumns.map(sc => [sc.id, sc]));
                     const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
-                        const storedColData = parsedStoredColumns.find(sc => sc.id === defaultCol.id);
+                        const storedColData = hydratedColumnsMap.get(defaultCol.id);
                         return {
                             ...defaultCol,
-                            taskIds: storedColData ? storedColData.taskIds : (defaultCol.taskIds || []),
+                            title: storedColData?.title || defaultCol.title, // Use stored title if available
+                            taskIds: storedColData ? storedColData.taskIds.filter(taskId => tasks.some(t => t.id === taskId)) : [], // Ensure taskIds are valid
                         };
                     });
                     dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
@@ -461,7 +465,6 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Load data if it hasn't been initialized yet for the current auth state, or if the user has changed.
     if (!state.isDataInitialized || hasUserChanged) {
         console.log(`[KanbanProvider] Triggering loadData. isDataInitialized: ${state.isDataInitialized}, hasUserChanged: ${hasUserChanged}`);
         loadData();
@@ -473,7 +476,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     return () => {
       // No specific cleanup needed here now that isMounted is handled separately
     };
-  }, [user, authLoading, dispatch, toast, handlePermissionDeniedError, state.isDataInitialized, state.isLoading]); // Added state.isLoading
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, dispatch, toast, handlePermissionDeniedError]); // Removed state.isDataInitialized, state.isLoading as they can cause loops
 
   // Separate effect for unmount cleanup
   useEffect(() => {
@@ -481,7 +485,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       isMounted.current = false;
       console.log("[KanbanProvider] Unmounted.");
       if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current); // Clear any pending save on unmount
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
   }, []);
@@ -504,10 +508,17 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       }
 
       const currentSdkUser = firebaseAuthInstance.currentUser;
-      console.log(`[KanbanProvider] Debounced SAVE: Context UserID: ${user?.uid}, SDK UserID: ${currentSdkUser?.uid}. Mode: ${user && currentSdkUser && user.uid === currentSdkUser.uid ? 'Logged-in (Firestore)' : 'Guest (localStorage)'}`);
+      const contextUserId = user?.uid;
 
-      if (user && currentSdkUser && user.uid === currentSdkUser.uid) {
-        console.log(`[KanbanProvider] Logged-in user mode (UID: ${user.uid}). Preparing to save ${state.tasks.length} tasks and ${state.columns.length} columns to Firestore.`);
+      if (contextUserId && currentSdkUser && contextUserId === currentSdkUser.uid) {
+        console.log(`[KanbanProvider] CRITICAL CHECK before Firestore save for user ${contextUserId}: SDK auth.currentUser is: ${currentSdkUser.uid}`);
+        if (currentSdkUser.uid !== contextUserId) { // Double check, though initial if should catch this
+          console.error(`[KanbanProvider] CRITICAL SAVE ERROR: Mismatch or null SDK user before Firestore save. Context user: ${contextUserId}, SDK user: ${currentSdkUser?.uid}. ABORTING SAVE.`);
+          toast({ title: "Save Error", description: "Authentication state mismatch. Could not save data to cloud. Please try refreshing.", variant: "destructive" });
+          return;
+        }
+        
+        console.log(`[KanbanProvider] Debounced SAVE: Logged-in user mode (UID: ${contextUserId}). Preparing to save ${state.tasks.length} tasks and ${state.columns.length} columns to Firestore.`);
         try {
           const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
             ...task,
@@ -524,25 +535,19 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             taskIds: col.taskIds,
           }));
 
-          console.log(`[KanbanProvider] CRITICAL CHECK before Firestore save for user ${user.uid}: SDK auth.currentUser is:`, currentSdkUser ? currentSdkUser.uid : 'null');
-          if (!currentSdkUser || currentSdkUser.uid !== user.uid) {
-            console.error(`[KanbanProvider] CRITICAL SAVE ERROR: Mismatch or null SDK user before Firestore save. Context user: ${user.uid}, SDK user: ${currentSdkUser?.uid}. ABORTING SAVE.`);
-            toast({ title: "Save Error", description: "Authentication state mismatch. Could not save data. Please try refreshing.", variant: "destructive" });
-            return;
-          }
 
-          await saveUserKanbanData(user.uid, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
-          console.log(`[KanbanProvider] Successfully saved data to Firestore for user ${user.uid}`);
+          await saveUserKanbanData(contextUserId, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
+          console.log(`[KanbanProvider] Successfully saved data to Firestore for user ${contextUserId}`);
         } catch (error: any) {
           console.error("[KanbanProvider] Failed to save data to Firestore:", error.message, error.code, error);
           if (error.code === 'permission-denied' || error.code === 7) {
-            handlePermissionDeniedError('save', `userKanbanData/${user.uid}`, error);
+            handlePermissionDeniedError('save', `userKanbanData/${contextUserId}`, error);
           } else {
             toast({ title: "Save Error", description: `Failed to save tasks to cloud. Error: ${error.message}`, variant: "destructive" });
           }
         }
       } else {
-        console.log(`[KanbanProvider] Guest user mode. Saving ${state.tasks.length} tasks and ${state.columns.length} columns to localStorage.`);
+        console.log(`[KanbanProvider] Debounced SAVE: Guest user mode (Context User: ${contextUserId}, SDK User: ${currentSdkUser?.uid}). Saving to localStorage.`);
         if (typeof window !== 'undefined') {
             try {
                 const tasksToSaveForGuest = state.tasks.map(task => ({
@@ -573,6 +578,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.tasks, state.columns, user, authLoading, state.isDataInitialized, dispatch, toast, handlePermissionDeniedError]);
 
 
