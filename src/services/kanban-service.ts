@@ -4,10 +4,10 @@
  * @fileOverview Firestore service for managing Kanban board data for authenticated users.
  */
 import { db, auth as firebaseAuth } from '@/lib/firebase'; // Import firebaseAuth for SDK check
-import type { Task, Column as ColumnType, TaskForFirestore, ColumnForFirestore } from '@/lib/types';
+import type { Task, Column as ColumnType, TaskForFirestore, ColumnForFirestore, Priority } from '@/lib/types';
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { formatISO, parseISO as dateFnsParseISO } from 'date-fns';
-import { DEFAULT_COLUMNS } from '@/lib/constants';
+import { DEFAULT_COLUMNS, PRIORITIES } from '@/lib/constants';
 
 const parseTaskDateFromFirestore = (dateValue?: string | Date | Timestamp): Date | undefined => {
   if (!dateValue) return undefined;
@@ -32,6 +32,7 @@ const parseTaskFromFirestore = (taskData: any): Task => ({
   dueDate: parseTaskDateFromFirestore(taskData.dueDate),
   createdAt: parseTaskDateFromFirestore(taskData.createdAt) || new Date(),
   updatedAt: parseTaskDateFromFirestore(taskData.updatedAt) || new Date(),
+  priority: PRIORITIES.includes(taskData.priority as Priority) ? taskData.priority as Priority : 'medium', // Validate priority
   subtasks: taskData.subtasks || [],
   dependencies: taskData.dependencies || [],
   tags: taskData.tags || [],
@@ -68,7 +69,7 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
         return {
           ...defaultCol,
           title: storedColData?.title || defaultCol.title,
-          taskIds: storedColData ? storedColData.taskIds : (defaultCol.taskIds || []),
+          taskIds: storedColData ? storedColData.taskIds.filter(taskId => tasks.some(t => t.id === taskId)) : (defaultCol.taskIds || []),
         };
       });
       console.log(`[KanbanService] Successfully fetched Kanban data from ${docPath} for user: ${userId}`);

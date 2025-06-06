@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { enhanceTaskDescription } from "@/ai/flows/enhance-task-description";
 import { suggestTaskTags } from "@/ai/flows/suggest-task-tags";
 import { suggestTaskSubtasks } from "@/ai/flows/suggest-task-subtasks";
+import { suggestTaskPriority } from "@/ai/flows/suggest-task-priority"; // New AI Flow
 import { SubtaskItem } from "./subtask-item";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,7 +35,7 @@ const taskSchema = z.object({
   description: z.string().optional(),
   columnId: z.string().min(1, "Column is required"),
   dueDate: z.date().optional(),
-  priority: z.enum(PRIORITIES),
+  priority: z.custom<Priority>(), // Changed from z.enum(PRIORITIES) to z.custom<Priority>()
   tags: z.string().optional(),
   subtasks: z.array(z.object({
     id: z.string(),
@@ -59,6 +60,7 @@ export function TaskModal() {
   const [isAiDescriptionLoading, setIsAiDescriptionLoading] = useState(false);
   const [isAiTagsLoading, setIsAiTagsLoading] = useState(false);
   const [isAiSubtasksLoading, setIsAiSubtasksLoading] = useState(false);
+  const [isAiPriorityLoading, setIsAiPriorityLoading] = useState(false); // New loading state
 
 
   const { control, register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TaskFormData>({
@@ -82,6 +84,7 @@ export function TaskModal() {
 
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");
+  const watchedDueDate = watch("dueDate"); // Watch due date for AI priority suggestion
 
   useEffect(() => {
     if (activeTaskModal) {
@@ -148,6 +151,7 @@ export function TaskModal() {
     setIsAiDescriptionLoading(false);
     setIsAiTagsLoading(false);
     setIsAiSubtasksLoading(false);
+    setIsAiPriorityLoading(false); // Reset new loading state
   };
 
   const handleAiError = (flowName: string, errorMsg?: string) => {
@@ -162,7 +166,7 @@ export function TaskModal() {
         } else if (errLower.includes("malformed response") || errLower.includes("empty response")) {
             toastDescription = `AI returned an unexpected response for ${flowName.toLowerCase()}. Please try again.`;
         } else {
-            toastDescription = errorMsg; // Use the specific error if not a common one
+            toastDescription = errorMsg; 
         }
     }
     toast({ title: `AI ${flowName} Error`, description: toastDescription, variant: "destructive" });
@@ -182,10 +186,10 @@ export function TaskModal() {
         } else if (result.enhancedDescription) {
             setValue("description", result.enhancedDescription);
             toast({ title: "Description Enhanced", description: "AI has enhanced the task description." });
-        } else { // Should not happen if schema guarantees enhancedDescription or error
+        } else { 
              toast({ title: "Enhancement Unclear", description: "AI couldn't provide an enhancement this time.", variant: "default" });
         }
-    } catch (error: any) { // Catch for unexpected throws from the flow (non-retryable)
+    } catch (error: any) { 
         handleAiError("Description Enhancement", String(error.message || "An unexpected error occurred."));
     } finally {
         setIsAiDescriptionLoading(false);
@@ -237,6 +241,41 @@ export function TaskModal() {
         handleAiError("Subtask Suggestion", String(error.message || "An unexpected error occurred."));
     } finally {
         setIsAiSubtasksLoading(false);
+    }
+  };
+
+  const handleSuggestPriority = async () => {
+    if (!watchedTitle) {
+        toast({ title: "Title Needed", description: "Please provide a title for AI to suggest a priority.", variant: "destructive" });
+        return;
+    }
+    setIsAiPriorityLoading(true);
+    try {
+        const input = {
+            title: watchedTitle,
+            description: watchedDescription || undefined,
+            dueDate: watchedDueDate ? watchedDueDate.toISOString() : undefined,
+        };
+        const result = await suggestTaskPriority(input);
+        
+        if (result.error) {
+            handleAiError("Priority Suggestion", result.error);
+             if (result.suggestedPriority) { // Still apply fallback priority if AI failed but provided one
+                setValue("priority", result.suggestedPriority);
+            }
+        } else if (result.suggestedPriority) {
+            setValue("priority", result.suggestedPriority);
+            toast({ 
+                title: "Priority Suggested", 
+                description: `AI suggested '${PRIORITY_STYLES[result.suggestedPriority].label}' priority. Reason: ${result.reason || 'No specific reason provided.'}` 
+            });
+        } else {
+             toast({ title: "Suggestion Unclear", description: "AI couldn't determine a priority this time.", variant: "default" });
+        }
+    } catch (error: any) {
+         handleAiError("Priority Suggestion", String(error.message || "An unexpected error occurred."));
+    } finally {
+        setIsAiPriorityLoading(false);
     }
   };
 
@@ -344,7 +383,13 @@ export function TaskModal() {
 
               {/* Priority */}
               <div>
-                <Label htmlFor="priority">Priority</Label>
+                <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor="priority">Priority</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={handleSuggestPriority} disabled={isAiPriorityLoading || !watchedTitle}>
+                        {isAiPriorityLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        AI Suggest
+                    </Button>
+                </div>
                 <Controller
                   name="priority"
                   control={control}
@@ -384,6 +429,7 @@ export function TaskModal() {
                     );
                   }}
                 />
+                 {errors.priority && <p className="text-sm text-destructive mt-1">{errors.priority.message}</p>}
               </div>
 
               {/* Recurrence */}
@@ -526,3 +572,4 @@ export function TaskModal() {
     </Dialog>
   );
 }
+

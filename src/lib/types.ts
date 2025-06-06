@@ -34,10 +34,11 @@ export interface Task {
 }
 
 // New type for tasks when sending to Firestore (dates as strings)
-export interface TaskForFirestore extends Omit<Task, 'dueDate' | 'createdAt' | 'updatedAt' | 'subtasks' | 'recurrenceRule'> {
+export interface TaskForFirestore extends Omit<Task, 'dueDate' | 'createdAt' | 'updatedAt' | 'subtasks' | 'recurrenceRule' | 'priority'> {
   dueDate?: string; // ISO string
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
+  priority: string; // Priority as string for Firestore
   subtasks: Array<Pick<Subtask, 'id' | 'title' | 'completed'>>; // Ensure subtasks are plain
   recurrenceRule?: Pick<RecurrenceRule, 'type'>; // Ensure recurrenceRule is plain
 }
