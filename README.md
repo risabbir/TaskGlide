@@ -112,44 +112,45 @@ This application uses Genkit to power its AI features (like suggesting task deta
 
 If you encounter errors specifically with Google Sign-In (e.g., "auth/operation-not-allowed", `auth/unauthorized-domain`, popup errors, or other "auth/..." codes):
 
-1.  **`auth/unauthorized-domain` Error:**
-    *   This is the most common issue. It means the domain your app is running on (e.g., `localhost` for development, or your live app's domain) is not listed in Firebase's authorized domains.
-    *   **Fix:** Go to Firebase Console -> Authentication -> Settings tab -> Authorized domains. Click "Add domain" and add `localhost` (for local development) and your production domain(s) if deployed.
+1.  **`auth/unauthorized-domain` Error (Even if `localhost` is added):**
+    *   This is the most common issue. If you've already added `localhost` to **Firebase Console -> Authentication -> Settings -> Authorized domains** and still see this error, check these:
+        *   **Firebase Console - Project Support Email (CRITICAL):**
+            *   Go to Firebase Console -> Authentication -> Sign-in method.
+            *   Click on the **Google** provider.
+            *   **Ensure a "Project support email" IS SELECTED** from the dropdown and saved. If this field is empty, Google Sign-In often fails, sometimes throwing `auth/unauthorized-domain` despite `localhost` being in the list.
+        *   **Google Cloud Platform (GCP) OAuth Consent Screen:**
+            *   Go to the [Google Cloud Console](https://console.cloud.google.com/).
+            *   Select the Google Cloud project linked to your Firebase project.
+            *   Navigate to "APIs & Services" -> "OAuth consent screen".
+            *   **Publishing status:** Make sure it's **"Published"**. If it's "Testing," only explicitly listed test users can sign in.
+            *   **User type:** For most apps, this will be "External".
+            *   **Authorized domains (GCP OAuth):** Verify this list in GCP. While Firebase usually syncs `your-project-id.firebaseapp.com`, ensure `localhost` isn't explicitly needed here too for some edge cases or if the sync failed.
 
 2.  **Check Firebase Console Configuration (General):**
     *   Go to your Firebase Project -> Authentication -> Sign-in method.
     *   Ensure **Google** is **Enabled**.
-    *   Crucially, make sure a **Project support email** is selected and saved for the Google provider. If it's empty, Google Sign-In will often fail.
+    *   Re-confirm the **Project support email** is selected for the Google provider.
 
-3.  **Check Google Cloud Console (GCP) OAuth Consent Screen:**
-    *   Firebase projects are typically linked to Google Cloud projects. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-    *   Select the Google Cloud project that is associated with your Firebase project.
-    *   Navigate to "APIs & Services" -> "OAuth consent screen".
-    *   **Publishing status:** Ensure your OAuth consent screen is **Published**. If it's in "Testing," only explicitly listed test users can sign in. For general access, it must be published.
-    *   **User type:** For most apps, this will be "External".
-    *   **Authorized domains (GCP OAuth):** While `signInWithPopup` doesn't always strictly require this for `localhost`, ensure your app's actual domain (if deployed) is listed here as well. For Firebase Hosting, it typically adds `your-project-id.firebaseapp.com` and `your-project-id.web.app` automatically when you set up the Google provider in Firebase. This is different from the Firebase Auth "Authorized Domains" list but also important.
-    *   **Scopes:** The default Firebase scopes for Google Sign-In (`email`, `profile`, `openid`) are usually sufficient.
-
-4.  **Check API Key Restrictions (if any):**
+3.  **Check API Key Restrictions (if any):**
     *   In Google Cloud Console -> APIs & Services -> Credentials.
-    *   Find the API key used by your web app (usually named "Browser key (auto created by Firebase)" or similar, associated with your web app's config).
-    *   If you have applied restrictions to this key:
-        *   Ensure "Identity Toolkit API" (sometimes listed as Firebase Authentication API) is enabled under "API restrictions".
-        *   Under "Application restrictions" (Website restrictions), ensure your domains are allowed. For local development, you might need to add `http://localhost:<YOUR_PORT>` (e.g., `http://localhost:9002`). For Firebase Hosting, it's `*.firebaseapp.com` and `*.web.app`.
+    *   Find the API key used by your web app (usually "Browser key (auto created by Firebase)").
+    *   If you have restrictions:
+        *   Ensure "Identity Toolkit API" (Firebase Authentication API) is enabled under "API restrictions".
+        *   Under "Application restrictions" (Website restrictions), if you use `http://localhost:<YOUR_PORT>`, ensure that specific entry is allowed, or try a wildcard like `http://localhost:*`.
 
-5.  **Verify `.env` Variables:**
-    *   Double-check that all `NEXT_PUBLIC_FIREBASE_...` variables in your `.env` file are correct and correspond to the Firebase project where you enabled Google Sign-In.
-    *   **Restart your Next.js development server** (`npm run dev`) after any changes to `.env`.
+4.  **Verify `.env` Variables & Restart Server:**
+    *   Double-check that all `NEXT_PUBLIC_FIREBASE_...` variables in your `.env` file are correct and correspond to the Firebase project where you enabled Google Sign-In and authorized `localhost`.
+    *   **Crucially, restart your Next.js development server** (`npm run dev`) after any changes to `.env`.
 
-6.  **Browser Issues:**
+5.  **Browser Issues:**
     *   Ensure your browser is not blocking pop-ups from `localhost` or your Firebase auth domain (`<YOUR_PROJECT_ID>.firebaseapp.com`).
-    *   Try clearing your browser's cache and cookies for the site.
-    *   Test in an incognito window to rule out extension conflicts.
+    *   Try clearing your browser's cache and cookies for `localhost`.
+    *   **Test in an incognito/private window** to rule out extension conflicts or stale cached data.
 
-7.  **Firebase Project Billing:**
-    *   While basic Firebase Auth is free, ensure your Firebase project is in good standing (e.g., if linked to a GCP project, billing is active if you're using paid services, though Auth itself doesn't usually require this unless you hit high usage quotas not typical for development). This is a less common cause for basic auth issues but worth noting.
+6.  **Firebase Project Billing:**
+    *   While basic Firebase Auth is free, ensure your Firebase project is in good standing (e.g., if linked to a GCP project, billing is active if you're using paid services). Unlikely to cause `auth/unauthorized-domain` directly but worth a check if all else fails.
 
-If errors persist after checking these, inspect the browser's developer console for more detailed error messages from Firebase, which often provide specific error codes.
+If errors persist after checking these, inspect the browser's developer console for more detailed error messages from Firebase, which often provide specific error codes beyond the general one you see.
 
 
 ## Development
@@ -184,4 +185,3 @@ If you have switched from an old Firebase project to a new one (e.g., from "kanv
 
 Remember to update security rules and email templates in the new Firebase project as well.
     
-
