@@ -26,7 +26,8 @@ import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { APP_NAME } from '@/lib/constants';
+import { APP_NAME, GUEST_ID_STORAGE_KEY } from '@/lib/constants';
+import { useRouter } from 'next/navigation'; // Added for guest navigation
 
 interface UserProfileUpdate {
   displayName?: string;
@@ -50,12 +51,15 @@ const initialOtherProfileData: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
 
 interface AuthContextType {
   user: FirebaseUser | null;
+  guestId: string | null; // New state for guest ID
+  isGuest: boolean; // Derived from user and guestId
   loading: boolean;
   otherProfileData: OtherProfileData | null;
   otherProfileDataLoading: boolean;
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
+  startNewGuestSession: () => void; // New function to initiate guest session
   resetPassword: (email: string) => Promise<boolean>;
   updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
   updateUserPhotoURL: (photoFile: File) => Promise<string | null>;
@@ -68,11 +72,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [guestId, setGuestId] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const { toast } = useToast();
+  const router = useRouter();
 
   const [otherProfileData, setOtherProfileData] = useState<OtherProfileData | null>(null);
   const [otherProfileDataLoading, setOtherProfileDataLoading] = useState(true);
+
+  const isGuest = !!guestId && !user;
 
   const handleFirestorePermissionError = (operation: string, error: any, path: string) => {
     console.error(`[AuthContext] Firestore PERMISSION_DENIED during ${operation} for path "${path}":`, error.message, error.code, error);
@@ -87,15 +95,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchOtherProfileData = useCallback(async (userIdToFetch: string) => {
     const currentSdkUser = auth.currentUser;
     if (!userIdToFetch || !currentSdkUser || currentSdkUser.uid !== userIdToFetch) {
-      console.error(`[AuthContext] fetchOtherProfileData critical error: Invalid state. Context UserID: ${userIdToFetch}, SDK UserID: ${currentSdkUser?.uid}. Aborting fetch.`);
+      console.error(`[AuthContext] fetchOtherProfileData critical error: Invalid state for fetching. Context UserID: ${userIdToFetch}, SDK UserID: ${currentSdkUser?.uid}. Aborting fetch.`);
       setOtherProfileData(null);
       setOtherProfileDataLoading(false);
-      if (userIdToFetch) { // Only toast if we thought we had a user
-        toast({ title: "Profile Load Error", description: "Authentication state error. Could not load profile details.", variant: "destructive" });
+      if (userIdToFetch && !currentSdkUser) {
+        toast({ title: "Profile Load Error", description: "Authentication state error (SDK user null). Could not load profile details.", variant: "destructive" });
+      } else if (userIdToFetch && currentSdkUser && currentSdkUser.uid !== userIdToFetch) {
+         toast({ title: "Profile Load Error", description: "Authentication state error (ID mismatch). Could not load profile details.", variant: "destructive" });
       }
       return;
     }
-
     const profileDocPath = `profiles/${userIdToFetch}`;
     console.log(`[AuthContext] Attempting to GET doc: ${profileDocPath} for user: ${userIdToFetch}`);
     setOtherProfileDataLoading(true);
@@ -110,13 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log(`[AuthContext] No profile data found at ${profileDocPath} for user: ${userIdToFetch}, using initial defaults.`);
       }
     } catch (err: any) {
-      if (err.code === 'permission-denied' || err.code === 7) {
+      if (err.code === 'permission-denied' || err.code === 7) { // Check for gRPC code 7 too
         handleFirestorePermissionError('fetch', err, profileDocPath);
       } else {
         console.error(`[AuthContext] Firestore error in fetchOtherProfileData for ${profileDocPath} (User: ${userIdToFetch}):`, err.message, err.code, err);
         toast({ title: "Profile Data Error", description: `Could not load additional profile details. Error: ${err.message}`, variant: "destructive" });
       }
-      setOtherProfileData(initialOtherProfileData);
+      setOtherProfileData(initialOtherProfileData); // Fallback to initial on error
     } finally {
       setOtherProfileDataLoading(false);
     }
@@ -126,14 +135,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log("[AuthContext] Setting up onAuthStateChanged listener.");
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        console.log(`[AuthContext] onAuthStateChanged: User signed IN. UID: ${firebaseUser.uid}`);
+        console.log(`[AuthContext] onAuthStateChanged: User signed IN. UID: ${firebaseUser.uid}. Clearing guest session.`);
         setUser({ ...firebaseUser } as FirebaseUser);
+        setGuestId(null); // Clear guest ID on login
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY); // Remove guest ID from storage
         await fetchOtherProfileData(firebaseUser.uid);
       } else {
-        console.log("[AuthContext] onAuthStateChanged: User signed OUT.");
+        console.log("[AuthContext] onAuthStateChanged: User signed OUT or initial load without auth. Checking for existing guest session.");
         setUser(null);
-        setOtherProfileData(null);
-        setOtherProfileDataLoading(false); // Reset loading state for profile data
+        const storedGuestId = localStorage.getItem(GUEST_ID_STORAGE_KEY);
+        if (storedGuestId) {
+            console.log(`[AuthContext] Restored guest session ID: ${storedGuestId}`);
+            setGuestId(storedGuestId);
+        } else {
+            setGuestId(null); // No active guest session found
+        }
+        setOtherProfileData(null); // Clear profile data for non-logged-in users
+        setOtherProfileDataLoading(false);
       }
       setInitialLoading(false);
     });
@@ -143,12 +161,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchOtherProfileData]);
 
+  const startNewGuestSession = useCallback(() => {
+    console.log("[AuthContext] Starting new guest session.");
+    const newGuestId = `guest-${crypto.randomUUID().substring(0, 8)}`;
+    setGuestId(newGuestId);
+    localStorage.setItem(GUEST_ID_STORAGE_KEY, newGuestId);
+    setUser(null); // Ensure no Firebase user is set in context
+    setOtherProfileData(null);
+    setOtherProfileDataLoading(false);
+    setInitialLoading(false); // Guest session is also an initialized state
+    console.log(`[AuthContext] New guest session started with ID: ${newGuestId}. Navigating to home.`);
+    router.push('/');
+  }, [router]);
+
   const signUp = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
     console.log(`[AuthContext] Attempting to sign up user: ${email}`);
+    setInitialLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       const newUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
       if (newUser) {
+        setGuestId(null); // Clear guest ID on successful sign-up
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
         const profileDocPath = `profiles/${newUser.uid}`;
         console.log(`[AuthContext] User ${newUser.uid} signed up. Attempting to create initial profile document at ${profileDocPath}.`);
         try {
@@ -158,17 +192,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           console.log(`[AuthContext] Initial profile document created for ${profileDocPath}.`);
         } catch (profileError: any) {
-            if (profileError.code === 'permission-denied' || profileError.code === 7) {
+             if (profileError.code === 'permission-denied' || profileError.code === 7) {
                 handleFirestorePermissionError('create initial profile', profileError, profileDocPath);
             } else {
                 console.error(`[AuthContext] Firestore error creating initial profile for ${profileDocPath}:`, profileError.message, profileError.code, profileError);
                 toast({ title: "Profile Setup Error", description: "Could not create initial profile data.", variant: "destructive" });
             }
-            // Even if profile creation fails, sign up itself might have succeeded.
-            // Depending on app logic, you might want to sign the user out or handle differently.
         }
       }
       toast({ title: "Account Created!", description: `Welcome to ${APP_NAME}! You're all set.` });
+      // onAuthStateChanged will handle setting the user and fetching profile data
       return newUser;
     } catch (e) {
       const authError = e as AuthError;
@@ -181,15 +214,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       toast({ title: "Sign Up Error", description: message, variant: "destructive" });
       return null;
+    } finally {
+        setInitialLoading(false);
     }
   }, [toast]);
 
   const signIn = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
     console.log(`[AuthContext] Attempting to sign in user: ${email}`);
+    setInitialLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
       const signedInUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
+      if (signedInUser) {
+        setGuestId(null); // Clear guest ID on successful sign-in
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
+      }
       toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
+      // onAuthStateChanged will handle setting user and fetching profile data
       return signedInUser;
     } catch (e) {
       const authError = e as AuthError;
@@ -200,6 +241,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       toast({ title: "Sign In Error", description: message, variant: "destructive" });
       return null;
+    } finally {
+        setInitialLoading(false);
     }
   }, [toast]);
 
@@ -208,9 +251,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[AuthContext] Attempting to sign out user: ${currentUid || 'No user currently authenticated'}`);
     try {
       await firebaseSignOut(auth);
-      console.log(`[AuthContext] User ${currentUid} signed out successfully (request initiated).`);
+      // onAuthStateChanged will handle setUser(null)
+      console.log(`[AuthContext] User ${currentUid} signed out successfully (request initiated). Clearing guest session info.`);
+      setGuestId(null); // Explicitly clear guest ID from context
+      localStorage.removeItem(GUEST_ID_STORAGE_KEY); // Clear guest ID from storage
       toast({ title: "Signed Out", description: "You have successfully signed out. Come back soon!" });
-      // State updates (setUser(null), etc.) handled by onAuthStateChanged
     } catch (e) {
       const authError = e as AuthError;
       console.error(`[AuthContext] Sign out error for user ${currentUid}:`, authError.message, authError.code, authError);
@@ -235,7 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (profileData: UserProfileUpdate): Promise<boolean> => {
     const currentSdkUser = auth.currentUser;
-    if (!currentSdkUser) {
+     if (!currentSdkUser) {
       console.error("[AuthContext] updateUserProfile critical error: No authenticated user found via SDK check.");
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
@@ -303,10 +348,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
     const userId = currentSdkUser.uid;
+    // Check for context-SDK user mismatch (defensive coding)
     if (user && user.uid !== userId) {
-        console.warn(`[AuthContext] saveOtherProfileData: Context user (${user.uid}) mismatch with SDK user (${userId}). Proceeding with SDK user, but this might indicate an issue.`);
+        console.warn(`[AuthContext] saveOtherProfileData: Context user (${user.uid}) mismatch with SDK user (${userId}). This is unexpected if onAuthStateChanged is working correctly. Proceeding with SDK user ID.`);
+        // Potentially log more or even block if this state is considered critical.
     }
-
     const profileDocPath = `profiles/${userId}`;
     console.log(`[AuthContext] Attempting to SET doc: ${profileDocPath} for user ${userId} with data:`, data);
     try {
@@ -314,10 +360,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const dataToSave = { ...data, firestoreUpdatedAt: serverTimestamp() };
       await setDoc(profileDocRef, dataToSave, { merge: true });
       console.log(`[AuthContext] Other profile data saved for ${profileDocPath}. Fetching updated data.`);
-      await fetchOtherProfileData(userId);
+      await fetchOtherProfileData(userId); // Re-fetch to update context
       return true;
     } catch (e: any) {
-      if (e.code === 'permission-denied' || e.code === 7) {
+      if (e.code === 'permission-denied' || e.code === 7) { // Check for gRPC code 7 too
         handleFirestorePermissionError('save', e, profileDocPath);
       } else {
         console.error(`[AuthContext] Firestore error in saveOtherProfileData for ${profileDocPath} (User: ${userId}):`, e.message, e.code, e);
@@ -325,7 +371,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return false;
     }
-  }, [toast, fetchOtherProfileData, user]);
+  }, [toast, fetchOtherProfileData, user]); // Added user dependency
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     const currentSdkUser = auth.currentUser;
@@ -401,12 +447,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
+    guestId,
+    isGuest,
     loading: initialLoading,
     otherProfileData,
     otherProfileDataLoading,
     signUp,
     signIn,
     signOut,
+    startNewGuestSession,
     resetPassword,
     updateUserProfile,
     updateUserPhotoURL,

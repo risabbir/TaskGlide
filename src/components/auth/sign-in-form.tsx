@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, User } from "lucide-react"; // Added User icon for guest
+import { Loader2, Eye, EyeOff, User } from "lucide-react"; 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -32,7 +32,7 @@ const signInSchema = z.object({
 type SignInFormData = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, startNewGuestSession } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -52,7 +52,7 @@ export function SignInForm() {
   }
 
   const handleGuestLogin = () => {
-    router.push("/");
+    startNewGuestSession(); // This will also handle navigation via router.push('/')
   };
 
   return (

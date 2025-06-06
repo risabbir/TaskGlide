@@ -6,6 +6,8 @@ export const APP_NAME = "TaskGlide";
 export const DEVELOPER_NAME = "R.Sabbir";
 export const DEVELOPER_URL = "https://rsabbir.com";
 
+export const GUEST_ID_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_id_v1`;
+
 export const DEFAULT_COLUMNS: Column[] = [
   { id: "todo", title: "To Do", icon: ListTodo, taskIds: [] },
   { id: "inprogress", title: "In Progress", icon: Flame, taskIds: [] },
@@ -37,3 +39,4 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   dueDateEnd: undefined,
   searchTerm: "",
 };
+

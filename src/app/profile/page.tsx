@@ -4,13 +4,18 @@
 import React, { useEffect, Suspense } from "react";
 import dynamic from 'next/dynamic';
 import { Header } from "@/components/layout/header";
-import { LayoutDashboard, UserCog, UserCircle, Settings } from "lucide-react";
+import { LayoutDashboard, UserCog, UserCircle, Settings, LogIn, UserPlus, Info } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { APP_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 const ProfileForm = dynamic(() => import('@/components/profile/profile-form').then(mod => mod.ProfileForm), {
   loading: () => <ProfileFormSkeleton />,
@@ -83,22 +88,23 @@ function FormSkeleton({ title, fields, description }: { title: string; fields: n
 
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth(); 
+  const { user, loading, guestId, isGuest, otherProfileDataLoading } = useAuth(); 
   const router = useRouter();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      document.title = `Profile & Settings | ${APP_NAME}`;
+      const title = user ? `Profile & Settings | ${APP_NAME}` : isGuest ? `Guest Info | ${APP_NAME}` : `Access Denied | ${APP_NAME}`;
+      document.title = title;
     }
-  }, []);
+  }, [user, isGuest]);
 
   useEffect(() => {
-    if (!loading && !user) { 
+    if (!loading && !user && !isGuest) { 
       router.push('/auth/signin'); 
     }
-  }, [user, loading, router]);
+  }, [user, loading, isGuest, router]);
 
-  if (loading || !user) { 
+  if (loading || (user && otherProfileDataLoading && !isGuest) ) { 
     return (
       <>
         <Header /> 
@@ -109,6 +115,70 @@ export default function ProfilePage() {
       </>
     );
   }
+
+  if (isGuest && guestId) {
+    return (
+      <>
+        <Header />
+        <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center bg-gradient-to-br from-background via-secondary/5 to-background dark:from-background dark:via-card/10 dark:to-background py-8 px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-2xl space-y-8">
+            <div className="flex flex-col items-center text-center mb-8">
+              <UserCircle className="mr-3 h-10 w-10 text-primary/80 mb-3" />
+              <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                Guest User Information
+              </h1>
+              <p className="mt-2 text-md text-muted-foreground sm:text-lg max-w-xl">You are currently browsing as a guest.</p>
+            </div>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Your Guest Session</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <span className="font-medium text-muted-foreground">Guest ID:</span>
+                  <span className="text-foreground font-mono bg-muted px-2 py-1 rounded-md text-sm">{guestId}</span>
+                </div>
+                 <Alert variant="default" className="bg-accent/50 border-accent">
+                    <Info className="h-5 w-5 text-primary" />
+                    <AlertTitle className="font-semibold text-primary/90">Local Data Storage</AlertTitle>
+                    <AlertDescription className="text-accent-foreground">
+                      Your task data is currently saved locally in this browser. To save your progress to the cloud and access it from any device, please sign up or log in.
+                    </AlertDescription>
+                  </Alert>
+              </CardContent>
+              <CardFooter className="flex flex-col sm:flex-row gap-3 pt-6 border-t bg-muted/20">
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href="/auth/signup">
+                    <UserPlus className="mr-2 h-4 w-4" /> Sign Up to Save Data
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="w-full sm:w-auto">
+                  <Link href="/auth/signin">
+                    <LogIn className="mr-2 h-4 w-4" /> Log In to Existing Account
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+
+  if (!user) { // Should be caught by useEffect pushing to signin, but as a fallback
+     return (
+      <>
+        <Header /> 
+        <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4 bg-background">
+          <LayoutDashboard className="h-12 w-12 text-primary animate-pulse" />
+          <p className="mt-4 text-muted-foreground">Redirecting...</p>
+        </div>
+      </>
+    );
+  }
+
 
   return (
     <>
@@ -123,7 +193,7 @@ export default function ProfilePage() {
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="flex w-full mb-6 border-b py-[33px] px-[10px]
+             <TabsList className="flex w-full mb-6 border-b py-[33px] px-[10px]
                                sm:inline-flex sm:mb-10 sm:w-auto sm:items-center sm:justify-center sm:rounded-lg sm:bg-muted sm:py-[33px] sm:px-[10px] sm:space-x-1.5 sm:border-0">
               <TabsTrigger 
                 value="profile" 
@@ -174,4 +244,3 @@ export default function ProfilePage() {
     </>
   );
 }
-

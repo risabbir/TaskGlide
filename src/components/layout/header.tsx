@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2, SlidersHorizontal } from "lucide-react"; 
+import { Search, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2, SlidersHorizontal, User as GuestIcon } from "lucide-react"; 
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import Link from "next/link";
@@ -34,7 +34,7 @@ interface HeaderProps {
 export function Header({ children }: HeaderProps) {
   const { dispatch, state } = useKanban();
   const filters = state.filters;
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, signOut, loading: authLoading, guestId, isGuest } = useAuth();
   
   const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters?.searchTerm ?? "");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -130,7 +130,7 @@ export function Header({ children }: HeaderProps) {
         }
         return email.substring(0,1).toUpperCase();
     }
-    return "??";
+    return "GU"; // Guest User fallback
   };
 
   return (
@@ -168,7 +168,6 @@ export function Header({ children }: HeaderProps) {
           </form>
 
           <div className="flex items-center space-x-0.5 sm:space-x-1">
-            {/* Mobile Search Button */}
             <Button variant="ghost" size="icon" onClick={() => {
                 setModalSearchTerm(filters?.searchTerm ?? ""); 
                 setIsSearchModalOpen(true);
@@ -177,13 +176,11 @@ export function Header({ children }: HeaderProps) {
                 <span className="sr-only">Search Tasks</span>
             </Button>
             
-            {/* Desktop New Task Button */}
             <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">New Task</span>
             </Button>
             
-            {/* Desktop Filters Button */}
             <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Filters & Sort</span>
@@ -192,7 +189,9 @@ export function Header({ children }: HeaderProps) {
             <ThemeToggle />
 
             <div className="hidden md:flex items-center space-x-1">
-              {!authLoading && user ? (
+              {authLoading ? (
+                <div className="h-9 w-20 animate-pulse bg-muted rounded-md"></div> // Skeleton for auth buttons
+              ) : user ? (
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -224,7 +223,49 @@ export function Header({ children }: HeaderProps) {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : !authLoading && (
+              ) : isGuest && guestId ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-8 w-8">
+                         <AvatarFallback><GuestIcon className="h-5 w-5" /></AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">Guest Session</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          ID: {guestId}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <UserCircle2 className="mr-2 h-4 w-4" />
+                        Guest Info
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                       <Link href="/auth/signin" className="w-full">
+                        <Button variant="outline" size="sm" className="w-full justify-start px-2 py-1.5 h-auto text-sm">
+                            <LogOut className="mr-2 h-4 w-4" /> Sign In
+                        </Button>
+                       </Link>
+                    </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                       <Link href="/auth/signup" className="w-full">
+                         <Button size="sm" className="w-full justify-start px-2 py-1.5 h-auto text-sm mt-1">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Sign Up to Save
+                         </Button>
+                        </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
                 <div className="flex items-center space-x-1">
                   <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3">
                     <Link href="/auth/signin">Sign In</Link>
