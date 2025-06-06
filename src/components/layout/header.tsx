@@ -33,52 +33,43 @@ interface HeaderProps {
 
 export function Header({ children }: HeaderProps) {
   const { dispatch, state } = useKanban();
-  const filters = state.filters;
+  const { filters } = state; // Use filters directly from state
   const { user, signOut, loading: authLoading, guestId, isGuest } = useAuth();
   
-  const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters?.searchTerm ?? "");
+  const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters.searchTerm ?? "");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [modalSearchTerm, setModalSearchTerm] = useState(filters?.searchTerm ?? "");
+  const [modalSearchTerm, setModalSearchTerm] = useState(filters.searchTerm ?? "");
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Effect to synchronize local desktopSearchTerm from global filters.searchTerm
   useEffect(() => {
-    if (filters?.searchTerm !== desktopSearchTerm) {
-      setDesktopSearchTerm(filters?.searchTerm ?? "");
-    }
-    if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
-        setModalSearchTerm(filters?.searchTerm ?? "");
+    if (filters.searchTerm !== desktopSearchTerm) {
+      setDesktopSearchTerm(filters.searchTerm ?? "");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters?.searchTerm, isSearchModalOpen, desktopSearchTerm]);
+  }, [filters.searchTerm]);
 
+  // Effect to synchronize local modalSearchTerm from global filters.searchTerm when modal opens or filter changes
+  useEffect(() => {
+    if (isSearchModalOpen) {
+      if (filters.searchTerm !== modalSearchTerm) {
+        setModalSearchTerm(filters.searchTerm ?? "");
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.searchTerm, isSearchModalOpen]);
 
+  // Effect for debouncing desktopSearchTerm changes and dispatching to global state
   useEffect(() => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     debounceTimeoutRef.current = setTimeout(() => {
+      // Only dispatch if the local term is different from the global one
       if (desktopSearchTerm !== filters.searchTerm) {
         dispatch({ type: "SET_FILTERS", payload: { searchTerm: desktopSearchTerm } });
       }
-    }, 300);
-
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, [desktopSearchTerm, dispatch, filters.searchTerm]);
-
-  useEffect(() => {
-    if (!isSearchModalOpen) return; 
-
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    debounceTimeoutRef.current = setTimeout(() => {
-       if (modalSearchTerm !== filters.searchTerm) {
-       }
-    }, 300);
+    }, 300); // Debounce time
 
     return () => {
       if (debounceTimeoutRef.current) {
@@ -86,7 +77,7 @@ export function Header({ children }: HeaderProps) {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalSearchTerm, dispatch, filters.searchTerm, isSearchModalOpen]);
+  }, [desktopSearchTerm, dispatch]); // Only depends on local search term and dispatch
 
 
   const handleDesktopSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,8 +85,11 @@ export function Header({ children }: HeaderProps) {
   };
 
   const clearDesktopSearch = () => {
-    setDesktopSearchTerm("");
-    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
+    setDesktopSearchTerm(""); // Update local UI immediately
+    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }); // Dispatch global update immediately
+    if (debounceTimeoutRef.current) { // Clear any pending debounce operations
+      clearTimeout(debounceTimeoutRef.current);
+    }
   };
 
   const handleModalSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,10 +98,13 @@ export function Header({ children }: HeaderProps) {
   
   const handleModalSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    if (debounceTimeoutRef.current) { 
+    if (debounceTimeoutRef.current) { // Clear desktop debounce if modal is submitted
       clearTimeout(debounceTimeoutRef.current);
     }
-    dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
+    // Dispatch the modal's current search term only if it's different
+    if (modalSearchTerm !== filters.searchTerm) {
+      dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
+    }
     setIsSearchModalOpen(false);
   };
   
@@ -169,7 +166,8 @@ export function Header({ children }: HeaderProps) {
 
           <div className="flex items-center space-x-0.5 sm:space-x-1">
             <Button variant="ghost" size="icon" onClick={() => {
-                setModalSearchTerm(filters?.searchTerm ?? ""); 
+                // Sync modalSearchTerm with global filter when opening
+                setModalSearchTerm(filters.searchTerm ?? ""); 
                 setIsSearchModalOpen(true);
             }} className="md:hidden h-9 w-9">
                 <Search className="h-5 w-5" />
@@ -190,7 +188,7 @@ export function Header({ children }: HeaderProps) {
 
             <div className="hidden md:flex items-center space-x-1">
               {authLoading ? (
-                <div className="h-9 w-20 animate-pulse bg-muted rounded-md"></div> // Skeleton for auth buttons
+                <div className="h-9 w-20 animate-pulse bg-muted rounded-md"></div> 
               ) : user ? (
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -304,6 +302,9 @@ export function Header({ children }: HeaderProps) {
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                   onClick={() => {
                     setModalSearchTerm(""); 
+                    // Optionally, dispatch clear immediately for modal, 
+                    // or let the main Search button handle it.
+                    // For consistency with desktop clear, let's also dispatch here:
                     dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
                   }}
                 >
