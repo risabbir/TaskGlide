@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, User } from "lucide-react"; 
+import { Loader2, Eye, EyeOff, User, Chrome, Facebook } from "lucide-react"; 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -32,7 +32,7 @@ const signInSchema = z.object({
 type SignInFormData = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn, loading, startNewGuestSession } = useAuth();
+  const { signIn, signInWithGoogle, signInWithFacebook, loading, startNewGuestSession } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -52,14 +52,29 @@ export function SignInForm() {
   }
 
   const handleGuestLogin = () => {
-    startNewGuestSession(); // This will also handle navigation via router.push('/')
+    startNewGuestSession(); 
   };
+
+  const handleGoogleSignIn = async () => {
+    const user = await signInWithGoogle();
+    if (user) {
+      router.push("/");
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    const user = await signInWithFacebook();
+    if (user) {
+      router.push("/");
+    }
+  };
+
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Sign In</CardTitle>
-        <CardDescription>Enter your credentials to access your account, or continue as a guest.</CardDescription>
+        <CardDescription>Enter your credentials to access your account, or use a social login.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -118,16 +133,28 @@ export function SignInForm() {
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <div className="relative w-full my-2">
+            
+            <div className="relative w-full my-1">
               <Separator />
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
                 OR
               </span>
             </div>
+
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button type="button" variant="outline" onClick={handleGoogleSignIn} disabled={loading}>
+                <Chrome className="mr-2 h-4 w-4" /> Google
+              </Button>
+              <Button type="button" variant="outline" onClick={handleFacebookSignIn} disabled={loading}>
+                <Facebook className="mr-2 h-4 w-4" /> Facebook
+              </Button>
+            </div>
+            
             <Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin} disabled={loading}>
               <User className="mr-2 h-4 w-4" />
               Continue as Guest
             </Button>
+
             <div className="text-center text-sm text-muted-foreground mt-2">
               Don&apos;t have an account?{" "}
               <Link href="/auth/signup" passHref legacyBehavior>
@@ -140,5 +167,3 @@ export function SignInForm() {
     </Card>
   );
 }
-
-    

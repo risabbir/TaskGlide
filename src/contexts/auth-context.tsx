@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { User as FirebaseUser, AuthError } from 'firebase/auth';
+import type { User as FirebaseUser, AuthError, UserCredential } from 'firebase/auth';
 import {
   createContext,
   useContext,
@@ -20,14 +20,18 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword as firebaseUpdatePassword,
-  verifyBeforeUpdateEmail
+  verifyBeforeUpdateEmail,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  getAdditionalUserInfo
 } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { APP_NAME, GUEST_ID_STORAGE_KEY } from '@/lib/constants';
-import { useRouter } from 'next/navigation'; // Added for guest navigation
+import { useRouter } from 'next/navigation';
 
 interface UserProfileUpdate {
   displayName?: string;
@@ -51,15 +55,17 @@ const initialOtherProfileData: Omit<OtherProfileData, 'firestoreUpdatedAt'> = {
 
 interface AuthContextType {
   user: FirebaseUser | null;
-  guestId: string | null; // New state for guest ID
-  isGuest: boolean; // Derived from user and guestId
+  guestId: string | null;
+  isGuest: boolean;
   loading: boolean;
   otherProfileData: OtherProfileData | null;
   otherProfileDataLoading: boolean;
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
+  signInWithGoogle: () => Promise<FirebaseUser | null>;
+  signInWithFacebook: () => Promise<FirebaseUser | null>;
   signOut: () => Promise<void>;
-  startNewGuestSession: () => void; // New function to initiate guest session
+  startNewGuestSession: () => void;
   resetPassword: (email: string) => Promise<boolean>;
   updateUserProfile: (profileData: UserProfileUpdate) => Promise<boolean>;
   updateUserPhotoURL: (photoFile: File) => Promise<string | null>;
@@ -91,6 +97,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       duration: 10000,
     });
   };
+  
+  const ensureUserProfileDocument = useCallback(async (firebaseUser: FirebaseUser) => {
+    const profileDocPath = `profiles/${firebaseUser.uid}`;
+    console.log(`[AuthContext] ensureUserProfileDocument: Checking/creating profile for ${profileDocPath}.`);
+    try {
+      const profileDocRef = doc(db, "profiles", firebaseUser.uid);
+      const docSnap = await getDoc(profileDocRef);
+      if (!docSnap.exists()) {
+        console.log(`[AuthContext] ensureUserProfileDocument: No profile found for ${firebaseUser.uid}. Creating initial profile document.`);
+        await setDoc(profileDocRef, {
+          ...initialOtherProfileData,
+          firestoreUpdatedAt: serverTimestamp()
+        });
+        console.log(`[AuthContext] ensureUserProfileDocument: Initial profile document created for ${profileDocPath}.`);
+        return initialOtherProfileData; // Return the newly created (empty) data
+      } else {
+        console.log(`[AuthContext] ensureUserProfileDocument: Profile document already exists for ${profileDocPath}.`);
+        return docSnap.data() as OtherProfileData; // Return existing data
+      }
+    } catch (profileError: any) {
+      if (profileError.code === 'permission-denied' || profileError.code === 7) {
+        handleFirestorePermissionError('ensure/create profile', profileError, profileDocPath);
+      } else {
+        console.error(`[AuthContext] ensureUserProfileDocument: Firestore error for ${profileDocPath}:`, profileError.message, profileError.code, profileError);
+        toast({ title: "Profile Sync Error", description: "Could not ensure user profile data exists.", variant: "destructive" });
+      }
+      return null; // Indicate error or no data
+    }
+  }, [toast]);
+
 
   const fetchOtherProfileData = useCallback(async (userIdToFetch: string) => {
     const currentSdkUser = auth.currentUser;
@@ -115,21 +151,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOtherProfileData(docSnap.data() as OtherProfileData);
         console.log(`[AuthContext] Successfully fetched profile data from ${profileDocPath} for user: ${userIdToFetch}`);
       } else {
-        setOtherProfileData(initialOtherProfileData);
-        console.log(`[AuthContext] No profile data found at ${profileDocPath} for user: ${userIdToFetch}, using initial defaults.`);
+        console.log(`[AuthContext] No profile data found at ${profileDocPath} for user: ${userIdToFetch}. Attempting to ensure profile document.`);
+        const ensuredData = await ensureUserProfileDocument(currentSdkUser);
+        setOtherProfileData(ensuredData || initialOtherProfileData);
       }
     } catch (err: any) {
-      if (err.code === 'permission-denied' || err.code === 7) { // Check for gRPC code 7 too
+      if (err.code === 'permission-denied' || err.code === 7) { 
         handleFirestorePermissionError('fetch', err, profileDocPath);
       } else {
         console.error(`[AuthContext] Firestore error in fetchOtherProfileData for ${profileDocPath} (User: ${userIdToFetch}):`, err.message, err.code, err);
         toast({ title: "Profile Data Error", description: `Could not load additional profile details. Error: ${err.message}`, variant: "destructive" });
       }
-      setOtherProfileData(initialOtherProfileData); // Fallback to initial on error
+      setOtherProfileData(initialOtherProfileData); 
     } finally {
       setOtherProfileDataLoading(false);
     }
-  }, [toast]);
+  }, [toast, ensureUserProfileDocument]);
 
   useEffect(() => {
     console.log("[AuthContext] Setting up onAuthStateChanged listener.");
@@ -137,8 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         console.log(`[AuthContext] onAuthStateChanged: User signed IN. UID: ${firebaseUser.uid}. Clearing guest session.`);
         setUser({ ...firebaseUser } as FirebaseUser);
-        setGuestId(null); // Clear guest ID on login
-        localStorage.removeItem(GUEST_ID_STORAGE_KEY); // Remove guest ID from storage
+        setGuestId(null); 
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY); 
         await fetchOtherProfileData(firebaseUser.uid);
       } else {
         console.log("[AuthContext] onAuthStateChanged: User signed OUT or initial load without auth. Checking for existing guest session.");
@@ -148,9 +185,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log(`[AuthContext] Restored guest session ID: ${storedGuestId}`);
             setGuestId(storedGuestId);
         } else {
-            setGuestId(null); // No active guest session found
+            setGuestId(null); 
         }
-        setOtherProfileData(null); // Clear profile data for non-logged-in users
+        setOtherProfileData(null); 
         setOtherProfileDataLoading(false);
       }
       setInitialLoading(false);
@@ -166,10 +203,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newGuestId = `guest-${crypto.randomUUID().substring(0, 8)}`;
     setGuestId(newGuestId);
     localStorage.setItem(GUEST_ID_STORAGE_KEY, newGuestId);
-    setUser(null); // Ensure no Firebase user is set in context
+    setUser(null); 
     setOtherProfileData(null);
     setOtherProfileDataLoading(false);
-    setInitialLoading(false); // Guest session is also an initialized state
+    setInitialLoading(false); 
     console.log(`[AuthContext] New guest session started with ID: ${newGuestId}. Navigating to home.`);
     router.push('/');
   }, [router]);
@@ -181,27 +218,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       const newUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
       if (newUser) {
-        setGuestId(null); // Clear guest ID on successful sign-up
+        setGuestId(null); 
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-        const profileDocPath = `profiles/${newUser.uid}`;
-        console.log(`[AuthContext] User ${newUser.uid} signed up. Attempting to create initial profile document at ${profileDocPath}.`);
-        try {
-          await setDoc(doc(db, "profiles", newUser.uid), {
-              ...initialOtherProfileData,
-              firestoreUpdatedAt: serverTimestamp()
-          });
-          console.log(`[AuthContext] Initial profile document created for ${profileDocPath}.`);
-        } catch (profileError: any) {
-             if (profileError.code === 'permission-denied' || profileError.code === 7) {
-                handleFirestorePermissionError('create initial profile', profileError, profileDocPath);
-            } else {
-                console.error(`[AuthContext] Firestore error creating initial profile for ${profileDocPath}:`, profileError.message, profileError.code, profileError);
-                toast({ title: "Profile Setup Error", description: "Could not create initial profile data.", variant: "destructive" });
-            }
-        }
+        await ensureUserProfileDocument(newUser); 
       }
       toast({ title: "Account Created!", description: `Welcome to ${APP_NAME}! You're all set.` });
-      // onAuthStateChanged will handle setting the user and fetching profile data
       return newUser;
     } catch (e) {
       const authError = e as AuthError;
@@ -217,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
         setInitialLoading(false);
     }
-  }, [toast]);
+  }, [toast, ensureUserProfileDocument]);
 
   const signIn = useCallback(async (email: string, pass: string): Promise<FirebaseUser | null> => {
     console.log(`[AuthContext] Attempting to sign in user: ${email}`);
@@ -226,11 +247,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
       const signedInUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
       if (signedInUser) {
-        setGuestId(null); // Clear guest ID on successful sign-in
+        setGuestId(null); 
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
+        await fetchOtherProfileData(signedInUser.uid); // Ensure profile data is fetched/checked
       }
       toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
-      // onAuthStateChanged will handle setting user and fetching profile data
       return signedInUser;
     } catch (e) {
       const authError = e as AuthError;
@@ -244,17 +265,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
         setInitialLoading(false);
     }
-  }, [toast]);
+  }, [toast, fetchOtherProfileData]);
+
+  const handleSocialSignIn = async (provider: GoogleAuthProvider | FacebookAuthProvider): Promise<FirebaseUser | null> => {
+    setInitialLoading(true);
+    try {
+      const result: UserCredential = await signInWithPopup(auth, provider);
+      const socialUser = result.user ? { ...result.user } as FirebaseUser : null;
+
+      if (socialUser) {
+        setGuestId(null);
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
+        
+        const additionalUserInfo = getAdditionalUserInfo(result);
+        if (additionalUserInfo?.isNewUser) {
+          console.log(`[AuthContext] New user signed in with ${provider.providerId}. Ensuring profile document.`);
+          await ensureUserProfileDocument(socialUser);
+        } else {
+          console.log(`[AuthContext] Existing user signed in with ${provider.providerId}. Fetching profile.`);
+          await fetchOtherProfileData(socialUser.uid);
+        }
+        toast({ title: "Signed In Successfully!", description: `Welcome to ${APP_NAME}!` });
+        router.push("/");
+        return socialUser;
+      }
+      return null;
+    } catch (e) {
+      const authError = e as AuthError;
+      console.error(`[AuthContext] Social sign in error with ${provider.providerId}:`, authError.message, authError.code, authError);
+      let message = `Failed to sign in with ${provider.providerId === 'google.com' ? 'Google' : 'Facebook'}. Please try again.`;
+      if (authError.code === 'auth/account-exists-with-different-credential') {
+        message = `An account already exists with this email address using a different sign-in method. Try signing in with that method.`;
+      } else if (authError.code === 'auth/popup-closed-by-user') {
+        message = `Sign-in popup was closed before completion. Please try again.`;
+      } else if (authError.code === 'auth/cancelled-popup-request') {
+         message = `Multiple sign-in attempts detected. Please try again.`;
+      }
+      toast({ title: "Social Sign-In Error", description: message, variant: "destructive" });
+      return null;
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  const signInWithGoogle = useCallback(async (): Promise<FirebaseUser | null> => {
+    console.log("[AuthContext] Attempting Google sign-in.");
+    const provider = new GoogleAuthProvider();
+    return handleSocialSignIn(provider);
+  }, [ensureUserProfileDocument, fetchOtherProfileData, toast, router]);
+
+  const signInWithFacebook = useCallback(async (): Promise<FirebaseUser | null> => {
+    console.log("[AuthContext] Attempting Facebook sign-in.");
+    const provider = new FacebookAuthProvider();
+    // Facebook may require custom parameters like permissions
+    // provider.addScope('email');
+    // provider.setCustomParameters({ 'display': 'popup' });
+    return handleSocialSignIn(provider);
+  }, [ensureUserProfileDocument, fetchOtherProfileData, toast, router]);
+
 
   const signOut = useCallback(async () => {
     const currentUid = auth.currentUser?.uid;
     console.log(`[AuthContext] Attempting to sign out user: ${currentUid || 'No user currently authenticated'}`);
     try {
       await firebaseSignOut(auth);
-      // onAuthStateChanged will handle setUser(null)
       console.log(`[AuthContext] User ${currentUid} signed out successfully (request initiated). Clearing guest session info.`);
-      setGuestId(null); // Explicitly clear guest ID from context
-      localStorage.removeItem(GUEST_ID_STORAGE_KEY); // Clear guest ID from storage
+      setGuestId(null); 
+      localStorage.removeItem(GUEST_ID_STORAGE_KEY); 
       toast({ title: "Signed Out", description: "You have successfully signed out. Come back soon!" });
     } catch (e) {
       const authError = e as AuthError;
@@ -348,10 +425,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
     const userId = currentSdkUser.uid;
-    // Check for context-SDK user mismatch (defensive coding)
     if (user && user.uid !== userId) {
         console.warn(`[AuthContext] saveOtherProfileData: Context user (${user.uid}) mismatch with SDK user (${userId}). This is unexpected if onAuthStateChanged is working correctly. Proceeding with SDK user ID.`);
-        // Potentially log more or even block if this state is considered critical.
     }
     const profileDocPath = `profiles/${userId}`;
     console.log(`[AuthContext] Attempting to SET doc: ${profileDocPath} for user ${userId} with data:`, data);
@@ -360,10 +435,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const dataToSave = { ...data, firestoreUpdatedAt: serverTimestamp() };
       await setDoc(profileDocRef, dataToSave, { merge: true });
       console.log(`[AuthContext] Other profile data saved for ${profileDocPath}. Fetching updated data.`);
-      await fetchOtherProfileData(userId); // Re-fetch to update context
+      await fetchOtherProfileData(userId); 
       return true;
     } catch (e: any) {
-      if (e.code === 'permission-denied' || e.code === 7) { // Check for gRPC code 7 too
+      if (e.code === 'permission-denied' || e.code === 7) { 
         handleFirestorePermissionError('save', e, profileDocPath);
       } else {
         console.error(`[AuthContext] Firestore error in saveOtherProfileData for ${profileDocPath} (User: ${userId}):`, e.message, e.code, e);
@@ -371,7 +446,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return false;
     }
-  }, [toast, fetchOtherProfileData, user]); // Added user dependency
+  }, [toast, fetchOtherProfileData, user]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     const currentSdkUser = auth.currentUser;
@@ -454,6 +529,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     otherProfileDataLoading,
     signUp,
     signIn,
+    signInWithGoogle,
+    signInWithFacebook,
     signOut,
     startNewGuestSession,
     resetPassword,

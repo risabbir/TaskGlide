@@ -17,9 +17,10 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Chrome, Facebook } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
 
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address.").min(1, "Email is required."),
@@ -33,7 +34,7 @@ const signUpSchema = z.object({
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
-  const { signUp, loading } = useAuth();
+  const { signUp, signInWithGoogle, signInWithFacebook, loading } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -54,11 +55,25 @@ export function SignUpForm() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    const user = await signInWithGoogle();
+    if (user) {
+      router.push("/");
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    const user = await signInWithFacebook();
+    if (user) {
+      router.push("/");
+    }
+  };
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Create an Account</CardTitle>
-        <CardDescription>Enter your details to get started.</CardDescription>
+        <CardDescription>Enter your details or use a social login to get started.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -140,9 +155,26 @@ export function SignUpForm() {
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign Up
+              Sign Up with Email
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
+
+            <div className="relative w-full my-1">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                OR
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Button type="button" variant="outline" onClick={handleGoogleSignIn} disabled={loading}>
+                <Chrome className="mr-2 h-4 w-4" /> Google
+              </Button>
+              <Button type="button" variant="outline" onClick={handleFacebookSignIn} disabled={loading}>
+                <Facebook className="mr-2 h-4 w-4" /> Facebook
+              </Button>
+            </div>
+
+            <div className="text-center text-sm text-muted-foreground mt-2">
               Already have an account?{" "}
               <Link href="/auth/signin" passHref legacyBehavior>
                 <a className="text-primary hover:underline">Sign In</a>

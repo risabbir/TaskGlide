@@ -36,16 +36,47 @@ This application uses Firebase for backend services including Authentication, Fi
     *   **Replace `your_project_id_here` with your actual Firebase Project ID (e.g., `taskglide-app`).**
     *   Replace the other placeholder values with your actual credentials.
 
-3.  **Security Rules:**
+3.  **Enable Sign-In Providers:**
+    *   In the Firebase console, go to **Authentication** -> **Sign-in method**.
+    *   **Email/Password:** Ensure this is enabled (it usually is by default if you selected Authentication during project setup).
+    *   **Google:**
+        *   Click on "Google" in the list of providers.
+        *   Enable the provider.
+        *   You might need to provide a project support email.
+        *   Save the changes.
+    *   **Facebook:**
+        *   Click on "Facebook" in the list of providers.
+        *   Enable the provider.
+        *   You will need a **Facebook App ID** and **App Secret**.
+            *   Go to the [Facebook Developer Portal](https://developers.facebook.com/) and create a new app if you haven't already.
+            *   From your Facebook App's dashboard, get the App ID and App Secret.
+            *   Enter these into the Firebase console.
+            *   **Crucially**, copy the **OAuth redirect URI** provided by Firebase (it looks like `https://<YOUR_PROJECT_ID>.firebaseapp.com/__/auth/handler`).
+            *   Go back to your Facebook App settings on the Facebook Developer Portal.
+            *   Find the "Facebook Login" product and go to its "Settings".
+            *   Add the copied URI to the "Valid OAuth Redirect URIs" field.
+            *   Save changes on the Facebook Developer Portal.
+            *   Save changes in the Firebase console.
+
+4.  **Security Rules:**
     *   **Firestore:** Set appropriate security rules for your Firestore database. Go to Firestore Database -> Rules in the Firebase console.
         *Example (allow read/write if authenticated):*
         ```rules
         rules_version = '2';
         service cloud.firestore {
           match /databases/{database}/documents {
-            match /{document=**} {
-              allow read, write: if request.auth != null;
+            // Allow access to user-specific kanban data and profile data if authenticated
+            match /userKanbanData/{userId} {
+              allow read, write: if request.auth != null && request.auth.uid == userId;
             }
+            match /profiles/{userId} {
+              allow read: if request.auth != null; // Or more restrictive if needed
+              allow write: if request.auth != null && request.auth.uid == userId;
+            }
+            // Other rules as needed
+            // match /{document=**} { // Broader rule, be careful
+            //   allow read, write: if request.auth != null;
+            // }
           }
         }
         ```
@@ -56,7 +87,7 @@ This application uses Firebase for backend services including Authentication, Fi
         service firebase.storage {
           match /b/{bucket}/o {
             match /profile-pictures/{userId}/{fileName} {
-              allow read: if true;
+              allow read: if true; // Or if request.auth != null for private images
               allow write: if request.auth != null && request.auth.uid == userId;
             }
           }
@@ -64,7 +95,7 @@ This application uses Firebase for backend services including Authentication, Fi
         ```
     *   Publish these rules in the Firebase console (Firestore -> Rules, and Storage -> Rules).
 
-4.  **Authentication Email Templates:**
+5.  **Authentication Email Templates:**
     *   In the Firebase console, go to Authentication -> Templates.
     *   Customize the email templates (e.g., Password Reset, Email Verification) to match your app's branding (e.g., change sender name from the default to "TaskGlide team").
 
