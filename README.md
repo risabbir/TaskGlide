@@ -46,7 +46,15 @@ This application uses Firebase for backend services including Authentication, Fi
         *   You **must** select a **Project support email**. If this is not set, Google Sign-In will fail.
         *   Save the changes.
 
-4.  **Security Rules:**
+4.  **Authorize Domains for Authentication:**
+    *   This is crucial for Google Sign-In and other OAuth providers.
+    *   In the Firebase console, go to **Authentication** -> **Settings** tab.
+    *   Under the **Authorized domains** section, click **Add domain**.
+    *   **For local development:** Add `localhost`. (e.g., if your app runs on `http://localhost:9002`, add `localhost`).
+    *   **For deployed app:** Your Firebase Hosting domains (e.g., `your-project-id.web.app`, `your-project-id.firebaseapp.com`) are typically added automatically when you enable a provider or set up hosting. However, if you see `auth/unauthorized-domain`, verify they are listed here. If deploying to a custom domain or another platform, you must add your live domain here.
+    *   This step is critical to resolve `auth/unauthorized-domain` errors.
+
+5.  **Security Rules:**
     *   **Firestore:** Set appropriate security rules for your Firestore database. Go to Firestore Database -> Rules in the Firebase console.
         *Example (allow read/write if authenticated for specific paths):*
         ```rules
@@ -79,7 +87,7 @@ This application uses Firebase for backend services including Authentication, Fi
         ```
     *   Publish these rules in the Firebase console (Firestore -> Rules, and Storage -> Rules).
 
-5.  **Authentication Email Templates:**
+6.  **Authentication Email Templates:**
     *   In the Firebase console, go to Authentication -> Templates.
     *   Customize the email templates (e.g., Password Reset, Email Verification) to match your app's branding (e.g., change sender name from the default to "TaskGlide team").
 
@@ -102,37 +110,46 @@ This application uses Genkit to power its AI features (like suggesting task deta
 
 ## Troubleshooting Google Sign-In Errors
 
-If you encounter errors specifically with Google Sign-In (e.g., "auth/operation-not-allowed", popup errors, or other "auth/..." codes):
+If you encounter errors specifically with Google Sign-In (e.g., "auth/operation-not-allowed", `auth/unauthorized-domain`, popup errors, or other "auth/..." codes):
 
-1.  **Check Firebase Console Configuration:**
+1.  **`auth/unauthorized-domain` Error:**
+    *   This is the most common issue. It means the domain your app is running on (e.g., `localhost` for development, or your live app's domain) is not listed in Firebase's authorized domains.
+    *   **Fix:** Go to Firebase Console -> Authentication -> Settings tab -> Authorized domains. Click "Add domain" and add `localhost` (for local development) and your production domain(s) if deployed.
+
+2.  **Check Firebase Console Configuration (General):**
     *   Go to your Firebase Project -> Authentication -> Sign-in method.
     *   Ensure **Google** is **Enabled**.
     *   Crucially, make sure a **Project support email** is selected and saved for the Google provider. If it's empty, Google Sign-In will often fail.
-2.  **Check Google Cloud Console (GCP) OAuth Consent Screen:**
+
+3.  **Check Google Cloud Console (GCP) OAuth Consent Screen:**
     *   Firebase projects are typically linked to Google Cloud projects. Go to the [Google Cloud Console](https://console.cloud.google.com/).
     *   Select the Google Cloud project that is associated with your Firebase project.
     *   Navigate to "APIs & Services" -> "OAuth consent screen".
     *   **Publishing status:** Ensure your OAuth consent screen is **Published**. If it's in "Testing," only explicitly listed test users can sign in. For general access, it must be published.
     *   **User type:** For most apps, this will be "External".
-    *   **Authorized domains:** While `signInWithPopup` doesn't always strictly require this for `localhost`, ensure your app's actual domain (if deployed) is listed. For Firebase Hosting, it typically adds `your-project-id.firebaseapp.com` and `your-project-id.web.app` automatically when you set up the Google provider in Firebase.
+    *   **Authorized domains (GCP OAuth):** While `signInWithPopup` doesn't always strictly require this for `localhost`, ensure your app's actual domain (if deployed) is listed here as well. For Firebase Hosting, it typically adds `your-project-id.firebaseapp.com` and `your-project-id.web.app` automatically when you set up the Google provider in Firebase. This is different from the Firebase Auth "Authorized Domains" list but also important.
     *   **Scopes:** The default Firebase scopes for Google Sign-In (`email`, `profile`, `openid`) are usually sufficient.
-3.  **Check API Key Restrictions (if any):**
+
+4.  **Check API Key Restrictions (if any):**
     *   In Google Cloud Console -> APIs & Services -> Credentials.
-    *   Find the API key used by your web app (usually named "Browser key (auto created by Firebase)").
+    *   Find the API key used by your web app (usually named "Browser key (auto created by Firebase)" or similar, associated with your web app's config).
     *   If you have applied restrictions to this key:
-        *   Ensure "Firebase Authentication API" is enabled under "API restrictions".
-        *   Under "Application restrictions", ensure `*.firebaseapp.com` is allowed if using Firebase Hosting. For local development, you might need to add `http://localhost:<YOUR_PORT>` (e.g., `http://localhost:9002`).
-4.  **Verify `.env` Variables:**
+        *   Ensure "Identity Toolkit API" (sometimes listed as Firebase Authentication API) is enabled under "API restrictions".
+        *   Under "Application restrictions" (Website restrictions), ensure your domains are allowed. For local development, you might need to add `http://localhost:<YOUR_PORT>` (e.g., `http://localhost:9002`). For Firebase Hosting, it's `*.firebaseapp.com` and `*.web.app`.
+
+5.  **Verify `.env` Variables:**
     *   Double-check that all `NEXT_PUBLIC_FIREBASE_...` variables in your `.env` file are correct and correspond to the Firebase project where you enabled Google Sign-In.
     *   **Restart your Next.js development server** (`npm run dev`) after any changes to `.env`.
-5.  **Browser Issues:**
+
+6.  **Browser Issues:**
     *   Ensure your browser is not blocking pop-ups from `localhost` or your Firebase auth domain (`<YOUR_PROJECT_ID>.firebaseapp.com`).
     *   Try clearing your browser's cache and cookies for the site.
     *   Test in an incognito window to rule out extension conflicts.
-6.  **Firebase Project Billing:**
+
+7.  **Firebase Project Billing:**
     *   While basic Firebase Auth is free, ensure your Firebase project is in good standing (e.g., if linked to a GCP project, billing is active if you're using paid services, though Auth itself doesn't usually require this unless you hit high usage quotas not typical for development). This is a less common cause for basic auth issues but worth noting.
 
-If errors persist after checking these, inspect the browser's developer console for more detailed error messages from Firebase, which often provide specific error codes (like `auth/operation-not-allowed`).
+If errors persist after checking these, inspect the browser's developer console for more detailed error messages from Firebase, which often provide specific error codes.
 
 
 ## Development
@@ -167,3 +184,4 @@ If you have switched from an old Firebase project to a new one (e.g., from "kanv
 
 Remember to update security rules and email templates in the new Firebase project as well.
     
+
