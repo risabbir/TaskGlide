@@ -76,3 +76,13 @@ export interface SortState {
   direction: SortDirection;
 }
 
+// Type for AI Focus Batch Suggestion Input Task (subset of main Task)
+export interface TaskForAISuggestion {
+    id: string;
+    title: string;
+    priority: Priority;
+    columnId: string; // e.g., 'todo', 'inprogress'
+    description?: string;
+    dueDate?: string; // ISO string format
+}
+

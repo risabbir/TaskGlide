@@ -177,3 +177,4 @@ export function FocusBatchModalContent({ onClose }: FocusBatchModalContentProps)
     </DialogContent>
   );
 }
+
