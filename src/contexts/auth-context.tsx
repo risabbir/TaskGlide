@@ -22,7 +22,7 @@ import {
   updatePassword as firebaseUpdatePassword,
   verifyBeforeUpdateEmail
 } from 'firebase/auth';
-import { auth, storage, db } from '@/lib/firebase';
+import { auth, storage, db } from '@/lib/firebase'; // Ensure auth is imported
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -82,6 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setOtherProfileDataLoading(false);
       return;
     }
+
+    const currentAuthUserFromSDK = auth.currentUser;
+    console.log(`[AuthContext] fetchOtherProfileData: Context user ID: ${userId}, SDK auth.currentUser: ${currentAuthUserFromSDK?.uid}`);
+    if (!currentAuthUserFromSDK || currentAuthUserFromSDK.uid !== userId) {
+      console.error(`[AuthContext] CRITICAL ERROR: Mismatch or null SDK user before fetching profile data. Context user: ${userId}, SDK user: ${currentAuthUserFromSDK?.uid}. Aborting fetch.`);
+      setOtherProfileData(initialOtherProfileData);
+      setOtherProfileDataLoading(false);
+      toast({ title: "Profile Data Error", description: "Authentication state error. Could not load profile.", variant: "destructive" });
+      return;
+    }
+
     const profileDocPath = `profiles/${userId}`;
     console.log(`[AuthContext] Attempting to GET doc: ${profileDocPath} for user: ${userId}`);
     setOtherProfileDataLoading(true);
@@ -97,8 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (err: any) {
       console.error(`[AuthContext] Firestore error in fetchOtherProfileData for ${profileDocPath} (User: ${userId}):`, err.message, err.code, err);
-      setOtherProfileData(initialOtherProfileData);
-      toast({ title: "Profile Data Error", description: "Could not load additional profile details.", variant: "destructive" });
+      setOtherProfileData(initialOtherProfileData); // Fallback to defaults on error
+      // The error is FirebaseError, so it includes a code.
+      if (err.code === 'permission-denied' || err.code === 7) { // 7 is the gRPC code for PERMISSION_DENIED
+        toast({ title: "Profile Load Failed", description: "You don't have permission to access this profile data. Please check Firestore rules.", variant: "destructive" });
+      } else {
+        toast({ title: "Profile Data Error", description: "Could not load additional profile details.", variant: "destructive" });
+      }
     } finally {
       setOtherProfileDataLoading(false);
     }
@@ -109,13 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         console.log(`[AuthContext] onAuthStateChanged: User signed IN. UID: ${firebaseUser.uid}`);
-        setUser({ ...firebaseUser } as FirebaseUser);
+        setUser({ ...firebaseUser } as FirebaseUser); // Ensure we are using a plain object copy for our state
         await fetchOtherProfileData(firebaseUser.uid);
       } else {
         console.log("[AuthContext] onAuthStateChanged: User signed OUT.");
         setUser(null);
         setOtherProfileData(null);
-        setOtherProfileDataLoading(false); // Ensure loading is false for guests
+        setOtherProfileDataLoading(false);
       }
       setInitialLoading(false);
     });
@@ -130,16 +146,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       const newUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
-      // setUser(newUser); // onAuthStateChanged will handle this
       if (newUser) {
         const profileDocPath = `profiles/${newUser.uid}`;
-        console.log(`[AuthContext] User ${newUser.uid} signed up. Attempting to create profile document at ${profileDocPath}.`);
+        console.log(`[AuthContext] User ${newUser.uid} signed up. Attempting to create initial profile document at ${profileDocPath}.`);
         await setDoc(doc(db, "profiles", newUser.uid), {
             ...initialOtherProfileData,
             firestoreUpdatedAt: serverTimestamp()
         });
-        console.log(`[AuthContext] Profile document created for ${profileDocPath}.`);
-        // await fetchOtherProfileData(newUser.uid); // onAuthStateChanged will trigger this
+        console.log(`[AuthContext] Initial profile document created for ${profileDocPath}.`);
       }
       toast({ title: "Account Created!", description: `Welcome to ${APP_NAME}! You're all set.` });
       return newUser;
@@ -162,10 +176,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
       const signedInUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
-      // setUser(signedInUser); // onAuthStateChanged will handle this
-      // if (signedInUser) { // onAuthStateChanged will trigger fetchOtherProfileData
-      //   console.log(`[AuthContext] User ${signedInUser.uid} signed in.`);
-      // }
       toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
       return signedInUser;
     } catch (e) {
@@ -185,8 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[AuthContext] Attempting to sign out user: ${currentUid || 'No user currently authenticated'}`);
     try {
       await firebaseSignOut(auth);
-      // setUser(null); // onAuthStateChanged will handle this
-      // setOtherProfileData(null); // onAuthStateChanged will handle this
       console.log(`[AuthContext] User ${currentUid} signed out successfully (request initiated).`);
       toast({ title: "Signed Out", description: "You have successfully signed out. Come back soon!" });
     } catch (e) {
@@ -213,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = useCallback(async (profileData: UserProfileUpdate): Promise<boolean> => {
     if (!auth.currentUser) {
-      console.error("[AuthContext] updateUserProfile called but no user is authenticated.");
+      console.error("[AuthContext] updateUserProfile called but no user is authenticated (SDK check).");
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile.", variant: "destructive" });
       return false;
     }
@@ -221,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[AuthContext] Attempting to update Firebase Auth profile for user: ${userId} with data:`, profileData);
     try {
       await firebaseUpdateProfile(auth.currentUser, profileData);
-      setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
+      setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null); // Refresh context user
       console.log(`[AuthContext] Firebase Auth profile updated successfully for user: ${userId}`);
       return true;
     } catch (e) {
@@ -234,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserPhotoURL = useCallback(async (photoFile: File): Promise<string | null> => {
     if (!auth.currentUser) {
-      console.error("[AuthContext] updateUserPhotoURL called but no user is authenticated.");
+      console.error("[AuthContext] updateUserPhotoURL called but no user is authenticated (SDK check).");
       toast({ title: "Not Authenticated", description: "You must be logged in to update your profile picture.", variant: "destructive" });
       return null;
     }
@@ -274,12 +282,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const saveOtherProfileData = useCallback(async (data: Omit<OtherProfileData, 'firestoreUpdatedAt'>): Promise<boolean> => {
-    if (!auth.currentUser) {
-      console.error("[AuthContext] saveOtherProfileData called but no user is authenticated.");
+    const currentAuthUserFromSDK = auth.currentUser;
+    if (!currentAuthUserFromSDK) {
+      console.error("[AuthContext] saveOtherProfileData critical error: No authenticated user found via SDK check. Aborting save.");
       toast({ title: "Not Authenticated", description: "You must be logged in to save profile details.", variant: "destructive" });
       return false;
     }
-    const userId = auth.currentUser.uid;
+    const userId = currentAuthUserFromSDK.uid;
+    // Additional check against context user if available, for consistency, though SDK is the source of truth here
+    if (user && user.uid !== userId) {
+        console.warn(`[AuthContext] saveOtherProfileData: Context user (${user.uid}) mismatch with SDK user (${userId}). Proceeding with SDK user.`);
+    }
+
     const profileDocPath = `profiles/${userId}`;
     console.log(`[AuthContext] Attempting to SET doc: ${profileDocPath} for user ${userId} with data:`, data);
     try {
@@ -287,18 +301,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const dataToSave = { ...data, firestoreUpdatedAt: serverTimestamp() };
       await setDoc(profileDocRef, dataToSave, { merge: true });
       console.log(`[AuthContext] Other profile data saved for ${profileDocPath}. Fetching updated data.`);
-      await fetchOtherProfileData(userId);
+      // Trigger re-fetch of other profile data after saving
+      await fetchOtherProfileData(userId); // This will update the local state
       return true;
     } catch (e: any) {
       console.error(`[AuthContext] Firestore error in saveOtherProfileData for ${profileDocPath} (User: ${userId}):`, e.message, e.code, e);
-      toast({ title: "Profile Save Error", description: e.message || "Failed to save additional profile details.", variant: "destructive" });
+      if (e.code === 'permission-denied' || e.code === 7) {
+        toast({ title: "Profile Save Failed", description: "You don't have permission to save this profile data. Please check Firestore rules.", variant: "destructive" });
+      } else {
+        toast({ title: "Profile Save Error", description: e.message || "Failed to save additional profile details.", variant: "destructive" });
+      }
       return false;
     }
-  }, [toast, fetchOtherProfileData]);
+  }, [toast, fetchOtherProfileData, user]); // Added user to dependency array
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     if (!auth.currentUser || !auth.currentUser.email) {
-      console.error("[AuthContext] changePassword called but no user or user email is available.");
+      console.error("[AuthContext] changePassword called but no user or user email is available (SDK check).");
       toast({ title: "Not Authenticated", description: "You must be logged in to change your password.", variant: "destructive" });
       return false;
     }
@@ -330,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserEmailWithVerification = useCallback(async (currentPassword: string, newEmail: string): Promise<boolean> => {
     if (!auth.currentUser || !auth.currentUser.email) {
-      console.error("[AuthContext] updateUserEmailWithVerification called but no user or user email is available.");
+      console.error("[AuthContext] updateUserEmailWithVerification called but no user or user email is available (SDK check).");
       toast({ title: "Not Authenticated", description: "You must be logged in to change your email.", variant: "destructive" });
       return false;
     }
