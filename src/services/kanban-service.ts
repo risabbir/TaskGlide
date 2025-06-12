@@ -3,7 +3,7 @@
 /**
  * @fileOverview Firestore service for managing Kanban board data for authenticated users.
  */
-import { db, auth as firebaseAuth } from '@/lib/firebase'; 
+import { db, auth as firebaseAuth } from '@/lib/firebase';
 import type { Task, Column as ColumnType, TaskForFirestore, ColumnForFirestore, Priority } from '@/lib/types';
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { formatISO, parseISO as dateFnsParseISO } from 'date-fns';
@@ -32,7 +32,7 @@ const parseTaskFromFirestore = (taskData: any): Task => ({
   dueDate: parseTaskDateFromFirestore(taskData.dueDate),
   createdAt: parseTaskDateFromFirestore(taskData.createdAt) || new Date(),
   updatedAt: parseTaskDateFromFirestore(taskData.updatedAt) || new Date(),
-  priority: PRIORITIES.includes(taskData.priority as Priority) ? taskData.priority as Priority : 'medium', 
+  priority: PRIORITIES.includes(taskData.priority as Priority) ? taskData.priority as Priority : 'medium',
   subtasks: taskData.subtasks || [],
   dependencies: taskData.dependencies || [],
   tags: taskData.tags || [],
@@ -49,14 +49,19 @@ interface UserKanbanDataFromFirestore {
 }
 
 export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]; columns: ColumnType[] } | null> {
-  console.log(`[KanbanService] getUserKanbanData called for userId: ${userId}`);
   const currentSdkUser = firebaseAuth.currentUser;
+  console.log(`[KanbanService] getUserKanbanData called for userId: ${userId}. SDK currentUser: ${currentSdkUser?.uid}, email: ${currentSdkUser?.email}`);
+
   if (!userId || typeof userId !== 'string' || userId.trim() === '' ) {
     console.error(`[KanbanService] getUserKanbanData error: Invalid userId provided: '${userId}'.`);
-    return null; 
+    return null;
   }
   if (!currentSdkUser || currentSdkUser.uid !== userId) {
      console.error(`[KanbanService] getUserKanbanData critical error: SDK User ID mismatch or null. Service UserID: ${userId}, SDK UserID: ${currentSdkUser?.uid}. Aborting fetch.`);
+     // This case should ideally be prevented by the calling context (e.g., AuthProvider or KanbanProvider)
+     // which should ensure `userId` matches `currentSdkUser.uid` before calling.
+     // Throwing an error here might be too aggressive if the caller has specific fallback logic.
+     // For now, returning null as per original logic, but logging the severity.
      return null;
   }
 
@@ -87,7 +92,7 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
     };
   } catch (error: any) {
     console.error(`[KanbanService] Firestore error in GET operation for ${docPath} (User: ${userId}):`, error.message, error.code, error);
-    throw error; 
+    throw error;
   }
 }
 
@@ -96,27 +101,30 @@ export async function saveUserKanbanData(
   tasks: TaskForFirestore[],
   columns: ColumnForFirestore[]
 ): Promise<void> {
-  console.log(`[KanbanService] saveUserKanbanData called for userId: ${userId}. Tasks count: ${tasks.length}, Columns count: ${columns.length}`);
+  const currentSdkUser = firebaseAuth.currentUser;
+  console.log(`[KanbanService] saveUserKanbanData called for userId: ${userId}. SDK currentUser: ${currentSdkUser?.uid}, email: ${currentSdkUser?.email}. Tasks count: ${tasks.length}, Columns count: ${columns.length}`);
+
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
     console.error(`[KanbanService] saveUserKanbanData error: Invalid userId provided: '${userId}'. Aborting save.`);
     throw new Error("Invalid user ID provided for saving Kanban data.");
   }
-  // SDK user check should be done by the caller (KanbanProvider) to handle UI/toast appropriately.
+  // It's crucial that the calling context (KanbanProvider) ensures that `userId` matches `currentSdkUser.uid`.
+  // If they don't match, Firestore rules will likely deny the write anyway.
 
   const docPath = `userKanbanData/${userId}`;
   console.log(`[KanbanService] Attempting to SET doc: ${docPath} for user: ${userId} with ${tasks.length} tasks.`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
-    const dataToSave: UserKanbanDataFromFirestore = { 
+    const dataToSave: UserKanbanDataFromFirestore = {
       tasks: tasks,
       columns: columns,
-      firestoreLastUpdated: serverTimestamp() as Timestamp, 
+      firestoreLastUpdated: serverTimestamp() as Timestamp,
     };
     await setDoc(docRef, dataToSave);
     console.log(`[KanbanService] Successfully saved Kanban data for ${docPath} (User: ${userId})`);
   } catch (error: any) {
     console.error(`[KanbanService] Firestore error in SET operation for ${docPath} (User: ${userId}):`, error.message, error.code, error);
-    throw error; 
+    throw error;
   }
 }
 

@@ -16,11 +16,11 @@ This application uses Firebase for backend services including Authentication, Fi
     *   Create a new project. If you desire a specific Project ID (e.g., `taskglide-app`), ensure it's available and set it during project creation. Remember, Project IDs are immutable.
     *   Enable the following services in your Firebase project:
         *   Authentication (with Email/Password sign-in method)
-        *   Firestore Database
+        *   Firestore Database (Choose **Native mode**)
         *   Storage (You may need to upgrade to the Blaze plan - pay-as-you-go, but with a generous free tier - to enable Storage. You'll be prompted if this is necessary.)
 
 2.  **Configure Environment Variables for Firebase:**
-    *   In your Firebase project settings, find your web app's Firebase configuration (the `firebaseConfig` object).
+    *   In your Firebase project settings (Project Overview -> Project settings -> General tab, scroll down to "Your apps"), find your web app's Firebase configuration (the `firebaseConfig` object). If no web app exists, create one.
     *   Create a `.env` file in the root of this Next.js project if it doesn't exist.
     *   Add your Firebase project's credentials to the `.env` file. It should look like this (replace placeholders with your actual values):
 
@@ -33,62 +33,65 @@ This application uses Firebase for backend services including Authentication, Fi
     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id_here (optional)
     ```
-    *   **Replace `your_project_id_here` with your actual Firebase Project ID (e.g., `taskglide-app`).**
-    *   Replace the other placeholder values with your actual credentials.
+    *   **Replace `your_project_id_here` with your actual Firebase Project ID (e.g., `taskglide-app`). This is CRITICAL.**
+    *   Replace the other placeholder values with your actual credentials from the `firebaseConfig` object.
     *   **Important:** After creating or modifying the `.env` file, you **must restart your Next.js development server** for the changes to take effect (`npm run dev`).
 
-3.  **Enable Sign-In Providers:**
-    *   In the Firebase console, go to **Authentication** -> **Sign-in method**.
-    *   **Email/Password:** Ensure this is enabled (it usually is by default if you selected Authentication during project setup).
-    *   **Google:**
-        *   Click on "Google" in the list of providers.
-        *   Enable the provider.
-        *   You **must** select a **Project support email**. If this is not set, Google Sign-In will fail.
-        *   Save the changes.
+3.  **Enable Email/Password Sign-In Provider:**
+    *   In the Firebase console, go to **Authentication** (Build menu) -> **Sign-in method** tab.
+    *   Click on **Email/Password** in the list of providers.
+    *   Enable the provider (toggle it on).
+    *   Save the changes.
 
 4.  **Authorize Domains for Authentication:**
-    *   This is crucial for Google Sign-In and other OAuth providers.
-    *   In the Firebase console, go to **Authentication** -> **Settings** tab.
+    *   This is crucial for authentication flows, especially when using custom domains or during local development.
+    *   In the Firebase console, go to **Authentication** (Build menu) -> **Settings** tab.
     *   Under the **Authorized domains** section, click **Add domain**.
     *   **For local development:** Add `localhost`. (e.g., if your app runs on `http://localhost:9002`, add `localhost`).
-    *   **For deployed app:** Your Firebase Hosting domains (e.g., `your-project-id.web.app`, `your-project-id.firebaseapp.com`) are typically added automatically when you enable a provider or set up hosting. However, if you see `auth/unauthorized-domain`, verify they are listed here. If deploying to a custom domain or another platform, you must add your live domain here.
+    *   **For deployed app:** Your Firebase Hosting domains (e.g., `your-project-id.web.app`, `your-project-id.firebaseapp.com`) are typically added automatically. However, if you encounter `auth/unauthorized-domain` errors, verify they are listed here. If deploying to a custom domain or another platform, you must add your live domain here.
     *   This step is critical to resolve `auth/unauthorized-domain` errors.
 
-5.  **Security Rules:**
-    *   **Firestore:** Set appropriate security rules for your Firestore database. Go to Firestore Database -> Rules in the Firebase console.
-        *Example (allow read/write if authenticated for specific paths):*
+5.  **Security Rules (CRITICAL for Data Persistence):**
+    *   **Firestore:** Set appropriate security rules for your Firestore database. Go to **Firestore Database** (Build menu) -> **Rules** tab in the Firebase console.
+        *Replace the default rules with the following:*
         ```rules
         rules_version = '2';
         service cloud.firestore {
           match /databases/{database}/documents {
-            // Allow access to user-specific kanban data and profile data if authenticated
+            // Allow a user to read and write their own kanban data document.
+            // The document ID {userId} must match the authenticated user's UID.
             match /userKanbanData/{userId} {
               allow read, write: if request.auth != null && request.auth.uid == userId;
             }
+            // Allow a user to read and write their own profile document.
             match /profiles/{userId} {
-              allow read: if request.auth != null; // Or more restrictive if needed
-              allow write: if request.auth != null && request.auth.uid == userId;
+              allow read, write: if request.auth != null && request.auth.uid == userId;
             }
           }
         }
         ```
-    *   **Storage:** Set security rules for Firebase Storage, especially for profile pictures. Go to Storage -> Rules in the Firebase console.
+    *   **Storage:** Set security rules for Firebase Storage, especially for profile pictures. Go to **Storage** (Build menu) -> **Rules** tab in the Firebase console.
         *Example (for profile pictures):*
         ```rules
         rules_version = '2';
         service firebase.storage {
           match /b/{bucket}/o {
+            // Allow public read for profile pictures, but only authenticated user can write to their own path.
             match /profile-pictures/{userId}/{fileName} {
-              allow read: if true; // Or if request.auth != null for private images
+              allow read: if true; // Or `if request.auth != null;` for private images
               allow write: if request.auth != null && request.auth.uid == userId;
             }
           }
         }
         ```
-    *   Publish these rules in the Firebase console (Firestore -> Rules, and Storage -> Rules).
+    *   **Publish these rules** in the Firebase console for both Firestore and Storage. Changes can take a few minutes to propagate.
+    *   **If you still get PERMISSION_DENIED errors after setting these rules:**
+        *   Double-check that the `NEXT_PUBLIC_FIREBASE_PROJECT_ID` in your `.env` file matches the project ID where you are setting these rules.
+        *   Verify that the user is actually authenticated when the Firestore operation is attempted (check console logs from `AuthContext` and `KanbanProvider`).
+        *   Ensure the path being accessed (e.g., `userKanbanData/SOME_USER_ID`) correctly uses the authenticated user's UID as `SOME_USER_ID`.
 
 6.  **Authentication Email Templates:**
-    *   In the Firebase console, go to Authentication -> Templates.
+    *   In the Firebase console, go to Authentication (Build menu) -> Templates tab.
     *   Customize the email templates (e.g., Password Reset, Email Verification) to match your app's branding (e.g., change sender name from the default to "TaskGlide team").
 
 ## AI Features Setup (Genkit with Google AI)
@@ -108,50 +111,32 @@ This application uses Genkit to power its AI features (like suggesting task deta
     *   Restart your Next.js development server if it was running.
     *   The Genkit `googleAI` plugin will automatically use this environment variable.
 
-## Troubleshooting Google Sign-In Errors
+## Troubleshooting Authentication and Data Errors
 
-If you encounter errors specifically with Google Sign-In (e.g., "auth/operation-not-allowed", `auth/unauthorized-domain`, popup errors, or other "auth/..." codes):
+### Common Authentication Errors (`auth/...`)
 
-1.  **`auth/unauthorized-domain` Error (Even if `localhost` is added):**
-    *   This is the most common issue. If you've already added `localhost` to **Firebase Console -> Authentication -> Settings -> Authorized domains** and still see this error, check these:
-        *   **Firebase Console - Project Support Email (CRITICAL):**
-            *   Go to Firebase Console -> Authentication -> Sign-in method.
-            *   Click on the **Google** provider.
-            *   **Ensure a "Project support email" IS SELECTED** from the dropdown and saved. If this field is empty, Google Sign-In often fails, sometimes throwing `auth/unauthorized-domain` despite `localhost` being in the list.
-        *   **Google Cloud Platform (GCP) OAuth Consent Screen:**
-            *   Go to the [Google Cloud Console](https://console.cloud.google.com/).
-            *   Select the Google Cloud project linked to your Firebase project.
-            *   Navigate to "APIs & Services" -> "OAuth consent screen".
-            *   **Publishing status:** Make sure it's **"Published"**. If it's "Testing," only explicitly listed test users can sign in.
-            *   **User type:** For most apps, this will be "External".
-            *   **Authorized domains (GCP OAuth):** Verify this list in GCP. While Firebase usually syncs `your-project-id.firebaseapp.com`, ensure `localhost` isn't explicitly needed here too for some edge cases or if the sync failed.
+*   **`auth/unauthorized-domain`:**
+    *   Ensure `localhost` (for development) and your production domain are listed in **Firebase Console -> Authentication -> Settings -> Authorized domains**.
+*   **`auth/operation-not-allowed` (for Email/Password):**
+    *   Ensure the **Email/Password** provider is **Enabled** in **Firebase Console -> Authentication -> Sign-in method**.
+*   **`auth/network-request-failed`:**
+    *   Check your internet connection.
+    *   Verify Firebase services are not down ([Firebase Status Dashboard](https://status.firebase.google.com/)).
+    *   Browser extensions (ad blockers) or VPNs might interfere.
+*   **General:**
+    *   Confirm `.env` variables (`NEXT_PUBLIC_FIREBASE_...`) are correct for the Firebase project you're configuring.
+    *   **Restart your Next.js dev server** after any `.env` changes.
+    *   Check browser console for more detailed Firebase error messages.
 
-2.  **Check Firebase Console Configuration (General):**
-    *   Go to your Firebase Project -> Authentication -> Sign-in method.
-    *   Ensure **Google** is **Enabled**.
-    *   Re-confirm the **Project support email** is selected for the Google provider.
+### Firestore `PERMISSION_DENIED` Errors (Data not saving/loading)
 
-3.  **Check API Key Restrictions (if any):**
-    *   In Google Cloud Console -> APIs & Services -> Credentials.
-    *   Find the API key used by your web app (usually "Browser key (auto created by Firebase)").
-    *   If you have restrictions:
-        *   Ensure "Identity Toolkit API" (Firebase Authentication API) is enabled under "API restrictions".
-        *   Under "Application restrictions" (Website restrictions), if you use `http://localhost:<YOUR_PORT>`, ensure that specific entry is allowed, or try a wildcard like `http://localhost:*`.
-
-4.  **Verify `.env` Variables & Restart Server:**
-    *   Double-check that all `NEXT_PUBLIC_FIREBASE_...` variables in your `.env` file are correct and correspond to the Firebase project where you enabled Google Sign-In and authorized `localhost`.
-    *   **Crucially, restart your Next.js development server** (`npm run dev`) after any changes to `.env`.
-
-5.  **Browser Issues:**
-    *   Ensure your browser is not blocking pop-ups from `localhost` or your Firebase auth domain (`<YOUR_PROJECT_ID>.firebaseapp.com`).
-    *   Try clearing your browser's cache and cookies for `localhost`.
-    *   **Test in an incognito/private window** to rule out extension conflicts or stale cached data.
-
-6.  **Firebase Project Billing:**
-    *   While basic Firebase Auth is free, ensure your Firebase project is in good standing (e.g., if linked to a GCP project, billing is active if you're using paid services). Unlikely to cause `auth/unauthorized-domain` directly but worth a check if all else fails.
-
-If errors persist after checking these, inspect the browser's developer console for more detailed error messages from Firebase, which often provide specific error codes beyond the general one you see.
-
+This is almost always due to **Firestore Security Rules**.
+1.  **Verify Rules:** Ensure the rules in **Firebase Console -> Firestore Database -> Rules** tab are correctly set as per Section 5 of this README.
+2.  **Correct Project:** Double-check that `NEXT_PUBLIC_FIREBASE_PROJECT_ID` in your `.env` file matches the project where you're setting the rules.
+3.  **User Authentication:** The rules require a user to be authenticated (`request.auth != null`) and that their UID (`request.auth.uid`) matches the `{userId}` in the document path (e.g., `userKanbanData/ACTUAL_USER_ID`).
+    *   Use your browser's developer console to check logs from `AuthContext` and `KanbanProvider`. They now output detailed information about the user's authentication state and the IDs being used during Firestore operations, especially when a permission error occurs. This can help identify if the user is unexpectedly `null` or if there's an ID mismatch.
+4.  **Publish and Wait:** After updating rules, click "Publish". It might take a few minutes for changes to take effect.
+5.  **Firebase Project Billing (Blaze Plan):** While the free "Spark" plan is usually sufficient for development, if you are on the "Blaze" (pay-as-you-go) plan, ensure billing is active for your Google Cloud project associated with Firebase. Firestore operations might be restricted if billing fails, though this usually results in errors other than `PERMISSION_DENIED`.
 
 ## Development
 

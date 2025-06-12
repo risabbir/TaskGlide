@@ -59,7 +59,6 @@ interface AuthContextType {
   otherProfileDataLoading: boolean;
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
-  // Removed: signInWithGoogle
   signOut: () => Promise<void>;
   startNewGuestSession: () => void;
   resetPassword: (email: string) => Promise<boolean>;
@@ -84,16 +83,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isGuest = !!guestId && !user;
 
-  const handleFirestorePermissionError = (operation: string, error: any, path: string) => {
+  const handleFirestorePermissionError = (operation: string, path: string, error: any, contextUserId?: string | null, sdkUserId?: string | null, sdkUserEmail?: string | null) => {
+    const detailedMessage = `Could not ${operation} profile data for path "${path}". This is likely due to Firestore security rules. Please ensure rules allow access for authenticated users. (Error code: ${error.code || 'UNKNOWN'})
+    \nContext User ID: ${contextUserId || 'N/A'}
+    \nSDK User ID: ${sdkUserId || 'N/A'} (Email: ${sdkUserEmail || 'N/A'})`;
+
     console.error(`[AuthContext] Firestore PERMISSION_DENIED during ${operation} for path "${path}":`, error.message, error.code, error);
     toast({
       title: `Profile Data Access Error (${operation})`,
-      description: `Could not ${operation.toLowerCase()} profile data. This is likely due to Firestore security rules. Please ensure rules allow access to "${path}" for authenticated users. (Error: ${error.code || 'UNKNOWN'})`,
+      description: detailedMessage,
       variant: "destructive",
       duration: 10000,
     });
   };
-  
+
   const ensureUserProfileDocument = useCallback(async (firebaseUser: FirebaseUser) => {
     const profileDocPath = `profiles/${firebaseUser.uid}`;
     console.log(`[AuthContext] ensureUserProfileDocument: Checking/creating profile for ${profileDocPath}.`);
@@ -104,23 +107,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log(`[AuthContext] ensureUserProfileDocument: No profile found for ${firebaseUser.uid}. Creating initial profile document.`);
         await setDoc(profileDocRef, {
           ...initialOtherProfileData,
-          displayName: firebaseUser.displayName || "", // Initialize with display name from Firebase Auth if available
+          displayName: firebaseUser.displayName || "",
           firestoreUpdatedAt: serverTimestamp()
         });
         console.log(`[AuthContext] ensureUserProfileDocument: Initial profile document created for ${profileDocPath}.`);
-        return { ...initialOtherProfileData, displayName: firebaseUser.displayName || "" }; 
+        return { ...initialOtherProfileData, displayName: firebaseUser.displayName || "" };
       } else {
         console.log(`[AuthContext] ensureUserProfileDocument: Profile document already exists for ${profileDocPath}.`);
-        return docSnap.data() as OtherProfileData; 
+        return docSnap.data() as OtherProfileData;
       }
     } catch (profileError: any) {
+      const currentSDKUser = auth.currentUser;
       if (profileError.code === 'permission-denied' || profileError.code === 7) {
-        handleFirestorePermissionError('ensure/create profile', profileError, profileDocPath);
+        console.error(`[AuthContext] ensureUserProfileDocument PERMISSION_DENIED: Attempted for firebaseUser.uid: ${firebaseUser.uid}. SDK current user ID: ${currentSDKUser?.uid}. SDK user email: ${currentSDKUser?.email}.`);
+        handleFirestorePermissionError('ensure/create profile', profileError, profileDocPath, firebaseUser.uid, currentSDKUser?.uid, currentSDKUser?.email);
       } else {
         console.error(`[AuthContext] ensureUserProfileDocument: Firestore error for ${profileDocPath}:`, profileError.message, profileError.code, profileError);
         toast({ title: "Profile Sync Error", description: "Could not ensure user profile data exists.", variant: "destructive" });
       }
-      return null; 
+      return null;
     }
   }, [toast]);
 
@@ -153,13 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setOtherProfileData(ensuredData || initialOtherProfileData);
       }
     } catch (err: any) {
-      if (err.code === 'permission-denied' || err.code === 7) { 
-        handleFirestorePermissionError('fetch', err, profileDocPath);
+      if (err.code === 'permission-denied' || err.code === 7) {
+        console.error(`[AuthContext] fetchOtherProfileData PERMISSION_DENIED: Attempted for userIdToFetch: ${userIdToFetch}. SDK current user ID: ${currentSdkUser?.uid}. SDK user email: ${currentSdkUser?.email}.`);
+        handleFirestorePermissionError('fetch', profileDocPath, err, userIdToFetch, currentSdkUser?.uid, currentSdkUser?.email);
       } else {
         console.error(`[AuthContext] Firestore error in fetchOtherProfileData for ${profileDocPath} (User: ${userIdToFetch}):`, err.message, err.code, err);
         toast({ title: "Profile Data Error", description: `Could not load additional profile details. Error: ${err.message}`, variant: "destructive" });
       }
-      setOtherProfileData(initialOtherProfileData); 
+      setOtherProfileData(initialOtherProfileData);
     } finally {
       setOtherProfileDataLoading(false);
     }
@@ -171,8 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         console.log(`[AuthContext] onAuthStateChanged: User signed IN. UID: ${firebaseUser.uid}. Clearing guest session.`);
         setUser({ ...firebaseUser } as FirebaseUser);
-        setGuestId(null); 
-        localStorage.removeItem(GUEST_ID_STORAGE_KEY); 
+        setGuestId(null);
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
         await fetchOtherProfileData(firebaseUser.uid);
       } else {
         console.log("[AuthContext] onAuthStateChanged: User signed OUT or initial load without auth. Checking for existing guest session.");
@@ -182,9 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log(`[AuthContext] Restored guest session ID: ${storedGuestId}`);
             setGuestId(storedGuestId);
         } else {
-            setGuestId(null); 
+            setGuestId(null);
         }
-        setOtherProfileData(null); 
+        setOtherProfileData(null);
         setOtherProfileDataLoading(false);
       }
       setInitialLoading(false);
@@ -200,10 +206,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newGuestId = `guest-${crypto.randomUUID().substring(0, 8)}`;
     setGuestId(newGuestId);
     localStorage.setItem(GUEST_ID_STORAGE_KEY, newGuestId);
-    setUser(null); 
+    setUser(null);
     setOtherProfileData(null);
     setOtherProfileDataLoading(false);
-    setInitialLoading(false); 
+    setInitialLoading(false);
     console.log(`[AuthContext] New guest session started with ID: ${newGuestId}. Navigating to home.`);
     router.push('/');
   }, [router]);
@@ -215,13 +221,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       const newUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
       if (newUser) {
-        // Update Firebase Auth profile display name (optional, can be done in ProfileForm)
-        // await firebaseUpdateProfile(newUser, { displayName: "New User" }); // Example
-        // setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
-        
-        setGuestId(null); 
+        setGuestId(null);
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-        await ensureUserProfileDocument(newUser); 
+        await ensureUserProfileDocument(newUser);
       }
       toast({ title: "Account Created!", description: `Welcome to ${APP_NAME}! You're all set.` });
       return newUser;
@@ -248,9 +250,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, pass);
       const signedInUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
       if (signedInUser) {
-        setGuestId(null); 
+        setGuestId(null);
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-        await fetchOtherProfileData(signedInUser.uid); 
+        await fetchOtherProfileData(signedInUser.uid);
       }
       toast({ title: "Signed In Successfully", description: `Welcome back to ${APP_NAME}!` });
       return signedInUser;
@@ -274,8 +276,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
       console.log(`[AuthContext] User ${currentUid} signed out successfully (request initiated). Clearing guest session info.`);
-      setGuestId(null); 
-      localStorage.removeItem(GUEST_ID_STORAGE_KEY); 
+      setGuestId(null);
+      localStorage.removeItem(GUEST_ID_STORAGE_KEY);
       toast({ title: "Signed Out", description: "You have successfully signed out. Come back soon!" });
     } catch (e) {
       const authError = e as AuthError;
@@ -379,11 +381,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const dataToSave = { ...data, firestoreUpdatedAt: serverTimestamp() };
       await setDoc(profileDocRef, dataToSave, { merge: true });
       console.log(`[AuthContext] Other profile data saved for ${profileDocPath}. Fetching updated data.`);
-      await fetchOtherProfileData(userId); 
+      await fetchOtherProfileData(userId);
       return true;
     } catch (e: any) {
-      if (e.code === 'permission-denied' || e.code === 7) { 
-        handleFirestorePermissionError('save', e, profileDocPath);
+      if (e.code === 'permission-denied' || e.code === 7) {
+        console.error(`[AuthContext] saveOtherProfileData PERMISSION_DENIED: Attempted for userId: ${userId}. SDK current user ID: ${currentSdkUser?.uid}. SDK user email: ${currentSdkUser?.email}.`);
+        handleFirestorePermissionError('save', profileDocPath, e, userId, currentSdkUser?.uid, currentSdkUser?.email);
       } else {
         console.error(`[AuthContext] Firestore error in saveOtherProfileData for ${profileDocPath} (User: ${userId}):`, e.message, e.code, e);
         toast({ title: "Profile Save Error", description: e.message || "Failed to save additional profile details.", variant: "destructive" });
@@ -473,7 +476,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     otherProfileDataLoading,
     signUp,
     signIn,
-    // Removed: signInWithGoogle,
     signOut,
     startNewGuestSession,
     resetPassword,
