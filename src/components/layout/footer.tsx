@@ -13,7 +13,7 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold text-primary mb-3">{APP_NAME}</h3>
             <p className="text-sm text-muted-foreground">
-              Organize your life, one task at a time. TaskGlide helps you stay productive and focused.
+              Organize your life, one task at a time. {APP_NAME} helps you stay productive and focused.
             </p>
           </div>
           <div>
@@ -44,7 +44,7 @@ export function Footer() {
             &copy; {currentYear} {APP_NAME}. All Rights Reserved.
           </p>
           <p className="mt-1">
-            Lovingly crafted by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a> with assistance from AI.
+            Lovingly crafted by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a> with assistance from Firebase Studio, powered by Gemini.
           </p>
         </div>
       </div>
