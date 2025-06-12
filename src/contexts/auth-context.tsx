@@ -21,9 +21,7 @@ import {
   reauthenticateWithCredential,
   updatePassword as firebaseUpdatePassword,
   verifyBeforeUpdateEmail,
-  GoogleAuthProvider,
-  signInWithPopup,
-  getAdditionalUserInfo
+  // Removed: GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo
 } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -61,7 +59,7 @@ interface AuthContextType {
   otherProfileDataLoading: boolean;
   signUp: (email: string, pass: string) => Promise<FirebaseUser | null>;
   signIn: (email: string, pass: string) => Promise<FirebaseUser | null>;
-  signInWithGoogle: () => Promise<FirebaseUser | null>;
+  // Removed: signInWithGoogle
   signOut: () => Promise<void>;
   startNewGuestSession: () => void;
   resetPassword: (email: string) => Promise<boolean>;
@@ -106,10 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log(`[AuthContext] ensureUserProfileDocument: No profile found for ${firebaseUser.uid}. Creating initial profile document.`);
         await setDoc(profileDocRef, {
           ...initialOtherProfileData,
+          displayName: firebaseUser.displayName || "", // Initialize with display name from Firebase Auth if available
           firestoreUpdatedAt: serverTimestamp()
         });
         console.log(`[AuthContext] ensureUserProfileDocument: Initial profile document created for ${profileDocPath}.`);
-        return initialOtherProfileData; 
+        return { ...initialOtherProfileData, displayName: firebaseUser.displayName || "" }; 
       } else {
         console.log(`[AuthContext] ensureUserProfileDocument: Profile document already exists for ${profileDocPath}.`);
         return docSnap.data() as OtherProfileData; 
@@ -216,6 +215,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
       const newUser = userCredential.user ? { ...userCredential.user } as FirebaseUser : null;
       if (newUser) {
+        // Update Firebase Auth profile display name (optional, can be done in ProfileForm)
+        // await firebaseUpdateProfile(newUser, { displayName: "New User" }); // Example
+        // setUser(auth.currentUser ? { ...auth.currentUser } as FirebaseUser : null);
+        
         setGuestId(null); 
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
         await ensureUserProfileDocument(newUser); 
@@ -264,54 +267,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setInitialLoading(false);
     }
   }, [toast, fetchOtherProfileData]);
-
-  const signInWithGoogle = useCallback(async (): Promise<FirebaseUser | null> => {
-    console.log("[AuthContext] Attempting Google sign-in.");
-    const provider = new GoogleAuthProvider();
-    setInitialLoading(true);
-    try {
-      const result: UserCredential = await signInWithPopup(auth, provider);
-      const socialUser = result.user ? { ...result.user } as FirebaseUser : null;
-
-      if (socialUser) {
-        setGuestId(null);
-        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-        
-        const additionalUserInfo = getAdditionalUserInfo(result);
-        if (additionalUserInfo?.isNewUser) {
-          console.log(`[AuthContext] New user signed in with Google. Ensuring profile document.`);
-          await ensureUserProfileDocument(socialUser);
-        } else {
-          console.log(`[AuthContext] Existing user signed in with Google. Fetching profile.`);
-          await fetchOtherProfileData(socialUser.uid);
-        }
-        toast({ title: "Signed In Successfully!", description: `Welcome to ${APP_NAME}!` });
-        router.push("/");
-        return socialUser;
-      }
-      return null; // Should not happen if result.user is present
-    } catch (e) {
-      const authError = e as AuthError;
-      console.error(`[AuthContext] Google sign-in error:`, authError.message, authError.code, authError);
-      let message = `Failed to sign in with Google. Please try again. (Code: ${authError.code || 'unknown'})`;
-      if (authError.code === 'auth/account-exists-with-different-credential') {
-        message = `An account already exists with this email address using a different sign-in method. Try signing in with that method.`;
-      } else if (authError.code === 'auth/popup-closed-by-user') {
-        message = `Sign-in popup was closed before completion. Please try again.`;
-      } else if (authError.code === 'auth/cancelled-popup-request') {
-         message = `Multiple sign-in attempts detected. Please try again.`;
-      } else if (authError.code === 'auth/popup-blocked-by-browser') {
-        message = `The sign-in popup was blocked by your browser. Please allow popups for this site and try again.`;
-      } else if (authError.code === 'auth/operation-not-allowed') {
-        message = `Google Sign-In is not enabled for this app. Please ensure it's configured correctly in the Firebase console.`;
-      }
-      toast({ title: "Google Sign-In Error", description: message, variant: "destructive", duration: 8000 });
-      return null;
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [ensureUserProfileDocument, fetchOtherProfileData, toast, router]);
-
 
   const signOut = useCallback(async () => {
     const currentUid = auth.currentUser?.uid;
@@ -518,7 +473,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     otherProfileDataLoading,
     signUp,
     signIn,
-    signInWithGoogle,
+    // Removed: signInWithGoogle,
     signOut,
     startNewGuestSession,
     resetPassword,

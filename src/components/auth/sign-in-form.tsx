@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, User, Chrome } from "lucide-react"; 
+import { Loader2, Eye, EyeOff, User } from "lucide-react"; 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -32,7 +32,7 @@ const signInSchema = z.object({
 type SignInFormData = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn, signInWithGoogle, loading, startNewGuestSession } = useAuth();
+  const { signIn, loading, startNewGuestSession } = useAuth(); // Removed signInWithGoogle
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -56,18 +56,13 @@ export function SignInForm() {
     router.push("/"); 
   };
 
-  const handleGoogleSignIn = async () => {
-    const user = await signInWithGoogle();
-    if (user) {
-      router.push("/");
-    }
-  };
+  // Removed handleGoogleSignIn
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Sign In</CardTitle>
-        <CardDescription>Enter your credentials to access your account, or use Google Sign-In.</CardDescription>
+        <CardDescription>Enter your credentials to access your account.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -133,10 +128,6 @@ export function SignInForm() {
                 OR
               </span>
             </div>
-
-            <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
-                <Chrome className="mr-2 h-4 w-4" /> Sign in with Google
-            </Button>
             
             <Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin} disabled={loading}>
               <User className="mr-2 h-4 w-4" />

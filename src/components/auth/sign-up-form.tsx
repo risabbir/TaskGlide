@@ -17,10 +17,10 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, Chrome } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react"; // Removed Chrome icon
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
-import { Separator } from "@/components/ui/separator";
+// Removed Separator, it wasn't used if there's only one main action.
 
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address.").min(1, "Email is required."),
@@ -34,7 +34,7 @@ const signUpSchema = z.object({
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
-  const { signUp, signInWithGoogle, loading } = useAuth();
+  const { signUp, loading } = useAuth(); // Removed signInWithGoogle
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -55,18 +55,13 @@ export function SignUpForm() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    const user = await signInWithGoogle();
-    if (user) {
-      router.push("/");
-    }
-  };
+  // Removed handleGoogleSignIn
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">Create an Account</CardTitle>
-        <CardDescription>Enter your details or use Google Sign-Up to get started.</CardDescription>
+        <CardDescription>Enter your details to get started.</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -151,16 +146,7 @@ export function SignUpForm() {
               Sign Up with Email
             </Button>
 
-            <div className="relative w-full my-1">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                OR
-              </span>
-            </div>
-            
-            <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
-                <Chrome className="mr-2 h-4 w-4" /> Sign up with Google
-            </Button>
+            {/* Removed Google Sign Up Button and Separator */}
 
             <div className="text-center text-sm text-muted-foreground mt-2">
               Already have an account?{" "}
