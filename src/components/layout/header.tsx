@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { APP_NAME } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface HeaderProps {
   children?: ReactNode; 
@@ -33,7 +34,7 @@ interface HeaderProps {
 
 export function Header({ children }: HeaderProps) {
   const { dispatch, state } = useKanban();
-  const { filters } = state; // Use filters directly from state
+  const { filters } = state;
   const { user, signOut, loading: authLoading, guestId, isGuest } = useAuth();
   
   const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters.searchTerm ?? "");
@@ -41,7 +42,6 @@ export function Header({ children }: HeaderProps) {
   const [modalSearchTerm, setModalSearchTerm] = useState(filters.searchTerm ?? "");
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Effect to synchronize local desktopSearchTerm from global filters.searchTerm
   useEffect(() => {
     if (filters.searchTerm !== desktopSearchTerm) {
       setDesktopSearchTerm(filters.searchTerm ?? "");
@@ -49,7 +49,6 @@ export function Header({ children }: HeaderProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.searchTerm]);
 
-  // Effect to synchronize local modalSearchTerm from global filters.searchTerm when modal opens or filter changes
   useEffect(() => {
     if (isSearchModalOpen) {
       if (filters.searchTerm !== modalSearchTerm) {
@@ -59,17 +58,15 @@ export function Header({ children }: HeaderProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.searchTerm, isSearchModalOpen]);
 
-  // Effect for debouncing desktopSearchTerm changes and dispatching to global state
   useEffect(() => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     debounceTimeoutRef.current = setTimeout(() => {
-      // Only dispatch if the local term is different from the global one
       if (desktopSearchTerm !== filters.searchTerm) {
         dispatch({ type: "SET_FILTERS", payload: { searchTerm: desktopSearchTerm } });
       }
-    }, 300); // Debounce time
+    }, 300);
 
     return () => {
       if (debounceTimeoutRef.current) {
@@ -77,7 +74,7 @@ export function Header({ children }: HeaderProps) {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [desktopSearchTerm, dispatch]); // Only depends on local search term and dispatch
+  }, [desktopSearchTerm, dispatch]);
 
 
   const handleDesktopSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,9 +82,9 @@ export function Header({ children }: HeaderProps) {
   };
 
   const clearDesktopSearch = () => {
-    setDesktopSearchTerm(""); // Update local UI immediately
-    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }); // Dispatch global update immediately
-    if (debounceTimeoutRef.current) { // Clear any pending debounce operations
+    setDesktopSearchTerm(""); 
+    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } }); 
+    if (debounceTimeoutRef.current) { 
       clearTimeout(debounceTimeoutRef.current);
     }
   };
@@ -98,10 +95,9 @@ export function Header({ children }: HeaderProps) {
   
   const handleModalSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    if (debounceTimeoutRef.current) { // Clear desktop debounce if modal is submitted
+    if (debounceTimeoutRef.current) { 
       clearTimeout(debounceTimeoutRef.current);
     }
-    // Dispatch the modal's current search term only if it's different
     if (modalSearchTerm !== filters.searchTerm) {
       dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
     }
@@ -127,26 +123,26 @@ export function Header({ children }: HeaderProps) {
         }
         return email.substring(0,1).toUpperCase();
     }
-    return "GU"; // Guest User fallback
+    return "G"; // Guest User fallback
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 shadow-sm">
         <div className="container px-2 sm:px-4 flex h-16 items-center justify-between gap-1 sm:gap-2">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center space-x-2">
-              <LayoutDashboard className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">{APP_NAME}</span>
+            <Link href="/" className="flex items-center space-x-2 group">
+              <LayoutDashboard className="h-7 w-7 text-primary transition-transform group-hover:rotate-[-5deg] group-hover:scale-105" />
+              <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">{APP_NAME}</span>
             </Link>
           </div>
 
           <form onSubmit={(e) => e.preventDefault()} className="relative hidden md:flex flex-grow max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               type="search"
               placeholder="Search tasks..."
-              className="pl-8 pr-8 h-9 w-full"
+              className="pl-10 pr-8 h-9 w-full rounded-lg text-sm"
               value={desktopSearchTerm}
               onChange={handleDesktopSearchChange}
             />
@@ -155,67 +151,64 @@ export function Header({ children }: HeaderProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-destructive"
                 onClick={clearDesktopSearch}
+                aria-label="Clear search"
               >
                 <XCircle className="h-4 w-4" />
-                <span className="sr-only">Clear search</span>
               </Button>
             )}
           </form>
 
-          <div className="flex items-center space-x-0.5 sm:space-x-1">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <Button variant="ghost" size="icon" onClick={() => {
-                // Sync modalSearchTerm with global filter when opening
                 setModalSearchTerm(filters.searchTerm ?? ""); 
                 setIsSearchModalOpen(true);
-            }} className="md:hidden h-9 w-9">
+            }} className="md:hidden h-9 w-9 text-muted-foreground hover:text-primary">
                 <Search className="h-5 w-5" />
                 <span className="sr-only">Search Tasks</span>
             </Button>
             
-            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2 sm:px-3 hidden md:inline-flex">
+            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2.5 sm:px-3 hidden md:inline-flex text-sm">
               <PlusCircle className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">New Task</span>
             </Button>
             
-            <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex" onClick={toggleFilterSidebar}>
+            <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex text-muted-foreground hover:text-primary hover:border-primary/50" onClick={toggleFilterSidebar}>
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Filters & Sort</span>
             </Button>
             
             <ThemeToggle />
 
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="flex items-center">
               {authLoading ? (
-                <div className="h-9 w-20 animate-pulse bg-muted rounded-md"></div> 
+                <Skeleton className="h-9 w-9 rounded-full" />
               ) : user ? (
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                      <Avatar className="h-8 w-8">
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                      <Avatar className="h-8 w-8 border-2 border-primary/30 hover:border-primary transition-colors">
                          <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
-                         <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
+                         <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">{getInitials(user.displayName, user.email)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.displayName || "User"}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
+                        <p className="text-sm font-medium leading-none truncate">{user.displayName || user.email || "User"}</p>
+                        {user.displayName && <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link href="/profile">
                         <UserCircle2 className="mr-2 h-4 w-4" />
-                        Profile
+                        Profile & Settings
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={signOut}>
+                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </DropdownMenuItem>
@@ -224,51 +217,49 @@ export function Header({ children }: HeaderProps) {
               ) : isGuest && guestId ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                      <Avatar className="h-8 w-8">
-                         <AvatarFallback><GuestIcon className="h-5 w-5" /></AvatarFallback>
+                     <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                      <Avatar className="h-8 w-8 border-2 border-muted hover:border-primary/50 transition-colors">
+                         <AvatarFallback className="bg-muted text-muted-foreground"><GuestIcon className="h-5 w-5" /></AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuContent className="w-60" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">Guest Session</p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                        <p className="text-xs leading-none text-muted-foreground truncate">
                           ID: {guestId}
                         </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
+                     <DropdownMenuItem asChild>
                       <Link href="/profile">
                         <UserCircle2 className="mr-2 h-4 w-4" />
-                        Guest Info
+                        Guest Info & Options
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                       <Link href="/auth/signin" className="w-full">
-                        <Button variant="outline" size="sm" className="w-full justify-start px-2 py-1.5 h-auto text-sm">
-                            <LogOut className="mr-2 h-4 w-4" /> Sign In
+                    <div className="p-1 space-y-1">
+                        <Button asChild size="sm" className="w-full justify-start text-sm">
+                           <Link href="/auth/signup">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Sign Up to Save Data
+                           </Link>
                         </Button>
-                       </Link>
-                    </DropdownMenuItem>
-                     <DropdownMenuItem asChild>
-                       <Link href="/auth/signup" className="w-full">
-                         <Button size="sm" className="w-full justify-start px-2 py-1.5 h-auto text-sm mt-1">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Sign Up to Save
-                         </Button>
-                        </Link>
-                    </DropdownMenuItem>
+                        <Button variant="outline" asChild size="sm" className="w-full justify-start text-sm">
+                           <Link href="/auth/signin">
+                                <LogIn className="mr-2 h-4 w-4" /> Log In to Existing Account
+                           </Link>
+                        </Button>
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3">
+                  <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3 text-sm">
                     <Link href="/auth/signin">Sign In</Link>
                   </Button>
-                  <Button size="sm" asChild className="px-2 sm:px-3">
+                  <Button size="sm" asChild className="px-2 sm:px-3 text-sm">
                     <Link href="/auth/signup">Sign Up</Link>
                   </Button>
                 </div>
@@ -281,15 +272,15 @@ export function Header({ children }: HeaderProps) {
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Search tasks...</DialogTitle>
+            <DialogTitle>Search Tasks</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleModalSearchSubmit} className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search tasks..."
-                className="pl-8 h-10 w-full"
+                className="pl-10 h-10 w-full text-base rounded-md"
                 value={modalSearchTerm}
                 onChange={handleModalSearchChange}
                 autoFocus
@@ -299,21 +290,18 @@ export function Header({ children }: HeaderProps) {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                  className="absolute right-1.5 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-destructive"
                   onClick={() => {
                     setModalSearchTerm(""); 
-                    // Optionally, dispatch clear immediately for modal, 
-                    // or let the main Search button handle it.
-                    // For consistency with desktop clear, let's also dispatch here:
                     dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
                   }}
+                  aria-label="Clear search"
                 >
                   <XCircle className="h-4 w-4" />
-                  <span className="sr-only">Clear search</span>
                 </Button>
               )}
             </div>
-            <DialogFooter className="sm:justify-end">
+            <DialogFooter className="sm:justify-end gap-2">
               <DialogClose asChild>
                 <Button type="button" variant="outline">
                   Cancel

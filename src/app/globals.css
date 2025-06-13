@@ -5,95 +5,98 @@
 
 @layer base {
   :root {
-    --background: 220 40% 98%; /* Very light cool gray - Preserved */
-    --foreground: 220 20% 25%; /* Dark desaturated blue-gray - Preserved */
+    --background: 213 33% 96%; /* Light gray, subtly blue (#F0F4F8) */
+    --foreground: 220 20% 25%; /* Dark desaturated blue-gray */
 
-    --card: 0 0% 100%; /* Preserved */
-    --card-foreground: 220 20% 25%; /* Preserved */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 220 20% 25%; /* Dark desaturated blue-gray */
 
-    --popover: 0 0% 100%; /* Preserved */
-    --popover-foreground: 220 20% 25%; /* Preserved */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 220 20% 25%; /* Dark desaturated blue-gray */
 
-    --primary: 215 65% 55%; /* REVERTED: Standard Blue */
-    --primary-foreground: 0 0% 100%; /* REVERTED: White text on primary */
+    --primary: 207 88% 68%; /* Soft blue (#64B5F6) */
+    --primary-foreground: 210 40% 98%; /* White for contrast on soft blue */
 
-    --secondary: 220 30% 92%; /* REVERTED: Muted light gray/blue */
-    --secondary-foreground: 220 10% 45%; /* REVERTED */
+    --secondary: 210 30% 90%; /* Lighter blue-gray for secondary elements */
+    --secondary-foreground: 220 10% 35%; /* Darker gray for text on secondary */
 
-    --muted: 220 30% 90%; /* Preserved */
-    --muted-foreground: 220 10% 45%; /* Preserved */
+    --muted: 210 30% 92%; /* Slightly lighter muted for less emphasis */
+    --muted-foreground: 210 15% 45%; /* Softer text for muted elements */
 
-    --accent: 215 70% 95%; /* NEW: Very Pale Blue (like 10% opacity primary) */
-    --accent-foreground: 215 60% 25%; /* NEW: Dark Blue for contrast on pale blue accent */
+    --accent: 45 100% 87%; /* Gentle yellow (#FFECB3) */
+    --accent-foreground: 50 60% 30%; /* Darker yellow/brown for text on accent */
 
-    --destructive: 0 75% 55%; /* Preserved */
-    --destructive-foreground: 0 0% 98%; /* Preserved */
+    --destructive: 0 75% 55%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
 
-    --border: 220 20% 88%; /* Lighter border - Preserved */
-    --input: 220 25% 92%; /* Lighter input - Preserved */
-    --ring: 215 65% 55%; /* REVERTED: Match new primary (Standard Blue) */
+    --border: 210 20% 85%; /* Softer border color */
+    --input: 210 25% 90%; /* Input background slightly off main background */
+    --ring: 207 88% 68%; /* Ring color matching primary */
 
-    --radius: 0.5rem; /* Preserved */
+    --radius: 0.5rem;
 
-    --chart-1: 215 65% 55%; /* REVERTED: Primary Blue */
-    --chart-2: 215 70% 95%; /* NEW: Match new Accent (Very Pale Blue) */
-    --chart-3: 30 80% 60%;  /* Warm Accent (Amber/Orange) - Preserved */
-    --chart-4: 260 60% 70%; /* Softer Purple - Preserved */
-    --chart-5: 340 70% 70%;   /* Softer Pink/Rose - Preserved */
+    /* Chart colors adjusted to fit the new theme */
+    --chart-1: 207 88% 68%; /* Primary Blue */
+    --chart-2: 45 100% 87%;  /* Accent Yellow */
+    --chart-3: 120 50% 65%; /* A gentle green */
+    --chart-4: 260 60% 75%; /* A soft purple */
+    --chart-5: 0 70% 70%;   /* A soft red/coral */
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%; /* Will take primary for focus if not overridden by component */
+    /* Sidebar specific theme variables, can be adjusted if a distinct sidebar theme is desired */
+    --sidebar-background: 213 33% 94%; /* Slightly darker than main bg */
+    --sidebar-foreground: 220 20% 25%;
+    --sidebar-primary: 207 88% 60%; /* Slightly darker primary for sidebar focus */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 30% 88%;
+    --sidebar-accent-foreground: 220 15% 30%;
+    --sidebar-border: 210 20% 80%;
+    --sidebar-ring: 207 88% 60%;
   }
 
   .dark {
-    --background: 220 15% 12%; /* Darker, cooler gray - Preserved */
-    --foreground: 210 30% 90%; /* Light gray text - Preserved */
+    --background: 220 15% 10%; /* Dark cool gray */
+    --foreground: 210 30% 90%; /* Light gray text */
 
-    --card: 220 15% 18%; /* Preserved */
-    --card-foreground: 210 30% 90%; /* Preserved */
+    --card: 220 15% 15%; /* Darker card background */
+    --card-foreground: 210 30% 90%; /* Light gray text on card */
 
-    --popover: 220 15% 10%; /* Preserved */
-    --popover-foreground: 210 30% 90%; /* Preserved */
+    --popover: 220 15% 8%; /* Even darker popover */
+    --popover-foreground: 210 30% 90%;
 
-    --primary: 215 65% 65%; /* REVERTED: Lighter standard blue for dark mode */
-    --primary-foreground: 210 40% 98%; /* REVERTED: Light text on dark primary */
+    --primary: 207 80% 72%; /* Lighter soft blue for dark mode */
+    --primary-foreground: 220 20% 15%; /* Dark text on light blue primary */
 
-    --secondary: 220 15% 25%; /* REVERTED: Darker muted gray/blue */
-    --secondary-foreground: 210 20% 70%; /* REVERTED */
+    --secondary: 220 15% 25%; /* Darker muted gray/blue */
+    --secondary-foreground: 210 20% 75%;
 
-    --muted: 220 15% 22%; /* Preserved */
-    --muted-foreground: 210 20% 65%; /* Preserved */
+    --muted: 220 15% 20%;
+    --muted-foreground: 210 20% 60%;
 
-    --accent: 215 35% 25%; /* NEW: Dark, Desaturated Blue for Dark Mode Accent */
-    --accent-foreground: 215 70% 85%; /* NEW: Light Blueish Gray for text on dark accent */
+    --accent: 45 70% 40%; /* Darker, desaturated yellow for dark mode accent */
+    --accent-foreground: 45 100% 90%; /* Light yellow text on dark accent */
 
-    --destructive: 0 65% 50%; /* Adjusted destructive for dark - Preserved */
-    --destructive-foreground: 0 0% 98%; /* Preserved */
+    --destructive: 0 65% 60%; /* Slightly brighter red for dark mode */
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 15% 30%; /* Preserved */
-    --input: 220 15% 28%; /* Preserved */
-    --ring: 215 65% 65%; /* REVERTED: Match new dark primary (Lighter standard blue) */
+    --border: 220 15% 28%;
+    --input: 220 15% 22%;
+    --ring: 207 80% 72%; /* Ring color matching dark primary */
 
-    --chart-1: 215 65% 65%; /* REVERTED: Primary Blue Dark */
-    --chart-2: 215 35% 25%; /* NEW: Match new Dark Accent */
-    --chart-3: 30 80% 65%;  /* Warm Accent (Amber/Orange) Dark - Preserved */
-    --chart-4: 260 60% 75%; /* Softer Purple Dark - Preserved */
-    --chart-5: 340 70% 75%;   /* Softer Pink/Rose Dark - Preserved */
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Chart colors adjusted for dark theme */
+    --chart-1: 207 80% 72%; /* Primary Blue Dark */
+    --chart-2: 45 80% 75%;  /* Accent Yellow Dark */
+    --chart-3: 120 40% 70%; /* Gentle Green Dark */
+    --chart-4: 260 50% 80%; /* Soft Purple Dark */
+    --chart-5: 0 60% 75%;   /* Soft Red/Coral Dark */
+    
+    --sidebar-background: 220 15% 12%; 
+    --sidebar-foreground: 210 30% 88%;
+    --sidebar-primary: 207 80% 68%;
+    --sidebar-primary-foreground: 220 20% 10%;
+    --sidebar-accent: 220 15% 22%;
+    --sidebar-accent-foreground: 210 25% 80%;
+    --sidebar-border: 220 15% 25%;
+    --sidebar-ring: 207 80% 68%;
   }
 }
 
@@ -107,49 +110,38 @@
   }
 }
 
-/* Custom scrollbar for webkit browsers - Made more obvious for debugging */
+/* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 12px; /* Made scrollbar slightly wider for visibility */
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted)); /* Changed to muted for track */
+  background: hsl(var(--background) / 0.5); /* Softer track */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.5); /* Primary color for thumb, lighter */
+  background: hsl(var(--muted-foreground) / 0.3); /* Softer thumb */
   border-radius: 10px;
-  border: 3px solid hsl(var(--muted)); /* Creates a border effect around thumb, using muted */
+  border: 2px solid hsl(var(--background) / 0.5);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary)); /* Darken on hover */
+  background: hsl(var(--muted-foreground) / 0.6); /* Slightly darker on hover */
 }
-.dark ::-webkit-scrollbar-track {
-  background: hsl(var(--muted)); /* Changed to muted for dark track */
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.5); /* Primary color for thumb, lighter */
-  border: 3px solid hsl(var(--muted)); /* Using muted for dark border */
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary));
-}
-
 
 /* More subtle custom scrollbar for specific areas like modal subtask list */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px; /* Kept this one a bit thinner */
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: hsl(var(--muted) / 0.5); /* Softer track */
+  background: hsl(var(--muted) / 0.3);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.5); /* Softer thumb */
+  background: hsl(var(--muted-foreground) / 0.4);
   border-radius: 10px;
-  border: 2px solid hsl(var(--muted) / 0.5);
+  border: 1px solid hsl(var(--muted) / 0.3);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.8); /* Slightly darker on hover */
+  background: hsl(var(--muted-foreground) / 0.7);
 }
