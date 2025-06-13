@@ -4,7 +4,7 @@
 import React, { useEffect, Suspense } from "react";
 import dynamic from 'next/dynamic';
 import { Header } from "@/components/layout/header";
-import { LayoutDashboard, UserCog, UserCircle, Settings, LogIn, UserPlus, Info } from "lucide-react";
+import { LayoutDashboard, UserCog, UserCircle, Settings, LogIn, UserPlus, Info, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -90,6 +90,7 @@ function FormSkeleton({ title, fields, description }: { title: string; fields: n
 export default function ProfilePage() {
   const { user, loading, guestId, isGuest, otherProfileDataLoading } = useAuth(); 
   const router = useRouter();
+  const configuredProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -167,7 +168,7 @@ export default function ProfilePage() {
   }
 
 
-  if (!user) { // Should be caught by useEffect pushing to signin, but as a fallback
+  if (!user) { 
      return (
       <>
         <Header /> 
@@ -191,6 +192,17 @@ export default function ProfilePage() {
             </h1>
             <p className="mt-2 text-md text-muted-foreground sm:text-lg max-w-xl">Manage your personal information, preferences, and account security settings.</p>
           </div>
+          
+          <Alert variant="destructive" className="border-yellow-500/50 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:border-yellow-500/70 dark:bg-yellow-500/15 my-6">
+            <AlertCircle className="h-5 w-5 !text-yellow-600 dark:!text-yellow-500" />
+            <AlertTitle className="font-semibold !text-yellow-700 dark:!text-yellow-500">Firebase Project ID Check</AlertTitle>
+            <AlertDescription>
+              Your application is configured to use Firebase Project ID: <br />
+              <code className="font-mono bg-yellow-500/20 px-1.5 py-0.5 rounded text-sm">{configuredProjectId || "NOT SET in .env!"}</code>
+              <br />
+              Please verify this **EXACTLY** matches the Project ID in your Firebase Console URL when viewing Firestore rules. See the README.md for detailed troubleshooting if you still have data saving issues.
+            </AlertDescription>
+          </Alert>
           
           <Tabs defaultValue="profile" className="w-full">
              <TabsList className="flex w-full mb-6 border-b py-[33px] px-[10px]
@@ -244,3 +256,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    

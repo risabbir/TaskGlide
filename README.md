@@ -158,12 +158,16 @@ This is almost always due to **Firestore Security Rules** configuration or a **m
         *   Navigate to **Firestore Database -> Rules**.
         *   Look at the URL in your browser's address bar. It will be something like: `https://console.firebase.google.com/project/YOUR-PROJECT-ID-FROM-CONSOLE/firestore/rules`
         *   **Carefully copy `YOUR-PROJECT-ID-FROM-CONSOLE`**. (Example: if URL is `.../project/my-cool-app-123/firestore/...`, then `my-cool-app-123` is the ID).
-    *   **Step B: Find Project ID in your `.env` file:**
+    *   **Step B: Find Project ID in your `.env` file AND in the app's Profile Page:**
         *   Open the `.env` file in the root of your Next.js project.
         *   Find the line `NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here`.
         *   Copy the value `your_project_id_here`.
-    *   **Step C: Compare the two Project IDs.**
-        *   **These two Project IDs MUST MATCH EXACTLY.** Case matters. No extra spaces.
+        *   **(NEW) As a logged-in user, navigate to the Profile page in your application. It now displays the "Configured Firebase Project ID" the app is using.**
+    *   **Step C: Compare the three Project IDs.**
+        *   The Project ID from the **Firebase Console URL (Step A)**
+        *   The Project ID from your **`.env` file (Step B)**
+        *   The Project ID displayed on your **app's Profile Page (Step B)**
+        *   **These three Project IDs MUST MATCH EXACTLY.** Case matters. No extra spaces.
         *   If they are different, your app is trying to connect to one Firebase project, but you are setting security rules in another. This *will* cause `PERMISSION_DENIED`.
         *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A).
     *   **Step D: Restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.** This is essential for the changes to take effect.
@@ -244,4 +248,6 @@ If you have switched from an old Firebase project to a new one (e.g., from "kanv
 *   **Storage Files:** Manually download/upload or use `gsutil` to transfer files between buckets.
 
 Remember to update security rules and email templates in the new Firebase project as well.
+    
+
     
