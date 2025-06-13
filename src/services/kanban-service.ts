@@ -50,7 +50,8 @@ interface UserKanbanDataFromFirestore {
 
 export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]; columns: ColumnType[] } | null> {
   const currentSdkUser = firebaseAuth.currentUser;
-  console.log(`[KanbanService] getUserKanbanData called for context userId: ${userId}. SDK currentUser at load time: ${currentSdkUser?.uid}, email: ${currentSdkUser?.email}`);
+  const configuredProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "NOT SET (Check .env!)";
+  console.log(`[KanbanService] getUserKanbanData called for context userId: ${userId}. SDK currentUser: ${currentSdkUser?.uid}, SDK email: ${currentSdkUser?.email}. Configured Project ID: ${configuredProjectId}`);
 
   if (!userId || typeof userId !== 'string' || userId.trim() === '' ) {
     console.error(`[KanbanService] getUserKanbanData error: Invalid context userId provided: '${userId}'.`);
@@ -66,7 +67,7 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
   }
 
   const docPath = `userKanbanData/${currentSdkUser.uid}`;
-  console.log(`[KanbanService] Attempting to GET doc: ${docPath} for user: ${currentSdkUser.uid}`);
+  console.log(`[KanbanService] Attempting to GET doc from path: "${docPath}" in project "${configuredProjectId}" for user: ${currentSdkUser.uid}`);
   try {
     const docRef = doc(db, 'userKanbanData', currentSdkUser.uid);
     const docSnap = await getDoc(docRef);
@@ -90,28 +91,24 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
         columns: DEFAULT_COLUMNS.map(col => ({ ...col, taskIds: [] })),
     };
   } catch (error: any) {
-    console.error(`[KanbanService] Firestore error in GET operation for ${docPath} (User: ${currentSdkUser.uid}):`, error.message, error.code, error);
+    console.error(`[KanbanService] Firestore error in GET operation for path "${docPath}" (User: ${currentSdkUser.uid}, Project: ${configuredProjectId}):`, error.message, error.code, error);
     throw error;
   }
 }
 
 export async function saveUserKanbanData(
-  userId: string, // Changed: This userId is verified by KanbanProvider before calling
+  userId: string,
   tasks: TaskForFirestore[],
   columns: ColumnForFirestore[]
 ): Promise<void> {
-  // The userId parameter is trusted as KanbanProvider performed the necessary checks
-  // against firebaseAuth.currentUser right before calling this function.
-  // We no longer re-check firebaseAuth.currentUser here to avoid race conditions.
-
+  const configuredProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "NOT SET (Check .env!)";
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
     console.error(`[KanbanService] saveUserKanbanData error: Invalid userId passed from caller: '${userId}'. Aborting save.`);
-    // This throw indicates a logic error in the calling code (KanbanProvider)
     throw new Error("Invalid user ID provided to saveUserKanbanData by the calling function.");
   }
 
   const docPath = `userKanbanData/${userId}`;
-  console.log(`[KanbanService] Attempting to SET doc: ${docPath} for user: ${userId}. Project ID from env: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
+  console.log(`[KanbanService] Attempting to SET doc to path: "${docPath}" in project "${configuredProjectId}" for user: ${userId}. Tasks count: ${tasks.length}, Columns count: ${columns.length}`);
   try {
     const docRef = doc(db, 'userKanbanData', userId);
     const dataToSave: UserKanbanDataFromFirestore = {
@@ -120,10 +117,9 @@ export async function saveUserKanbanData(
       firestoreLastUpdated: serverTimestamp() as Timestamp,
     };
     await setDoc(docRef, dataToSave);
-    console.log(`[KanbanService] Successfully saved Kanban data for ${docPath} (User: ${userId})`);
+    console.log(`[KanbanService] Successfully saved Kanban data for path "${docPath}" (User: ${userId})`);
   } catch (error: any) {
-    // Firestore specific errors like PERMISSION_DENIED will be caught here.
-    console.error(`[KanbanService] Firestore error in SET operation for ${docPath} (User: ${userId}):`, error.message, error.code, error);
+    console.error(`[KanbanService] Firestore error in SET operation for path "${docPath}" (User: ${userId}, Project: ${configuredProjectId}):`, error.message, error.code, error);
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     if (error.code === 'permission-denied' || error.code === 7) {
         console.error(`[KanbanService] PERMISSION_DENIED saving to path ${docPath}. Ensure Firestore rules for project '${projectId || 'UNKNOWN (check .env)'}' allow write access for UID '${userId}'.`);

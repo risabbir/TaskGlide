@@ -85,10 +85,7 @@ This application uses Firebase for backend services including Authentication, Fi
         }
         ```
     *   **Publish these rules** in the Firebase console for both Firestore and Storage. Changes can take a few minutes to propagate.
-    *   **If you still get PERMISSION_DENIED errors after setting these rules:**
-        *   Double-check that the `NEXT_PUBLIC_FIREBASE_PROJECT_ID` in your `.env` file matches the project ID where you are setting these rules.
-        *   Verify that the user is actually authenticated when the Firestore operation is attempted (check console logs from `AuthContext` and `KanbanProvider`).
-        *   Ensure the path being accessed (e.g., `userKanbanData/SOME_USER_ID`) correctly uses the authenticated user's UID as `SOME_USER_ID`.
+    *   **If you still get PERMISSION_DENIED errors after setting these rules:** See the "Troubleshooting Authentication and Data Errors" section below, especially "CRITICAL: Firestore `PERMISSION_DENIED` Errors".
 
 6.  **Authentication Email Templates:**
     *   In the Firebase console, go to Authentication (Build menu) -> Templates tab.
@@ -128,15 +125,64 @@ This application uses Genkit to power its AI features (like suggesting task deta
     *   **Restart your Next.js dev server** after any `.env` changes.
     *   Check browser console for more detailed Firebase error messages.
 
-### Firestore `PERMISSION_DENIED` Errors (Data not saving/loading)
+### ⚠️ CRITICAL: Firestore `PERMISSION_DENIED` Errors (Data not saving/loading for registered users) ⚠️
 
-This is almost always due to **Firestore Security Rules**.
-1.  **Verify Rules:** Ensure the rules in **Firebase Console -> Firestore Database -> Rules** tab are correctly set as per Section 5 of this README.
-2.  **Correct Project:** Double-check that `NEXT_PUBLIC_FIREBASE_PROJECT_ID` in your `.env` file matches the project where you're setting the rules.
-3.  **User Authentication:** The rules require a user to be authenticated (`request.auth != null`) and that their UID (`request.auth.uid`) matches the `{userId}` in the document path (e.g., `userKanbanData/ACTUAL_USER_ID`).
-    *   Use your browser's developer console to check logs from `AuthContext` and `KanbanProvider`. They now output detailed information about the user's authentication state and the IDs being used during Firestore operations, especially when a permission error occurs. This can help identify if the user is unexpectedly `null` or if there's an ID mismatch.
-4.  **Publish and Wait:** After updating rules, click "Publish". It might take a few minutes for changes to take effect.
-5.  **Firebase Project Billing (Blaze Plan):** While the free "Spark" plan is usually sufficient for development, if you are on the "Blaze" (pay-as-you-go) plan, ensure billing is active for your Google Cloud project associated with Firebase. Firestore operations might be restricted if billing fails, though this usually results in errors other than `PERMISSION_DENIED`.
+This is almost always due to **Firestore Security Rules** configuration or a **mismatch between your app's Firebase project configuration and the Firebase project where you're setting the rules**.
+
+1.  **Verify Rules:**
+    *   Go to your **Firebase Console -> Firestore Database -> Rules** tab.
+    *   Ensure the rules are **EXACTLY** as follows and have been **Published**:
+        ```rules
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            // Allow a user to read and write their own kanban data document.
+            // The document ID {userId} must match the authenticated user's UID.
+            match /userKanbanData/{userId} {
+              allow read, write: if request.auth != null && request.auth.uid == userId;
+            }
+            // Allow a user to read and write their own profile document.
+            match /profiles/{userId} {
+              allow read, write: if request.auth != null && request.auth.uid == userId;
+            }
+          }
+        }
+        ```
+    *   **Rule Explanation:** The rule `allow read, write: if request.auth != null && request.auth.uid == userId;` means that for a user to read or write a document in `userKanbanData/SOME_USER_ID`, they must be logged in (`request.auth != null`) AND their authenticated User ID (`request.auth.uid`) must be identical to `SOME_USER_ID`.
+
+2.  **🔥🔥🔥 CRITICAL - Verify Correct Firebase Project ID Match 🔥🔥🔥**
+    *   This is the **MOST COMMON CAUSE** of persistent `PERMISSION_DENIED` errors when rules *seem* correct.
+    *   **Step A: Find Project ID in Firebase Console URL:**
+        *   Go to your **Firebase Console**.
+        *   Navigate to **Firestore Database -> Rules**.
+        *   Look at the URL in your browser's address bar. It will be something like: `https://console.firebase.google.com/project/YOUR-PROJECT-ID-FROM-CONSOLE/firestore/rules`
+        *   Copy `YOUR-PROJECT-ID-FROM-CONSOLE`.
+    *   **Step B: Find Project ID in your `.env` file:**
+        *   Open the `.env` file in the root of your Next.js project.
+        *   Find the line `NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here`.
+        *   Copy the value `your_project_id_here`.
+    *   **Step C: Compare the two Project IDs.**
+        *   **These two Project IDs MUST MATCH EXACTLY.**
+        *   If they are different, your app is trying to connect to one Firebase project, but you are setting security rules in another. This *will* cause `PERMISSION_DENIED`.
+        *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A).
+    *   **Step D: Restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.** This is essential for the changes to take effect.
+
+3.  **User Authentication State:**
+    *   The app's `AuthContext` and `KanbanProvider` output console logs about the user's authentication state (e.g., `[AuthContext] onAuthStateChanged: User signed IN. UID: ...`, `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. AuthContext User: ..., SDK User: ...`).
+    *   When you attempt an operation that fails with `PERMISSION_DENIED`:
+        *   Check the console logs. Is the `AuthContext User UID` defined and correct?
+        *   Is the `SDK User UID` (from `firebaseAuthInstance.currentUser`) defined and matching the `AuthContext User UID`?
+        *   The `kanban-service.ts` also logs the UID it's attempting the Firestore operation for and the configured Project ID from `.env`.
+    *   If `request.auth` is `null` in the Firestore rules' context (meaning Firebase doesn't see an authenticated user for the request), or if `request.auth.uid` doesn't match the `{userId}` in the Firestore path, access will be denied. The console logs should help identify if the app is trying to use an incorrect or null UID, or if it's communicating with an unintended Firebase project.
+
+4.  **Publish and Wait:**
+    *   After updating rules in the Firebase Console, click "Publish".
+    *   It might take a few minutes (sometimes up to 5-10 minutes, though usually faster) for rule changes to propagate globally. If you test immediately, you might still hit the old (or default) rules.
+
+5.  **Firebase Project Billing (Blaze Plan):**
+    *   While the free "Spark" plan is usually sufficient for development, if you are on the "Blaze" (pay-as-you-go) plan, ensure billing is active for your Google Cloud project associated with Firebase. Firestore operations might be restricted if billing fails, though this usually results in errors other than `PERMISSION_DENIED`.
+
+By meticulously checking these steps, particularly the **Firebase Project ID match** and the **exact security rules**, you should be able to resolve the `PERMISSION_DENIED` error.
 
 ## Development
 
