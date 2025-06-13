@@ -125,7 +125,7 @@ This application uses Genkit to power its AI features (like suggesting task deta
     *   **Restart your Next.js dev server** after any `.env` changes.
     *   Check browser console for more detailed Firebase error messages.
 
-### CRITICAL: Firestore `PERMISSION_DENIED` Errors (Data not saving/loading for registered users)
+### ⚠️ CRITICAL: Firestore `PERMISSION_DENIED` Errors (Data not saving/loading for registered users) ⚠️
 
 This is almost always due to **Firestore Security Rules** configuration or a **mismatch between your app's Firebase project configuration and the Firebase project where you're setting the rules**.
 
@@ -150,15 +150,25 @@ This is almost always due to **Firestore Security Rules** configuration or a **m
         ```
     *   **Rule Explanation:** The rule `allow read, write: if request.auth != null && request.auth.uid == userId;` means that for a user to read or write a document in `userKanbanData/SOME_USER_ID`, they must be logged in (`request.auth != null`) AND their authenticated User ID (`request.auth.uid`) must be identical to `SOME_USER_ID`.
 
-2.  **CRITICAL - Verify Correct Firebase Project:**
-    *   **In your Firebase Console:** When you are viewing your Firestore rules (or any Firebase project settings), look at the URL in your browser's address bar. It will be something like: `https://console.firebase.google.com/project/YOUR-PROJECT-ID-FROM-CONSOLE/firestore/rules`
-    *   **In your Next.js app's `.env` file:** Look at the value for `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
-    *   **These two Project IDs MUST MATCH EXACTLY.** If they are different, your app is trying to connect to one Firebase project, but you are setting security rules in another. This is the most common reason for `PERMISSION_DENIED` errors when the rules themselves appear correct.
-    *   If they don't match, update your `.env` file to use the Project ID from the Firebase Console where you've set the correct rules.
-    *   **Remember to restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.**
+2.  **🔥🔥🔥 CRITICAL - Verify Correct Firebase Project ID Match 🔥🔥🔥**
+    *   This is the **MOST COMMON CAUSE** of persistent `PERMISSION_DENIED` errors when rules *seem* correct.
+    *   **Step A: Find Project ID in Firebase Console URL:**
+        *   Go to your **Firebase Console**.
+        *   Navigate to **Firestore Database -> Rules**.
+        *   Look at the URL in your browser's address bar. It will be something like: `https://console.firebase.google.com/project/YOUR-PROJECT-ID-FROM-CONSOLE/firestore/rules`
+        *   Copy `YOUR-PROJECT-ID-FROM-CONSOLE`.
+    *   **Step B: Find Project ID in your `.env` file:**
+        *   Open the `.env` file in the root of your Next.js project.
+        *   Find the line `NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here`.
+        *   Copy the value `your_project_id_here`.
+    *   **Step C: Compare the two Project IDs.**
+        *   **These two Project IDs MUST MATCH EXACTLY.**
+        *   If they are different, your app is trying to connect to one Firebase project, but you are setting security rules in another. This *will* cause `PERMISSION_DENIED`.
+        *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A).
+    *   **Step D: Restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.** This is essential for the changes to take effect.
 
 3.  **User Authentication State:**
-    *   The app's `AuthContext` and `KanbanProvider` now output detailed console logs about the user's authentication state (e.g., `[AuthContext] onAuthStateChanged: User signed IN. UID: ...`, `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. AuthContext User: ..., SDK User: ...`).
+    *   The app's `AuthContext` and `KanbanProvider` output console logs about the user's authentication state (e.g., `[AuthContext] onAuthStateChanged: User signed IN. UID: ...`, `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. AuthContext User: ..., SDK User: ...`).
     *   When you attempt an operation that fails with `PERMISSION_DENIED`:
         *   Check the console logs. Is the `AuthContext User UID` defined and correct?
         *   Is the `SDK User UID` (from `firebaseAuthInstance.currentUser`) defined and matching the `AuthContext User UID`?
