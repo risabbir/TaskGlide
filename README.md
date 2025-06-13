@@ -108,13 +108,12 @@ This application uses Genkit to power its AI features (like suggesting task deta
     *   Restart your Next.js development server if it was running.
     *   The Genkit `googleAI` plugin will automatically use this environment variable.
 
-## Troubleshooting Authentication and Data Errors
+## Troubleshooting Common Errors
 
 ### Common Authentication Errors (`auth/...`)
 
 *   **`auth/unauthorized-domain`:**
     *   Ensure `localhost` (for development) and your production domain are listed in **Firebase Console -> Authentication -> Settings -> Authorized domains**.
-    *   For Google Sign-In specifically: In **Firebase Console -> Authentication -> Sign-in method -> Google**, ensure the **"Project support email"** is selected and saved.
     *   Check your **Google Cloud Console -> APIs & Services -> OAuth consent screen**. Ensure the "Publishing status" is **"Published"**.
 *   **`auth/operation-not-allowed` (for Email/Password):**
     *   Ensure the **Email/Password** provider is **Enabled** in **Firebase Console -> Authentication -> Sign-in method**.
@@ -158,16 +157,17 @@ This is almost always due to **Firestore Security Rules** configuration or a **m
         *   Go to your **Firebase Console**.
         *   Navigate to **Firestore Database -> Rules**.
         *   Look at the URL in your browser's address bar. It will be something like: `https://console.firebase.google.com/project/YOUR-PROJECT-ID-FROM-CONSOLE/firestore/rules`
-        *   Copy `YOUR-PROJECT-ID-FROM-CONSOLE`.
+        *   **Carefully copy `YOUR-PROJECT-ID-FROM-CONSOLE`**. (Example: if URL is `.../project/my-cool-app-123/firestore/...`, then `my-cool-app-123` is the ID).
     *   **Step B: Find Project ID in your `.env` file:**
         *   Open the `.env` file in the root of your Next.js project.
         *   Find the line `NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here`.
         *   Copy the value `your_project_id_here`.
     *   **Step C: Compare the two Project IDs.**
-        *   **These two Project IDs MUST MATCH EXACTLY.**
+        *   **These two Project IDs MUST MATCH EXACTLY.** Case matters. No extra spaces.
         *   If they are different, your app is trying to connect to one Firebase project, but you are setting security rules in another. This *will* cause `PERMISSION_DENIED`.
         *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A).
     *   **Step D: Restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.** This is essential for the changes to take effect.
+    *   **Console Log Check:** Your browser's developer console will show logs from `[KanbanService]` when it attempts Firestore operations. These logs include `Configured Project ID: ...`. This logged Project ID *must* match the Project ID from your Firebase Console URL (Step A).
 
 3.  **User Authentication State & UID Verification:**
     *   The app's `AuthContext` and `KanbanProvider` output console logs about the user's authentication state (e.g., `[AuthContext] onAuthStateChanged: User signed IN. UID: ...`, `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. AuthContext User: ..., SDK User: ...`).
@@ -197,6 +197,21 @@ This is almost always due to **Firestore Security Rules** configuration or a **m
     *   While the free "Spark" plan is usually sufficient for development, if you are on the "Blaze" (pay-as-you-go) plan, ensure billing is active for your Google Cloud project associated with Firebase. Firestore operations might be restricted if billing fails, though this usually results in errors other than `PERMISSION_DENIED`.
 
 By meticulously checking these steps, particularly the **Firebase Project ID match**, the **exact security rules**, and using the **Firestore Rules Simulator**, you should be able to resolve the `PERMISSION_DENIED` error.
+
+### Font Loading Errors (403 Forbidden)
+
+If you see console errors like `Failed to load resource: ... .woff2 ... status of 403 ()`, this typically means the server is forbidding access to these font files.
+*   **Cause:** This is often due to environment-specific configurations, especially if using platforms like Cloud Workstations. It could be related to Content Security Policy (CSP) headers, proxy configurations, or network access rules on the server/platform hosting your development environment.
+*   **Solution:** This is generally not an issue within the Next.js application code itself (as `geist` fonts are standard). You'll need to investigate the configuration of your hosting/development platform (e.g., Cloud Workstations settings, any intermediary proxies or firewalls).
+
+### React Hydration Mismatch Errors (e.g., `bis_skin_checked="1"`)
+
+If you see hydration errors mentioning unexpected attributes like `bis_skin_checked="1"`:
+*   **Cause:** This is almost always caused by a **browser extension** (like Grammarly, Bitdefender Anti-tracker, or some accessibility tools) modifying the HTML of your page after the server renders it but before React fully hydrates on the client.
+*   **Solution:**
+    *   Try running your application in an **Incognito/Private Browsing window** (which usually disables extensions).
+    *   Temporarily disable all browser extensions and see if the error disappears.
+*   The application already uses `suppressHydrationWarning={true}` on root elements, which is the standard React way to handle such unavoidable discrepancies. No further application code changes can typically "fix" DOM modifications made by external browser extensions.
 
 ## Development
 
