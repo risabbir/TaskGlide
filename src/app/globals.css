@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 225 66% 61%; /* New primary color #5876de */
+    --primary-foreground: 210 40% 98%; /* White for good contrast */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -31,12 +31,12 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 225 66% 61%; /* Ring color based on new primary */
 
     --radius: 0.5rem;
 
     /* Chart colors */
-    --chart-1: 222.2 47.4% 11.2%; /* primary */
+    --chart-1: 225 66% 61%; /* primary */
     --chart-2: 0 84.2% 60.2%;  /* destructive */
     --chart-3: 142.1 70.6% 45.3%; /* a green */
     --chart-4: 262.1 83.3% 57.8%; /* a purple */
@@ -45,12 +45,12 @@
     /* Sidebar specific theme variables (adjusted for new theme) */
     --sidebar-background: 210 40% 98%; /* Slightly off-white */
     --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 222.2 47.4% 11.2%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary: 225 66% 61%; /* New primary color */
+    --sidebar-primary-foreground: 210 40% 98%; /* White */
     --sidebar-accent: 210 40% 94%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
     --sidebar-border: 214.3 31.8% 88.4%;
-    --sidebar-ring: 222.2 84% 4.9%;
+    --sidebar-ring: 225 66% 61%; /* Ring color based on new primary */
   }
 
   .dark {
@@ -63,8 +63,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 225 66% 71%; /* Lighter shade of #5876de for dark mode */
+    --primary-foreground: 222.2 47.4% 11.2%; /* Dark for contrast */
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -80,10 +80,10 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 225 66% 71%; /* Ring color based on new primary for dark mode */
     
     /* Chart colors for dark theme */
-    --chart-1: 210 40% 98%;   /* primary dark */
+    --chart-1: 225 66% 71%;   /* primary dark */
     --chart-2: 0 70% 50%;    /* brighter destructive red for dark */
     --chart-3: 142.1 60.6% 55.3%;   /* a lighter green for dark */
     --chart-4: 262.1 73.3% 67.8%;   /* a lighter purple for dark */
@@ -91,12 +91,12 @@
     
     --sidebar-background: 222.2 80% 3.9%; /* Darker for sidebar */
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-primary: 225 66% 71%; /* Lighter primary for dark sidebar */
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%; /* Dark for contrast */
     --sidebar-accent: 217.2 32.6% 15.5%; 
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 15.5%; 
-    --sidebar-ring: 212.7 26.8% 83.9%;
+    --sidebar-ring: 225 66% 71%; /* Ring color based on new primary for dark sidebar */
   }
 }
 
