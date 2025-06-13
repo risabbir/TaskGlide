@@ -114,6 +114,8 @@ This application uses Genkit to power its AI features (like suggesting task deta
 
 *   **`auth/unauthorized-domain`:**
     *   Ensure `localhost` (for development) and your production domain are listed in **Firebase Console -> Authentication -> Settings -> Authorized domains**.
+    *   For Google Sign-In specifically: In **Firebase Console -> Authentication -> Sign-in method -> Google**, ensure the **"Project support email"** is selected and saved.
+    *   Check your **Google Cloud Console -> APIs & Services -> OAuth consent screen**. Ensure the "Publishing status" is **"Published"**.
 *   **`auth/operation-not-allowed` (for Email/Password):**
     *   Ensure the **Email/Password** provider is **Enabled** in **Firebase Console -> Authentication -> Sign-in method**.
 *   **`auth/network-request-failed`:**
@@ -167,22 +169,34 @@ This is almost always due to **Firestore Security Rules** configuration or a **m
         *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A).
     *   **Step D: Restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.** This is essential for the changes to take effect.
 
-3.  **User Authentication State:**
+3.  **User Authentication State & UID Verification:**
     *   The app's `AuthContext` and `KanbanProvider` output console logs about the user's authentication state (e.g., `[AuthContext] onAuthStateChanged: User signed IN. UID: ...`, `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. AuthContext User: ..., SDK User: ...`).
-    *   When you attempt an operation that fails with `PERMISSION_DENIED`:
-        *   Check the console logs. Is the `AuthContext User UID` defined and correct?
-        *   Is the `SDK User UID` (from `firebaseAuthInstance.currentUser`) defined and matching the `AuthContext User UID`?
-        *   The `kanban-service.ts` also logs the UID it's attempting the Firestore operation for and the configured Project ID from `.env`.
-    *   If `request.auth` is `null` in the Firestore rules' context (meaning Firebase doesn't see an authenticated user for the request), or if `request.auth.uid` doesn't match the `{userId}` in the Firestore path, access will be denied. The console logs should help identify if the app is trying to use an incorrect or null UID, or if it's communicating with an unintended Firebase project.
+    *   When you attempt an operation that fails with `PERMISSION_DENIED` (like saving a task for user `k2SQs3CKg4hbDJMz9MqBzYyJYB93`):
+        *   Check your browser's developer console.
+        *   The logs from `kanban-service.ts` (e.g., `[KanbanService] Attempting to SET doc to path: "userKanbanData/k2SQs3CKg4hbDJMz9MqBzYyJYB93" ...`) will show the exact path and Project ID the app is trying to use.
+        *   The logs from `AuthContext` should show if the user (`k2SQs3CKg4hbDJMz9MqBzYyJYB93`) is correctly signed in from the app's perspective.
+        *   Go to **Firebase Console -> Authentication -> Users tab**. Find the user with the UID `k2SQs3CKg4hbDJMz9MqBzYyJYB93`. Confirm this user exists and is enabled.
+    *   If `request.auth` is `null` in the Firestore rules' context (meaning Firebase doesn't see an authenticated user for the request), or if `request.auth.uid` doesn't match the `{userId}` in the Firestore path (`k2SQs3CKg4hbDJMz9MqBzYyJYB93` in your case), access will be denied. The console logs should help identify if the app is trying to use an incorrect or null UID, or if it's communicating with an unintended Firebase project.
 
-4.  **Publish and Wait:**
+4.  **Use the Firestore Rules Simulator:**
+    *   In the **Firebase Console -> Firestore Database -> Rules** tab, click on **"Rules Playground"** or **"Simulator"**.
+    *   **Simulate a write operation:**
+        *   **Type of operation:** Select "set" or "update".
+        *   **Location (Path):** Enter the exact path your app is trying to write to (e.g., `userKanbanData/k2SQs3CKg4hbDJMz9MqBzYyJYB93`).
+        *   **Authenticated:** Toggle this ON.
+        *   **Authentication UID:** Enter the UID of the user you are testing with (e.g., `k2SQs3CKg4hbDJMz9MqBzYyJYB93`).
+        *   (Optional) You can add mock document data if your rules depend on `resource.data`.
+        *   Click "Run".
+    *   The simulator will tell you if the operation is allowed or denied based on your *current published rules* and the simulated authentication state. If it's denied here, your rules are the problem or the UID you're testing with is incorrect.
+
+5.  **Publish and Wait:**
     *   After updating rules in the Firebase Console, click "Publish".
     *   It might take a few minutes (sometimes up to 5-10 minutes, though usually faster) for rule changes to propagate globally. If you test immediately, you might still hit the old (or default) rules.
 
-5.  **Firebase Project Billing (Blaze Plan):**
+6.  **Firebase Project Billing (Blaze Plan):**
     *   While the free "Spark" plan is usually sufficient for development, if you are on the "Blaze" (pay-as-you-go) plan, ensure billing is active for your Google Cloud project associated with Firebase. Firestore operations might be restricted if billing fails, though this usually results in errors other than `PERMISSION_DENIED`.
 
-By meticulously checking these steps, particularly the **Firebase Project ID match** and the **exact security rules**, you should be able to resolve the `PERMISSION_DENIED` error.
+By meticulously checking these steps, particularly the **Firebase Project ID match**, the **exact security rules**, and using the **Firestore Rules Simulator**, you should be able to resolve the `PERMISSION_DENIED` error.
 
 ## Development
 
