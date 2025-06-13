@@ -5,98 +5,98 @@
 
 @layer base {
   :root {
-    --background: 213 33% 96%; /* Light gray, subtly blue (#F0F4F8) */
-    --foreground: 220 20% 25%; /* Dark desaturated blue-gray */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 220 20% 25%; /* Dark desaturated blue-gray */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 220 20% 25%; /* Dark desaturated blue-gray */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 207 88% 68%; /* Soft blue (#64B5F6) */
-    --primary-foreground: 210 40% 98%; /* White for contrast on soft blue */
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 30% 90%; /* Lighter blue-gray for secondary elements */
-    --secondary-foreground: 220 10% 35%; /* Darker gray for text on secondary */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 30% 92%; /* Slightly lighter muted for less emphasis */
-    --muted-foreground: 210 15% 45%; /* Softer text for muted elements */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 45 100% 87%; /* Gentle yellow (#FFECB3) */
-    --accent-foreground: 50 60% 30%; /* Darker yellow/brown for text on accent */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 75% 55%; /* Red for destructive actions */
-    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 210 20% 85%; /* Softer border color */
-    --input: 210 25% 90%; /* Input background slightly off main background */
-    --ring: 207 88% 68%; /* Ring color matching primary */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
 
-    /* Chart colors adjusted to fit the new theme */
-    --chart-1: 207 88% 68%; /* Primary Blue */
-    --chart-2: 45 100% 87%;  /* Accent Yellow */
-    --chart-3: 120 50% 65%; /* A gentle green */
-    --chart-4: 260 60% 75%; /* A soft purple */
-    --chart-5: 0 70% 70%;   /* A soft red/coral */
+    /* Chart colors for neutral theme */
+    --chart-1: 222.2 47.4% 11.2%; /* primary */
+    --chart-2: 0 72% 51%;  /* darker destructive red */
+    --chart-3: 142.4 71.8% 29.2%; /* a green */
+    --chart-4: 262.1 83.3% 57.8%; /* a purple */
+    --chart-5: 38.9 98.1% 50.2%;   /* an orange */
 
-    /* Sidebar specific theme variables, can be adjusted if a distinct sidebar theme is desired */
-    --sidebar-background: 213 33% 94%; /* Slightly darker than main bg */
-    --sidebar-foreground: 220 20% 25%;
-    --sidebar-primary: 207 88% 60%; /* Slightly darker primary for sidebar focus */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 30% 88%;
-    --sidebar-accent-foreground: 220 15% 30%;
-    --sidebar-border: 210 20% 80%;
-    --sidebar-ring: 207 88% 60%;
+    /* Sidebar specific theme variables for neutral theme */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 222.2 47.4% 11.2%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 94%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 222.2 84% 4.9%;
   }
 
   .dark {
-    --background: 220 15% 10%; /* Dark cool gray */
-    --foreground: 210 30% 90%; /* Light gray text */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 220 15% 15%; /* Darker card background */
-    --card-foreground: 210 30% 90%; /* Light gray text on card */
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 220 15% 8%; /* Even darker popover */
-    --popover-foreground: 210 30% 90%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 207 80% 72%; /* Lighter soft blue for dark mode */
-    --primary-foreground: 220 20% 15%; /* Dark text on light blue primary */
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 220 15% 25%; /* Darker muted gray/blue */
-    --secondary-foreground: 210 20% 75%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 210 20% 60%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 45 70% 40%; /* Darker, desaturated yellow for dark mode accent */
-    --accent-foreground: 45 100% 90%; /* Light yellow text on dark accent */
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 65% 60%; /* Slightly brighter red for dark mode */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 28%;
-    --input: 220 15% 22%;
-    --ring: 207 80% 72%; /* Ring color matching dark primary */
-
-    /* Chart colors adjusted for dark theme */
-    --chart-1: 207 80% 72%; /* Primary Blue Dark */
-    --chart-2: 45 80% 75%;  /* Accent Yellow Dark */
-    --chart-3: 120 40% 70%; /* Gentle Green Dark */
-    --chart-4: 260 50% 80%; /* Soft Purple Dark */
-    --chart-5: 0 60% 75%;   /* Soft Red/Coral Dark */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
     
-    --sidebar-background: 220 15% 12%; 
-    --sidebar-foreground: 210 30% 88%;
-    --sidebar-primary: 207 80% 68%;
-    --sidebar-primary-foreground: 220 20% 10%;
-    --sidebar-accent: 220 15% 22%;
-    --sidebar-accent-foreground: 210 25% 80%;
-    --sidebar-border: 220 15% 25%;
-    --sidebar-ring: 207 80% 68%;
+    /* Chart colors for neutral dark theme */
+    --chart-1: 210 40% 98%; /* primary dark */
+    --chart-2: 0 70% 60%;  /* brighter destructive red */
+    --chart-3: 142.4 60% 40%; /* a green dark */
+    --chart-4: 262.1 70% 67.8%; /* a purple dark */
+    --chart-5: 38.9 80% 60.2%;   /* an orange dark */
+    
+    --sidebar-background: 222.2 84% 6.9%; 
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 20.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -145,4 +145,3 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.7);
 }
-
