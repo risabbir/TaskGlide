@@ -17,7 +17,7 @@ This application uses Firebase for backend services including Authentication, Fi
     *   Enable the following services in your Firebase project:
         *   Authentication (with Email/Password sign-in method)
         *   Firestore Database (Choose **Native mode**)
-        *   Storage (You may need to upgrade to the Blaze plan - pay-as-you-go, but with a generous free tier - to enable Storage. You'll be prompted if this is necessary.)
+        *   Storage (For profile picture functionality. **Note:** Enabling Storage or exceeding its free tier usage might require upgrading your Firebase project to the Blaze (pay-as-you-go) plan. You'll be prompted by Firebase if this is necessary. If you cannot upgrade, profile picture features will be disabled in the app, but core task management will still work.)
 
 2.  **Configure Environment Variables for Firebase:**
     *   In your Firebase project settings (Project Overview -> Project settings -> General tab, scroll down to "Your apps"), find your web app's Firebase configuration (the `firebaseConfig` object). If no web app exists, create one.
@@ -70,7 +70,7 @@ This application uses Firebase for backend services including Authentication, Fi
           }
         }
         ```
-    *   **Storage:** Set security rules for Firebase Storage, especially for profile pictures. Go to **Storage** (Build menu) -> **Rules** tab in the Firebase console.
+    *   **Storage (for profile pictures, if Storage is enabled and active):** Set security rules for Firebase Storage. Go to **Storage** (Build menu) -> **Rules** tab in the Firebase console.
         *Example (for profile pictures):*
         ```rules
         rules_version = '2';

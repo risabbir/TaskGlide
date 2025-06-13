@@ -23,13 +23,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useAuth, type OtherProfileData } from "@/contexts/auth-context";
-import { Loader2, Info, UserCircle as UserIcon } from "lucide-react";
+import { Loader2, Info, UserCircle as UserIcon, ImageOff } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import React, { useEffect, useState, useMemo } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProfilePictureUploader } from "./profile-picture-uploader";
+// import { ProfilePictureUploader } from "./profile-picture-uploader";
 
 
 const OCCUPATIONS = [
@@ -222,7 +222,15 @@ export function ProfileForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onProfileSubmit)}>
             <CardContent className="space-y-6 p-6 sm:p-8">
-                <ProfilePictureUploader />
+                {/* <ProfilePictureUploader /> */}
+                <Alert variant="default" className="bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 dark:bg-blue-500/15 dark:border-blue-500/50">
+                  <ImageOff className="h-5 w-5 !text-blue-600 dark:!text-blue-400" />
+                  <AlertTitle className="font-semibold !text-blue-700 dark:!text-blue-400">Profile Pictures Disabled</AlertTitle>
+                  <AlertDescription>
+                    Profile picture uploads require Firebase Storage, which may need a project billing plan upgrade. This feature is currently disabled.
+                  </AlertDescription>
+                </Alert>
+
 
                 <FormField
                 control={form.control}
@@ -333,4 +341,6 @@ export function ProfileForm() {
     </Card>
   );
 }
+    
+
     
