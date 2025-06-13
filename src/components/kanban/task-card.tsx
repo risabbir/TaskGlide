@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock, Play, Pause, Repeat, Link2 } from "lucide-react"; // Added Repeat, Link2
+import { MoreVertical, Edit2, Trash2, ChevronsUpDown, ChevronDown, ChevronUp, CalendarDays, Info, Clock, Play, Pause, Repeat, Link2 } from "lucide-react";
 import { useKanban } from "@/lib/store";
 import { format, isPast, isToday, formatDistanceToNow, parseISO } from "date-fns";
 import { cn, formatTime } from "@/lib/utils";
@@ -100,8 +100,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
   });
 
   const isInProgressColumn = task.columnId === 'inprogress';
-  const isInReviewColumn = task.columnId === 'review';
-  const isInWorkingColumn = isInProgressColumn || isInReviewColumn;
+  const isInWorkingColumn = isInProgressColumn; // Simplified as 'review' is removed
 
 
   const toggleExpand = (e?: React.MouseEvent) => {
@@ -241,7 +240,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
                 </div>
               )}
               
-              {(isInProgressColumn || ((isInReviewColumn || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
+              {(isInProgressColumn || (task.columnId === 'done' && task.timeSpentSeconds > 0)) && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-muted-foreground" title="Time spent">
                     <Clock className="h-3.5 w-3.5" />
@@ -280,8 +279,8 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
                 </div>
               </div>
               
-              {(isInProgressColumn || ((isInReviewColumn || task.columnId === 'done') && task.timeSpentSeconds > 0)) && (
-                <div className="pt-2 pb-1"> {/* Removed border-b border-dashed */}
+              {(isInProgressColumn || (task.columnId === 'done' && task.timeSpentSeconds > 0)) && (
+                <div className="pt-2 pb-1">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">Time Tracker</h4>
                     <div className="flex items-center gap-2">

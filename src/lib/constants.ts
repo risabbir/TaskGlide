@@ -1,6 +1,6 @@
 
 import type { Column, Priority, FilterState, SortState } from "@/lib/types";
-import { ListTodo, Flame, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
+import { ListTodo, Flame, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
 export const APP_NAME = "TaskGlide"; 
 export const DEVELOPER_NAME = "R.Sabbir";
@@ -11,7 +11,7 @@ export const GUEST_ID_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_
 export const DEFAULT_COLUMNS: Column[] = [
   { id: "todo", title: "To Do", icon: ListTodo, taskIds: [] },
   { id: "inprogress", title: "In Progress", icon: Flame, taskIds: [] },
-  { id: "review", title: "Review", icon: Eye, taskIds: [] },
+  // { id: "review", title: "Review", icon: Eye, taskIds: [] }, // Removed Review column
   { id: "done", title: "Done", icon: CheckCircle2, taskIds: [] },
 ];
 
