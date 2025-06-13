@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { APP_NAME } from "@/lib/constants";
 import { useEffect } from "react";
-import { FileText, BookOpen } from "lucide-react";
+import { FileText } from "lucide-react"; // Removed BookOpen
 import type { Metadata } from 'next';
 
 
@@ -28,8 +28,8 @@ export default function TermsOfServicePage() {
       <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <BookOpen className="mx-auto h-16 w-16 text-primary mb-4" />
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            {/* <BookOpen className="mx-auto h-16 w-16 text-primary mb-4" /> Removed Icon */}
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Terms of Service
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">

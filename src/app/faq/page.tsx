@@ -11,7 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useEffect } from "react";
-import { HelpCircle, BookOpenText } from "lucide-react";
+import { HelpCircle } from "lucide-react"; // Removed BookOpenText
 import type { Metadata } from 'next';
 
 // export const metadata: Metadata = { // This needs to be uncommented if making this a Server Component
@@ -98,8 +98,8 @@ export default function FAQPage() {
       <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <BookOpenText className="mx-auto h-16 w-16 text-primary mb-4" />
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            {/* <BookOpenText className="mx-auto h-16 w-16 text-primary mb-4" /> Removed Icon */}
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Frequently Asked Questions
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
