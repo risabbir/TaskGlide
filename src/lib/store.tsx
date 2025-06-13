@@ -371,10 +371,10 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(false);
-  const lastAuthIdentifierRef = useRef<string | null>(null);
-
+  
   const authUserRef = useRef(authContextUser);
   const guestIdRef = useRef(authContextGuestId);
+  const lastAuthIdentifierRef = useRef<string | null>(null); // Stores the last active identifier (UID or GuestID)
 
   useEffect(() => {
     authUserRef.current = authContextUser;
@@ -387,13 +387,19 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
   const handlePermissionDeniedError = useCallback((operation: string, path: string, error: any, contextUserId?: string | null, sdkUserId?: string | null, sdkUserEmail?: string | null) => {
     const configuredProjectIdInEnv = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'NOT SET (Check .env!)';
-    const detailedMessage = `Could not ${operation} board data for path "${path}". This is likely due to Firestore security rules. Please ensure rules allow access for authenticated users. (Error code: ${error.code || 'UNKNOWN'})
-    \nContext User ID (at error): ${contextUserId || 'N/A'}
-    \nSDK User ID (at error): ${sdkUserId || 'N/A'} (Email: ${sdkUserEmail || 'N/A'})
-    \nApp's configured Firebase Project ID (from .env): ${configuredProjectIdInEnv}
-    \n\n🔥 ACTION REQUIRED: 
-    1. Verify Firestore rules in the Firebase Console are EXACTLY as in README.md and PUBLISHED.
-    2. CRITICAL: Ensure the 'App's configured Firebase Project ID' (from your .env file) EXACTLY matches the Project ID in your Firebase Console URL when viewing the rules. This is the most common cause of this error. Refer to README.md troubleshooting.`;
+    const expectedRule = `// Firestore Rule for path '${path}':\nmatch /${path.split('/')[0]}/{userId} {\n  allow read, write: if request.auth != null && request.auth.uid == userId;\n}`;
+    
+    const detailedMessage = `Could not ${operation} board data for path "${path}". This is likely due to Firestore security rules. (Error: ${error.code || 'UNKNOWN'} - ${error.message})
+    \n➡️ App's Configured Firebase Project ID (from .env): ${configuredProjectIdInEnv}
+    \n🔑 Context User ID (attempted operation for): ${contextUserId || 'N/A'}
+    \n🕵️ Firebase SDK Authenticated User ID (at time of error): ${sdkUserId || 'N/A'} (Email: ${sdkUserEmail || 'N/A'})
+    \n\n📋 Expected Firestore Rule for this path:
+    ${expectedRule}
+    \n\n🔥 ACTION REQUIRED:
+    1. Go to Firebase Console -> Firestore Database -> Rules.
+    2. Verify the Project ID in your browser's URL EXACTLY matches the "App's Configured Firebase Project ID" logged above.
+    3. Ensure the Firestore rules are EXACTLY as specified in README.md and are PUBLISHED.
+    4. If rules and Project ID match, verify the "SDK Authenticated User ID" above is what you expect and matches the "Context User ID".`;
 
     console.error(`[KanbanProvider] DETAILED PERMISSION_DENIED: Operation: ${operation}, Path: ${path}, ContextUID: ${contextUserId}, SdkUID: ${sdkUserId}, SdkEmail: ${sdkUserEmail}, Configured Project ID: ${configuredProjectIdInEnv}, Error:`, error);
     dispatch({ type: "SET_ERROR", payload: `Failed to ${operation} board data due to permissions.` });
@@ -401,130 +407,137 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       title: `Board Data Access Error (${operation}) - PERMISSION_DENIED`,
       description: detailedMessage,
       variant: "destructive",
-      duration: 30000, // Longer duration for critical errors to allow reading
+      duration: 30000,
     });
   }, [toast]);
 
 
+  const loadData = useCallback(async (identifierToLoad: string, contextUserAtLoadTime: typeof authContextUser, guestIdAtLoadTime: typeof authContextGuestId) => {
+    if (!isMounted.current) {
+      console.log("[KanbanProvider] loadData: Component unmounted. Aborting load.");
+      return;
+    }
+    console.log(`[KanbanProvider] loadData: Called for identifier '${identifierToLoad}'. ContextUser UID: ${contextUserAtLoadTime?.uid}, GuestID: ${guestIdAtLoadTime}`);
+
+    if (!state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
+
+    if (contextUserAtLoadTime?.uid === identifierToLoad) { // User mode
+      const userIdToLoad = contextUserAtLoadTime.uid;
+      const currentSdkUser = firebaseAuthInstance.currentUser; // Fresh SDK check
+      if (!currentSdkUser || currentSdkUser.uid !== userIdToLoad) {
+        console.error(`[KanbanProvider] loadData: SDK user mismatch or null during user data load. SDK User: ${currentSdkUser?.uid}, Expected: ${userIdToLoad}. Aborting Firestore load.`);
+        dispatch({ type: "SET_ERROR", payload: "Authentication state error during data load." });
+        dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
+        return;
+      }
+      console.log(`[KanbanProvider] loadData: Logged-in user mode (UID: ${userIdToLoad}). Fetching from Firestore.`);
+      try {
+        const firestoreData = await getUserKanbanData(userIdToLoad);
+        if (isMounted.current) {
+          if (firestoreData) {
+            dispatch({ type: "SET_INITIAL_DATA", payload: firestoreData });
+          } else {
+            dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
+          }
+        }
+      } catch (error: any) {
+        console.error(`[KanbanProvider] loadData: Firestore error for user ${userIdToLoad}:`, error);
+        if (isMounted.current) {
+          if (error.code === 'permission-denied' || error.code === 7) {
+            handlePermissionDeniedError('load', `userKanbanData/${userIdToLoad}`, error, userIdToLoad, currentSdkUser?.uid, currentSdkUser?.email);
+          } else {
+            dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
+          }
+          dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
+        }
+      }
+    } else if (guestIdAtLoadTime === identifierToLoad) { // Guest mode
+      console.log(`[KanbanProvider] loadData: Guest mode (Guest ID: ${guestIdAtLoadTime}). Loading from localStorage.`);
+      if (typeof window !== 'undefined' && isMounted.current) {
+        try {
+          const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
+          const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
+          if (storedTasks && storedColumnsState) {
+            const tasks: Task[] = JSON.parse(storedTasks).map(parseTaskForStorage);
+            const parsedStoredColumns: Array<{ id: string; title: string; taskIds: string[] }> = JSON.parse(storedColumnsState);
+            const hydratedColumnsMap = new Map(parsedStoredColumns.map(sc => [sc.id, sc]));
+            const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
+              const storedColData = hydratedColumnsMap.get(defaultCol.id);
+              return { ...defaultCol, title: storedColData?.title || defaultCol.title, taskIds: storedColData ? storedColData.taskIds.filter(taskId => tasks.some(t => t.id === taskId)) : [] };
+            });
+            dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
+          } else {
+            dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
+          }
+        } catch (e: any) {
+          console.error("[KanbanProvider] loadData: Failed to parse guest data from localStorage:", e);
+          dispatch({ type: "SET_ERROR", payload: "Error loading local data." });
+          dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
+        }
+      }
+    } else {
+      console.warn(`[KanbanProvider] loadData: Identifier '${identifierToLoad}' does not match current contextUser or guestId. This should not happen if called correctly. Aborting specific load.`);
+      dispatch({ type: "SET_LOADING", payload: false });
+      if (!state.isDataInitialized) dispatch({ type: "SET_DATA_INITIALIZED", payload: true }); // Mark as initialized to prevent reload loops for this invalid state
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, handlePermissionDeniedError, state.isLoading]); // Removed state.isDataInitialized as it's managed by the calling effect
+
   useEffect(() => {
     isMounted.current = true;
-    const currentAuthIdentifier = authUserRef.current?.uid || guestIdRef.current;
-    console.log(`[KanbanProvider] Mount/Auth Effect | Auth loading: ${authLoading}, Current Identifier (from refs): ${currentAuthIdentifier}, Prev Identifier: ${lastAuthIdentifierRef.current}, Data Initialized: ${state.isDataInitialized}`);
+    const currentAuthContextUser = authUserRef.current;
+    const currentGuestId = guestIdRef.current;
+    const activeIdentifier = currentAuthContextUser?.uid || currentGuestId;
 
-    if (authLoading && !currentAuthIdentifier) {
-      console.log("[KanbanProvider] Auth is loading and no guest ID ref active. Waiting for auth state. Setting isLoading: true.");
+    console.log(`[KanbanProvider] AuthEffect | AuthLoading: ${authLoading}, ActiveIdentifier(refs): ${activeIdentifier}, LastIdentifier: ${lastAuthIdentifierRef.current}, State.isLoading: ${state.isLoading}, State.isDataInitialized: ${state.isDataInitialized}`);
+
+    if (authLoading) {
+      console.log("[KanbanProvider] AuthEffect: Auth is loading. Waiting...");
       if (!state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
       return;
     }
 
-    const hasIdentifierChanged = currentAuthIdentifier !== lastAuthIdentifierRef.current;
-
-    if (hasIdentifierChanged) {
-      console.log(`[KanbanProvider] Identifier CHANGED (refs). Previous: ${lastAuthIdentifierRef.current}, New: ${currentAuthIdentifier}. Resetting data and flags (isDataInitialized to false).`);
-      lastAuthIdentifierRef.current = currentAuthIdentifier;
+    if (activeIdentifier !== lastAuthIdentifierRef.current) {
+      console.log(`[KanbanProvider] AuthEffect: Identifier CHANGED. Prev: ${lastAuthIdentifierRef.current}, New: ${activeIdentifier}. Resetting Kanban state.`);
+      lastAuthIdentifierRef.current = activeIdentifier;
       dispatch({ type: "SET_LOADING", payload: true });
       dispatch({ type: "SET_DATA_INITIALIZED", payload: false });
-      dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
-    }
+      dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
 
-    const loadData = async () => {
-      console.log(`[KanbanProvider] loadData triggered for identifier (from refs): ${currentAuthIdentifier}. AuthContext User (ref): ${authUserRef.current?.uid}, Guest ID (ref): ${guestIdRef.current}, Direct SDK user: ${firebaseAuthInstance.currentUser?.uid}`);
-
-      if (!isMounted.current) {
-        console.log("[KanbanProvider] loadData: Component unmounted. Aborting load.");
-        return;
-      }
-
-      if (!state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
-
-      const contextUserForLoad = authUserRef.current;
-      const currentSdkUserForLoad = firebaseAuthInstance.currentUser;
-      const guestIdForLoad = guestIdRef.current;
-
-      if (contextUserForLoad && currentSdkUserForLoad && contextUserForLoad.uid === currentSdkUserForLoad.uid) {
-        const userIdToLoad = currentSdkUserForLoad.uid;
-        console.log(`[KanbanProvider] Logged-in user mode (UID: ${userIdToLoad}). Attempting to initialize from Firestore.`);
-        console.log(`[KanbanProvider] PRE-LOAD check for user ${userIdToLoad}: Calling getUserKanbanData.`);
-        try {
-          const firestoreData = await getUserKanbanData(userIdToLoad);
-          if (isMounted.current) {
-            if (firestoreData) {
-              console.log(`[KanbanProvider] Firestore data fetched for user ${userIdToLoad}: ${firestoreData.tasks.length} tasks, ${firestoreData.columns.length} columns.`);
-              dispatch({ type: "SET_INITIAL_DATA", payload: firestoreData });
-            } else {
-              console.log(`[KanbanProvider] No data in Firestore for user ${userIdToLoad}. Initializing with default empty state.`);
-              dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
-            }
-          }
-        } catch (error: any) {
-          console.error(`[KanbanProvider] Failed to load data from Firestore for user ${userIdToLoad}:`, error);
-          if (isMounted.current) {
-            if (error.code === 'permission-denied' || error.code === 7) {
-              handlePermissionDeniedError('load', `userKanbanData/${userIdToLoad}`, error, userIdToLoad, currentSdkUserForLoad?.uid, currentSdkUserForLoad?.email);
-            } else {
-              dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
-              toast({ title: "Load Error", description: `Failed to load tasks from cloud. Error: ${error.message}`, variant: "destructive" });
-            }
-            dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
-          }
-        }
-      } else if (guestIdForLoad) {
-        console.log(`[KanbanProvider] Guest user mode (Guest ID ref: ${guestIdForLoad}). Initializing from localStorage.`);
-        if (typeof window !== 'undefined' && isMounted.current) {
-            try {
-                const storedTasks = localStorage.getItem(GUEST_TASKS_STORAGE_KEY);
-                const storedColumnsState = localStorage.getItem(GUEST_COLUMNS_STORAGE_KEY);
-                console.log("[KanbanProvider] Guest data from localStorage - Tasks:", storedTasks ? "Found" : "Not Found", "Columns:", storedColumnsState ? "Found" : "Not Found");
-
-                if (storedTasks && storedColumnsState) {
-                    const tasks: Task[] = JSON.parse(storedTasks).map(parseTaskForStorage);
-                    const parsedStoredColumns: Array<{ id: string; title: string; taskIds: string[] }> = JSON.parse(storedColumnsState);
-
-                    const hydratedColumnsMap = new Map(parsedStoredColumns.map(sc => [sc.id, sc]));
-                    const hydratedColumns: Column[] = DEFAULT_COLUMNS.map(defaultCol => {
-                        const storedColData = hydratedColumnsMap.get(defaultCol.id);
-                        return {
-                            ...defaultCol,
-                            title: storedColData?.title || defaultCol.title,
-                            taskIds: storedColData ? storedColData.taskIds.filter(taskId => tasks.some(t => t.id === taskId)) : [],
-                        };
-                    });
-                    dispatch({ type: "SET_INITIAL_DATA", payload: { tasks, columns: hydratedColumns } });
-                } else {
-                    console.log("[KanbanProvider] No guest data in localStorage. Initializing with default empty state.");
-                    dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
-                }
-            } catch (e: any) {
-                console.error("[KanbanProvider] Failed to parse guest data from localStorage:", e);
-                toast({ title: "Local Data Error", description: "Could not load tasks from your browser's storage. Starting fresh.", variant: "destructive" });
-                dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
-            }
-        } else if (isMounted.current) {
-            console.log("[KanbanProvider] Window undefined or unmounted during guest load. Initializing with default empty state.");
-            dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({...c, taskIds:[]})) } });
-        }
+      if (activeIdentifier) {
+        console.log(`[KanbanProvider] AuthEffect: New active identifier '${activeIdentifier}'. Initiating data load.`);
+        loadData(activeIdentifier, currentAuthContextUser, currentGuestId);
       } else {
-        console.log("[KanbanProvider] No user (ref) and no guestId (ref) during loadData. This might be transient during auth loading. Setting isLoading true, no data dispatch.");
-        if (isMounted.current && !state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
+        console.log("[KanbanProvider] AuthEffect: No active identifier (user signed out, no guest). State is clean.");
+        dispatch({ type: "SET_LOADING", payload: false });
+        dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
       }
-    };
-
-    if (!state.isDataInitialized || hasIdentifierChanged) {
-        console.log(`[KanbanProvider] Triggering loadData. isDataInitialized: ${state.isDataInitialized}, hasIdentifierChanged: ${hasIdentifierChanged}`);
-        loadData();
-    } else {
-        console.log(`[KanbanProvider] Data already initialized for current identifier (${currentAuthIdentifier}), and identifier has not changed. Skipping loadData. Ensuring isLoading is false.`);
-        if (state.isLoading && isMounted.current) dispatch({ type: "SET_LOADING", payload: false });
+    } else if (activeIdentifier && !state.isDataInitialized && !state.isLoading) {
+      console.log(`[KanbanProvider] AuthEffect: Identifier '${activeIdentifier}' same, data not initialized, not loading. Retrying load.`);
+      dispatch({ type: "SET_LOADING", payload: true });
+      loadData(activeIdentifier, currentAuthContextUser, currentGuestId);
+    } else if (!activeIdentifier && state.isLoading) {
+      // If authLoading is false, and no active identifier, but provider is still loading, set to false.
+      console.log(`[KanbanProvider] AuthEffect: No active identifier, and authLoading is false, but provider state.isLoading is true. Setting to false.`);
+      dispatch({ type: "SET_LOADING", payload: false });
+      if(!state.isDataInitialized) dispatch({ type: "SET_DATA_INITIALIZED", payload: true }); // Consider empty state as initialized
+    } else if (activeIdentifier && state.isDataInitialized && state.isLoading) {
+      // If data is initialized for the current identifier, but isLoading is still true, set it to false.
+      console.log(`[KanbanProvider] AuthEffect: Identifier '${activeIdentifier}' same, data initialized, but state.isLoading is true. Setting to false.`);
+       dispatch({ type: "SET_LOADING", payload: false });
     }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authContextUser, authContextGuestId, authLoading, dispatch, toast, handlePermissionDeniedError]); // Removed state.isDataInitialized and state.isLoading
+
+    return () => {
+      // isMounted.current = false; // Global unmount is handled in a separate effect
+    };
+  }, [authContextUser, authContextGuestId, authLoading, dispatch, loadData, state.isDataInitialized, state.isLoading, handlePermissionDeniedError]);
 
 
   useEffect(() => {
-    return () => {
+    return () => { // This is the global unmount cleanup
       isMounted.current = false;
-      console.log("[KanbanProvider] Unmounted.");
+      console.log("[KanbanProvider] Unmounted globally.");
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
@@ -538,15 +551,6 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Only run if tasks or columns have actually changed since the last save/initial load for this user.
-    // This check is imperfect as it doesn't compare against *last saved state* but *current state*.
-    // However, combined with isDataInitialized, it prevents saves on initial load.
-    const hasRelevantStateChanged = state.tasks !== initialState.tasks || state.columns !== initialState.columns;
-    if (!hasRelevantStateChanged && state.isDataInitialized) {
-      // This condition might need refinement if it skips legitimate saves after data is loaded and then changed.
-      // For now, the primary goal is to ensure saves happen *after* initialization and *when data changes*.
-    }
-
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
@@ -557,8 +561,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const userAtSaveTime = authUserRef.current; // From AuthContext
-      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser; // Fresh SDK check
+      const userAtSaveTime = authUserRef.current;
+      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser;
       const guestIdAtSaveTime = guestIdRef.current;
 
       console.log(`[KanbanProvider] Debounced Save TIMEOUT EXECUTING. Context User (ref): ${userAtSaveTime?.uid}, Guest ID (ref): ${guestIdAtSaveTime}, SDK User: ${sdkUserAtSaveTime?.uid} (Email: ${sdkUserAtSaveTime?.email}), Tasks: ${state.tasks.length}`);
@@ -589,9 +593,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           console.error(`[KanbanProvider] Failed to save data to Firestore for user ${userIdForSave}:`, error.message, error.code, error);
           if (error.code === 'permission-denied' || error.code === 7) {
             handlePermissionDeniedError('save', `userKanbanData/${userIdForSave}`, error, userIdForSave, sdkUserAtSaveTime?.uid, sdkUserAtSaveTime?.email);
-          } else if (error.message && error.message.includes("currentUser is null")) {
-            console.warn(`[KanbanProvider] Save for user ${userIdForSave} aborted by service due to currentUser being null. This suggests a rapid sign-out. Toasting info.`);
-            toast({ title: "Save Skipped", description: "User signed out, data not saved to cloud.", variant: "default" });
+          } else if (error.message && error.message.includes("Invalid user ID")) { // Error from saveUserKanbanData itself
+             toast({ title: "Save Error", description: `Save aborted: ${error.message}`, variant: "destructive" });
           } else {
             toast({ title: "Save Error", description: `Failed to save tasks to cloud. Error: ${error.message}`, variant: "destructive" });
           }
@@ -630,8 +633,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.tasks, state.columns, authLoading, dispatch, toast, handlePermissionDeniedError]); // Removed state.isDataInitialized
+  }, [state.tasks, state.columns, authLoading, dispatch, toast, handlePermissionDeniedError, state.isDataInitialized]);
 
 
   return <KanbanContext.Provider value={{ state, dispatch }}>{children}</KanbanContext.Provider>;
