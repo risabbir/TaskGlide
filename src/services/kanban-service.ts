@@ -58,14 +58,14 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
   }
    if (!currentSdkUser) {
     console.error(`[KanbanService] getUserKanbanData error: Firebase SDK's currentUser is null at the time of load for context userId: ${userId}. User might have been signed out. Aborting load.`);
-    return null; // Or throw, but null aligns with existing logic for "no data"
+    return null;
   }
   if (currentSdkUser.uid !== userId) {
      console.error(`[KanbanService] getUserKanbanData critical error: Mismatch between context userId ('${userId}') and SDK currentUser.uid ('${currentSdkUser.uid}'). Aborting load.`);
      return null;
   }
 
-  const docPath = `userKanbanData/${currentSdkUser.uid}`; // Use SDK's UID for path
+  const docPath = `userKanbanData/${currentSdkUser.uid}`;
   console.log(`[KanbanService] Attempting to GET doc: ${docPath} for user: ${currentSdkUser.uid}`);
   try {
     const docRef = doc(db, 'userKanbanData', currentSdkUser.uid);
@@ -91,55 +91,44 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
     };
   } catch (error: any) {
     console.error(`[KanbanService] Firestore error in GET operation for ${docPath} (User: ${currentSdkUser.uid}):`, error.message, error.code, error);
-    throw error; // Re-throw to be caught by KanbanProvider for specific PERMISSION_DENIED handling
+    throw error;
   }
 }
 
 export async function saveUserKanbanData(
-  userId: string, // This comes from AuthContext's user.uid
+  userId: string, // Changed: This userId is verified by KanbanProvider before calling
   tasks: TaskForFirestore[],
   columns: ColumnForFirestore[]
 ): Promise<void> {
-  const currentSdkUser = firebaseAuth.currentUser; // Check SDK's perspective *now*
-  console.log(`[KanbanService] saveUserKanbanData called for context userId: ${userId}. SDK currentUser at save time: ${currentSdkUser?.uid}, email: ${currentSdkUser?.email}. Tasks count: ${tasks.length}, Columns count: ${columns.length}`);
+  // The userId parameter is trusted as KanbanProvider performed the necessary checks
+  // against firebaseAuth.currentUser right before calling this function.
+  // We no longer re-check firebaseAuth.currentUser here to avoid race conditions.
 
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-    console.error(`[KanbanService] saveUserKanbanData error: Invalid context userId provided: '${userId}'. Aborting save.`);
-    throw new Error("Invalid user ID (from context) provided for saving Kanban data.");
+    console.error(`[KanbanService] saveUserKanbanData error: Invalid userId passed from caller: '${userId}'. Aborting save.`);
+    // This throw indicates a logic error in the calling code (KanbanProvider)
+    throw new Error("Invalid user ID provided to saveUserKanbanData by the calling function.");
   }
 
-  if (!currentSdkUser) {
-    console.error(`[KanbanService] saveUserKanbanData error: Firebase SDK's currentUser is null at the time of save for context userId: ${userId}. User might have been signed out. Aborting save.`);
-    throw new Error("Firebase SDK's currentUser is null. Cannot save Kanban data.");
-  }
-
-  if (currentSdkUser.uid !== userId) {
-    // This is a critical state inconsistency.
-    console.error(`[KanbanService] saveUserKanbanData CRITICAL error: Mismatch between context userId ('${userId}') and Firebase SDK currentUser.uid ('${currentSdkUser.uid}'). This indicates a serious auth state inconsistency. Aborting save.`);
-    throw new Error(`User ID mismatch. Context: ${userId}, SDK: ${currentSdkUser.uid}. Cannot reliably save Kanban data.`);
-  }
-
-  // If we reach here, context userId and SDK currentSdkUser.uid match and are valid.
-  // The path will be userKanbanData/currentSdkUser.uid
-  const docPath = `userKanbanData/${currentSdkUser.uid}`; // Use SDK's UID for path construction for certainty
-  console.log(`[KanbanService] Attempting to SET doc: ${docPath} for user: ${currentSdkUser.uid}. Project ID from env: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
+  const docPath = `userKanbanData/${userId}`;
+  console.log(`[KanbanService] Attempting to SET doc: ${docPath} for user: ${userId}. Project ID from env: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
   try {
-    const docRef = doc(db, 'userKanbanData', currentSdkUser.uid);
+    const docRef = doc(db, 'userKanbanData', userId);
     const dataToSave: UserKanbanDataFromFirestore = {
       tasks: tasks,
       columns: columns,
       firestoreLastUpdated: serverTimestamp() as Timestamp,
     };
     await setDoc(docRef, dataToSave);
-    console.log(`[KanbanService] Successfully saved Kanban data for ${docPath} (User: ${currentSdkUser.uid})`);
+    console.log(`[KanbanService] Successfully saved Kanban data for ${docPath} (User: ${userId})`);
   } catch (error: any) {
-    console.error(`[KanbanService] Firestore error in SET operation for ${docPath} (User: ${currentSdkUser.uid}):`, error.message, error.code, error);
-    // Add project ID to error context if available
+    // Firestore specific errors like PERMISSION_DENIED will be caught here.
+    console.error(`[KanbanService] Firestore error in SET operation for ${docPath} (User: ${userId}):`, error.message, error.code, error);
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     if (error.code === 'permission-denied' || error.code === 7) {
-        console.error(`[KanbanService] PERMISSION_DENIED saving to path ${docPath}. Ensure Firestore rules for project '${projectId || 'UNKNOWN (check .env)'}' allow write access for UID '${currentSdkUser.uid}'.`);
+        console.error(`[KanbanService] PERMISSION_DENIED saving to path ${docPath}. Ensure Firestore rules for project '${projectId || 'UNKNOWN (check .env)'}' allow write access for UID '${userId}'.`);
     }
-    throw error; // Re-throw to be caught by KanbanProvider for specific PERMISSION_DENIED handling
+    throw error;
   }
 }
     
