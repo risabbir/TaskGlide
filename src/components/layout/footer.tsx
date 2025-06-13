@@ -29,12 +29,15 @@ export function Footer() {
             </nav>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">Support</h3>
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">Support & Community</h3>
             <nav className="space-y-2">
               <Link href="/faq" legacyBehavior>
                 <a className="text-sm text-muted-foreground hover:text-primary transition-colors">FAQ</a>
               </Link>
-              {/* Add Contact Us link if you have a contact page/method */}
+              <br />
+              <Link href="/feature-request" legacyBehavior>
+                <a className="text-sm text-muted-foreground hover:text-primary transition-colors">Request a Feature</a>
+              </Link>
             </nav>
           </div>
         </div>

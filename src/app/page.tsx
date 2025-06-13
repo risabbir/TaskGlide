@@ -12,7 +12,7 @@ import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton"; // Added Skeleton
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Dynamic imports for components that might be heavy or not immediately needed
 const TaskModal = dynamic(() => import('@/components/task/task-modal').then(mod => mod.TaskModal), {
@@ -143,4 +143,3 @@ export default function HomePage() {
       <PageContent />
   );
 }
-
