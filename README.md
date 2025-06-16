@@ -16,7 +16,7 @@ This application uses Firebase for backend services including Authentication, Fi
 1.  **Create a Firebase Project:**
     *   Go to the [Firebase Console](https://console.firebase.google.com/).
     *   Click "Add project" and follow the prompts. Choose a Project name (e.g., "My TaskGlide App").
-    *   You can accept the default Project ID or customize it during creation (it's immutable later).
+    *   Your Firebase Project ID will be assigned by Firebase (e.g., `mytaskglide`, `my-cool-app-123`). You can find this in Project Settings or in the URL of your Firebase console.
     *   Enable or disable Google Analytics as you prefer (not essential for app functionality).
 
 2.  **Configure Environment Variables for Firebase (CRITICAL):**
@@ -32,7 +32,7 @@ This application uses Firebase for backend services including Authentication, Fi
         ```env
         NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
         NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-        NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID=mytaskglide  # <-- REPLACE 'mytaskglide' WITH YOUR ACTUAL FIREBASE PROJECT ID
         NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
         NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
         NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
@@ -41,7 +41,7 @@ This application uses Firebase for backend services including Authentication, Fi
         # For AI Features (Genkit with Google AI)
         GOOGLE_API_KEY=YOUR_GOOGLE_AI_API_KEY_HERE
         ```
-    *   **🔥🔥🔥 CRITICAL: `NEXT_PUBLIC_FIREBASE_PROJECT_ID` must be your actual Firebase Project ID.** This is the most common source of `PERMISSION_DENIED` errors if mismatched. Find your Project ID in the Firebase Console URL (e.g., `console.firebase.google.com/project/YOUR-PROJECT-ID/`) or in Project Settings.
+    *   **🔥🔥🔥 CRITICAL: `NEXT_PUBLIC_FIREBASE_PROJECT_ID` must be your actual Firebase Project ID.** For example, if your Project ID is `mytaskglide`, the line should be `NEXT_PUBLIC_FIREBASE_PROJECT_ID=mytaskglide`. This is the most common source of `PERMISSION_DENIED` errors if mismatched. Find your Project ID in the Firebase Console URL (e.g., `console.firebase.google.com/project/YOUR-PROJECT-ID/`) or in Project Settings.
     *   **Restart your Next.js development server (`npm run dev`)** after creating or modifying the `.env` file. This is essential for the changes to take effect.
 
 3.  **Enable Firebase Services:**
@@ -141,19 +141,19 @@ This is almost always due to **Firestore Security Rules** configuration or a **m
         *   Go to your **Firebase Console**.
         *   Navigate to **Firestore Database -> Rules**.
         *   Look at the URL in your browser's address bar. It will be something like: `https://console.firebase.google.com/project/YOUR-PROJECT-ID-FROM-CONSOLE/firestore/rules`
-        *   **Carefully copy `YOUR-PROJECT-ID-FROM-CONSOLE`**. (Example: if URL is `.../project/my-cool-app-123/firestore/...`, then `my-cool-app-123` is the ID).
+        *   **Carefully copy `YOUR-PROJECT-ID-FROM-CONSOLE`**. (Example: if URL is `.../project/mytaskglide/firestore/...`, then `mytaskglide` is the ID).
     *   **Step B: Find Project ID in your `.env` file AND in the app's Profile Page:**
         *   Open the `.env` file in the root of your Next.js project.
         *   Find the line `NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here`.
-        *   Copy the value `your_project_id_here`.
-        *   **(NEW) As a logged-in user, navigate to the Profile page in your application. It now displays the "Configured Firebase Project ID" the app is using.**
+        *   Copy the value `your_project_id_here`. (For example, it should be `mytaskglide` if that is your Project ID).
+        *   As a logged-in user, navigate to the Profile page in your application. It now displays the "Configured Firebase Project ID" the app is using.
     *   **Step C: Compare the three Project IDs.**
-        *   The Project ID from the **Firebase Console URL (Step A)**
-        *   The Project ID from your **`.env` file (Step B)**
-        *   The Project ID displayed on your **app's Profile Page (Step B)**
+        *   The Project ID from the **Firebase Console URL (Step A)** (e.g., `mytaskglide`)
+        *   The Project ID from your **`.env` file (Step B)** (e.g., should be `mytaskglide`)
+        *   The Project ID displayed on your **app's Profile Page (Step B)** (e.g., should be `mytaskglide`)
         *   **These three Project IDs MUST MATCH EXACTLY.** Case matters. No extra spaces.
         *   If they are different, your app is trying to connect to one Firebase project, but you are setting security rules in another. This *will* cause `PERMISSION_DENIED`.
-        *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A).
+        *   If they don't match, **update your `.env` file** to use the Project ID from the Firebase Console URL (Step A). (e.g., `NEXT_PUBLIC_FIREBASE_PROJECT_ID=mytaskglide`).
     *   **Step D: Restart your Next.js development server (`npm run dev`) after any changes to the `.env` file.** This is essential for the changes to take effect.
     *   **Console Log Check:** Your browser's developer console will show logs from `[KanbanService]` when it attempts Firestore operations. These logs include `Configured Project ID: ...`. This logged Project ID *must* match the Project ID from your Firebase Console URL (Step A).
 
@@ -224,3 +224,6 @@ If you switch Firebase projects, you'll need to migrate data:
 *   **Firestore Data:** Export/Import via Firebase Console or `gcloud firestore`.
 *   **Storage Files:** Manual download/upload or `gsutil`.
 Remember to update security rules and email templates in the new project.
+
+
+      
