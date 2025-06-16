@@ -364,7 +364,11 @@ const parseTaskForStorage = (task: any): Task => ({
 
 export function KanbanProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(kanbanReducer, initialState);
-  const { user: authContextUser, loading: authLoading, guestId: authContextGuestId } = useAuth();
+  const {
+    user: authContextUser,
+    loading: authLoading,
+    guestId: authContextGuestId,
+  } = useAuth();
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(false);
@@ -478,55 +482,50 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
       if (!state.isDataInitialized) dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, handlePermissionDeniedError, state.isLoading]);
+  }, [dispatch, handlePermissionDeniedError, state.isLoading]); // Removed state.isLoading from deps, it's managed inside.
 
   useEffect(() => {
     isMounted.current = true;
-    const currentAuthContextUser = authUserRef.current;
-    const currentGuestId = guestIdRef.current;
-    const activeIdentifier = currentAuthContextUser?.uid || currentGuestId;
+    // Use authContextUser and authContextGuestId directly from useAuth() in this effect's scope
+    // as they represent the latest state from AuthProvider.
+    const activeIdentifier = authContextUser?.uid || authContextGuestId;
 
-    console.log(`[KanbanProvider] Mount/Auth Effect | Auth loading: ${authLoading}, Current Identifier (from refs): ${activeIdentifier}, Prev Identifier: ${lastAuthIdentifierRef.current}, Data Initialized: ${state.isDataInitialized}`);
+    console.log(`[KanbanProvider] Mount/Auth Effect | Auth loading: ${authLoading}, Current Identifier (from context): ${activeIdentifier}, Prev Identifier (ref): ${lastAuthIdentifierRef.current}, Data Initialized: ${state.isDataInitialized}`);
 
-    if (authLoading && !currentGuestId) {
-      console.log("[KanbanProvider] Mount/Auth Effect: Auth is loading and no guest ID ref active. Waiting for auth state. Setting isLoading: true.");
-      if (!state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
-      return;
+    if (authLoading && !authContextGuestId) {
+        console.log("[KanbanProvider] Mount/Auth Effect: Auth is loading and no guest ID. Waiting for auth state. Setting isLoading: true.");
+        if (!state.isLoading) dispatch({ type: "SET_LOADING", payload: true });
+        return;
     }
 
     if (activeIdentifier !== lastAuthIdentifierRef.current) {
-      console.log(`[KanbanProvider] Mount/Auth Effect: Identifier CHANGED. Prev: ${lastAuthIdentifierRef.current}, New: ${activeIdentifier}. Resetting Kanban state.`);
-      lastAuthIdentifierRef.current = activeIdentifier;
-      dispatch({ type: "SET_LOADING", payload: true });
-      dispatch({ type: "SET_DATA_INITIALIZED", payload: false });
-      dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
+        console.log(`[KanbanProvider] Mount/Auth Effect: Identifier CHANGED. Prev: ${lastAuthIdentifierRef.current}, New: ${activeIdentifier}. Resetting Kanban state.`);
+        lastAuthIdentifierRef.current = activeIdentifier;
+        dispatch({ type: "SET_LOADING", payload: true });
+        dispatch({ type: "SET_DATA_INITIALIZED", payload: false });
+        dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
 
-      if (activeIdentifier) {
-        console.log(`[KanbanProvider] Mount/Auth Effect: New active identifier '${activeIdentifier}'. Initiating data load.`);
-        loadData(activeIdentifier, currentAuthContextUser, currentGuestId);
-      } else {
-        console.log("[KanbanProvider] Mount/Auth Effect: No active identifier (user signed out, no guest). State is clean. Setting isLoading false, data initialized.");
-        dispatch({ type: "SET_LOADING", payload: false });
-        dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
-      }
+        if (activeIdentifier) {
+            console.log(`[KanbanProvider] Mount/Auth Effect: New active identifier '${activeIdentifier}'. Initiating data load.`);
+            loadData(activeIdentifier, authContextUser, authContextGuestId);
+        } else {
+            console.log("[KanbanProvider] Mount/Auth Effect: No active identifier (user signed out, no guest). State is clean. Setting isLoading false, data initialized.");
+            dispatch({ type: "SET_LOADING", payload: false });
+            dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
+        }
     } else if (activeIdentifier && !state.isDataInitialized && !state.isLoading) {
-      console.log(`[KanbanProvider] Mount/Auth Effect: Identifier '${activeIdentifier}' same, data not initialized, not loading. Retrying load.`);
-      dispatch({ type: "SET_LOADING", payload: true });
-      loadData(activeIdentifier, currentAuthContextUser, currentGuestId);
+        console.log(`[KanbanProvider] Mount/Auth Effect: Identifier '${activeIdentifier}' same, data not initialized, not loading. Retrying load.`);
+        dispatch({ type: "SET_LOADING", payload: true });
+        loadData(activeIdentifier, authContextUser, authContextGuestId);
     } else if (!activeIdentifier && state.isLoading && !authLoading) {
-      console.log(`[KanbanProvider] Mount/Auth Effect: No active identifier, provider isLoading=true, authLoading=false. Setting isLoading false, data initialized.`);
-      dispatch({ type: "SET_LOADING", payload: false });
-      if(!state.isDataInitialized) dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
+        console.log(`[KanbanProvider] Mount/Auth Effect: No active identifier, provider isLoading=true, authLoading=false. Setting isLoading false, data initialized.`);
+        dispatch({ type: "SET_LOADING", payload: false });
+        if(!state.isDataInitialized) dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
     } else if (activeIdentifier && state.isDataInitialized && state.isLoading) {
-      console.log(`[KanbanProvider] Mount/Auth Effect: Identifier '${activeIdentifier}' same, data initialized, but isLoading=true. Setting isLoading false.`);
-       dispatch({ type: "SET_LOADING", payload: false });
+        console.log(`[KanbanProvider] Mount/Auth Effect: Identifier '${activeIdentifier}' same, data initialized, but isLoading=true. Setting isLoading false.`);
+         dispatch({ type: "SET_LOADING", payload: false });
     }
-
-    return () => {
-      // This cleanup runs when dependencies change, not just global unmount
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authContextUser, authContextGuestId, authLoading, loadData]);
+  }, [authContextUser, authContextGuestId, authLoading, loadData, state.isDataInitialized, state.isLoading, dispatch]);
 
 
   useEffect(() => {
@@ -541,10 +540,14 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    if (!isMounted.current || !state.isDataInitialized) {
+    if (!isMounted.current || !state.isDataInitialized || authLoading) {
       console.log(
-        `[KanbanProvider] Debounced Save effect SKIPPED (initial check): isMounted=${isMounted.current}, isDataInitialized=${state.isDataInitialized}`
+        `[KanbanProvider] Debounced Save effect SKIPPED (initial check): isMounted=${isMounted.current}, isDataInitialized=${state.isDataInitialized}, authLoading=${authLoading}`
       );
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
+      }
       return;
     }
 
@@ -553,44 +556,46 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     }
 
     console.log(
-      `[KanbanProvider] Debounced Save effect: Data changed (tasks/columns). Scheduling save. isDataInitialized=${state.isDataInitialized}`
+      `[KanbanProvider] Debounced Save effect: Data/Auth context changed. Scheduling save. ` +
+      `Tasks: ${state.tasks.length}, Columns: ${state.columns.length}, ` +
+      `ContextUser: ${authContextUser?.uid}, GuestID: ${authContextGuestId}, AuthLoading: ${authLoading}`
     );
 
     debounceTimeoutRef.current = setTimeout(async () => {
       if (!isMounted.current || !state.isDataInitialized) {
         console.log(
-          `[KanbanProvider] Debounced Save TIMEOUT SKIPPED (inner check): Component unmounted or data not initialized for current auth identifier. isMounted=${isMounted.current}, isDataInitialized=${state.isDataInitialized}`
+          `[KanbanProvider] Debounced Save TIMEOUT SKIPPED (inner check): Component unmounted or data not initialized. ` +
+          `isMounted=${isMounted.current}, isDataInitialized=${state.isDataInitialized}`
         );
         return;
       }
 
-      const userAtSaveTime = authUserRef.current; // From AuthContext, reflects React state
-      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser; // Direct SDK check
-      const guestIdAtSaveTime = guestIdRef.current;
+      const userForSaveAttempt = authUserRef.current; // Use ref for value at time of scheduling
+      const guestForSaveAttempt = guestIdRef.current; // Use ref
+      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser;
 
       console.log(
-        `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. Context User (ref): ${userAtSaveTime?.uid}, SDK User (direct check): ${sdkUserAtSaveTime?.uid} (Email: ${sdkUserAtSaveTime?.email}), Guest ID (ref): ${guestIdAtSaveTime}, Tasks: ${state.tasks.length}`
+        `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. ` +
+        `AuthUserRef: ${userForSaveAttempt?.uid}, SDKUser: ${sdkUserAtSaveTime?.uid} (Email: ${sdkUserAtSaveTime?.email}), ` +
+        `GuestIdRef: ${guestForSaveAttempt}, Tasks: ${state.tasks.length}`
       );
 
-      // Critical check: Is the user signed out from SDK's perspective?
-      if (userAtSaveTime && !sdkUserAtSaveTime) {
-        console.error(`[KanbanProvider] CRITICAL AUTH MISMATCH at save time: Context User ${userAtSaveTime.uid} exists, but SDK reports NO user. Aborting save.`);
-        toast({ title: "Save Error", description: "Critical authentication mismatch. User may have been signed out. Please try logging in again.", variant: "destructive", duration: 10000 });
-        return; // Abort save
+      if (userForSaveAttempt && !sdkUserAtSaveTime) {
+        console.error(`[KanbanProvider] CRITICAL AUTH MISMATCH at save time: Context User (ref) ${userForSaveAttempt.uid} exists, but SDK reports NO user. Aborting save.`);
+        toast({ title: "Save Error", description: "Critical authentication mismatch (SDK user null). User may have been signed out. Please try logging in again.", variant: "destructive", duration: 10000 });
+        return;
       }
 
-      // Critical check: Do UIDs match if both exist?
-      if (userAtSaveTime && sdkUserAtSaveTime && userAtSaveTime.uid !== sdkUserAtSaveTime.uid) {
-        console.error(`[KanbanProvider] CRITICAL AUTH MISMATCH at save time: Context User ID ${userAtSaveTime.uid} differs from SDK User ID ${sdkUserAtSaveTime.uid}. Aborting save.`);
+      if (userForSaveAttempt && sdkUserAtSaveTime && userForSaveAttempt.uid !== sdkUserAtSaveTime.uid) {
+        console.error(`[KanbanProvider] CRITICAL AUTH MISMATCH at save time: Context User ID (ref) ${userForSaveAttempt.uid} differs from SDK User ID ${sdkUserAtSaveTime.uid}. Aborting save.`);
         toast({ title: "Save Error", description: "Critical authentication ID mismatch. Please try logging in again.", variant: "destructive", duration: 10000 });
-        return; // Abort save
+        return;
       }
 
-      // Proceed using the direct SDK user if available, otherwise use guest ID.
       if (sdkUserAtSaveTime) {
         const userIdForSave = sdkUserAtSaveTime.uid;
         console.log(
-          `[KanbanProvider] Attempting to save for authenticated user ${userIdForSave}. Tasks: ${state.tasks.length}, Columns: ${state.columns.length}`
+          `[KanbanProvider] Attempting to save for authenticated user ${userIdForSave} (confirmed by SDK). Tasks: ${state.tasks.length}, Columns: ${state.columns.length}`
         );
         try {
           const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
@@ -608,25 +613,23 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             title: col.title,
             taskIds: col.taskIds,
           }));
-
           await saveUserKanbanData(userIdForSave, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
           console.log(`[KanbanProvider] Successfully saved data to Firestore for user ${userIdForSave}`);
         } catch (error: any) {
-          console.error(`[KanbanProvider] Failed to save data to Firestore for user ${userIdForSave}:`, error.message, error.code, error);
-          if (error.code === 'permission-denied' || error.code === 7) {
-            handlePermissionDeniedError('save', `userKanbanData/${userIdForSave}`, error, userIdForSave, sdkUserAtSaveTime?.uid, sdkUserAtSaveTime?.email);
-          } else if (error.message && error.message.includes("currentUser is null")) {
-             console.error(`[KanbanProvider] Save Error (in catch): saveUserKanbanData threw 'currentUser is null' EVEN THOUGH sdkUserAtSaveTime WAS ${sdkUserAtSaveTime?.uid} just before the call. This is highly unexpected.`);
-             toast({ title: "Save Error", description: "Save aborted: User signed out unexpectedly during save operation.", variant: "destructive" });
-          } else if (error.message && error.message.includes("Invalid user ID")) {
-             toast({ title: "Save Error", description: `Save aborted: ${error.message}`, variant: "destructive" });
-          }
-           else {
-            toast({ title: "Save Error", description: `Failed to save tasks to cloud. Error: ${error.message}`, variant: "destructive" });
-          }
+            console.error(`[KanbanProvider] Failed to save data to Firestore for user ${userIdForSave}:`, error.message, error.code, error);
+            if (error.code === 'permission-denied' || error.code === 7) {
+                handlePermissionDeniedError('save', `userKanbanData/${userIdForSave}`, error, userIdForSave, sdkUserAtSaveTime?.uid, sdkUserAtSaveTime?.email);
+            } else if (error.message && error.message.includes("currentUser is null")) {
+                console.error(`[KanbanProvider] Save Error (in catch): saveUserKanbanData threw 'currentUser is null' EVEN THOUGH sdkUserAtSaveTime WAS ${sdkUserAtSaveTime?.uid} just before the call. This is highly unexpected.`);
+                toast({ title: "Save Error", description: "Save aborted: User signed out unexpectedly during save operation.", variant: "destructive" });
+            } else if (error.message && error.message.includes("Invalid user ID")) {
+                toast({ title: "Save Error", description: `Save aborted: ${error.message}`, variant: "destructive" });
+            } else {
+                toast({ title: "Save Error", description: `Failed to save tasks to cloud. Error: ${error.message}`, variant: "destructive" });
+            }
         }
-      } else if (guestIdAtSaveTime) {
-        console.log(`[KanbanProvider] Debounced SAVE: Guest user mode (Guest ID ref: ${guestIdAtSaveTime}). Saving to localStorage. Tasks: ${state.tasks.length}`);
+      } else if (guestForSaveAttempt) {
+        console.log(`[KanbanProvider] Debounced SAVE: Guest user mode (Guest ID ref: ${guestForSaveAttempt}). Saving to localStorage. Tasks: ${state.tasks.length}`);
         if (typeof window !== 'undefined') {
             try {
                 const tasksToSaveForGuest = state.tasks.map(task => ({
@@ -650,16 +653,29 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             }
         }
       } else {
-         console.warn(`[KanbanProvider] Debounced SAVE SKIPPED (TIMEOUT EXECUTION): No valid authenticated user (SDK check returned null) and no guest ID (ref). Data not saved.`);
+        console.warn(
+          `[KanbanProvider] Debounced SAVE SKIPPED (TIMEOUT EXECUTION): No valid authenticated user (SDK check null) and no guest ID (ref). Data not saved.`
+        );
       }
     }, 1500);
 
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
+        debounceTimeoutRef.current = null;
       }
     };
-  }, [state.tasks, state.columns, state.isDataInitialized, dispatch, toast, handlePermissionDeniedError]);
+  }, [
+    state.tasks,
+    state.columns,
+    state.isDataInitialized, // Important: only save if data has been initialized for the current user/guest
+    authContextUser,      // Trigger re-evaluation if auth user changes
+    authContextGuestId,   // Trigger re-evaluation if guest ID changes
+    authLoading,          // Consider auth loading state
+    dispatch,
+    toast,
+    handlePermissionDeniedError,
+  ]);
 
 
   return <KanbanContext.Provider value={{ state, dispatch }}>{children}</KanbanContext.Provider>;
