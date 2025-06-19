@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send, Info } from "lucide-react";
+import { Lightbulb, Send, Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const featureRequestSchema = z.object({
@@ -84,23 +84,32 @@ Submitted from ${APP_NAME} Feature Request Form
     const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
     if (typeof window !== "undefined") {
+      // Attempt to open email client
       window.location.href = mailtoLink;
+      
+      // Provide feedback
       toast({
-        title: "Opening Email Client",
-        description: "Your email client should open shortly. Please complete and send your feature request from there.",
+        title: "Preparing Your Email",
+        description: "Your email client should open shortly with a pre-filled message. Please review and send it.",
         duration: 7000,
       });
+      
+      // Reset the form after attempting to open the mail client
+      form.reset();
+
     } else {
-       console.log("Feature Request Data (Mailto Fallback):", {
+       // Fallback for environments where window.location.href might not work as expected (e.g., some server-side contexts if misconfigured)
+       // Though this is a client component, it's a safety net.
+       console.warn("Feature Request (Mailto Fallback - window.location.href issue?):", {
         to: SUPPORT_EMAIL,
         subject,
         body,
       });
       toast({
-        title: "Request Prepared",
-        description: "Could not automatically open email client. Please manually send an email with your request details.",
+        title: "Request Prepared (Manual Send Needed)",
+        description: "Could not automatically open your email client. Please copy the details and send your request manually.",
         variant: "default",
-        duration: 7000,
+        duration: 10000,
       });
     }
   }
@@ -115,7 +124,7 @@ Submitted from ${APP_NAME} Feature Request Form
               Suggest a Feature
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Have an idea to make {APP_NAME} even better? We&apos;d love to hear it!
+              Have an idea to make ${APP_NAME} even better? We&apos;d love to hear it!
             </p>
              <p className="mt-1 text-sm text-muted-foreground">
               Submitting this form will attempt to open your default email client.
@@ -129,19 +138,20 @@ Submitted from ${APP_NAME} Feature Request Form
                 Your Feature Idea
               </CardTitle>
               <CardDescription>
-                Fill out the form below. This will prepare an email for you to send.
+                Fill out the form below. This will prepare an email for you to send using your default email application.
               </CardDescription>
             </CardHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CardContent className="space-y-6 pt-2">
-                  <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700">
-                      <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      <AlertTitle className="text-blue-700 dark:text-blue-500 font-semibold">Developer Note</AlertTitle>
-                      <AlertDescription className="text-blue-700 dark:text-blue-300">
-                        For this form to work, please update the 
-                        <code> SUPPORT_EMAIL </code> constant in <code>src/app/feature-request/page.tsx</code> 
-                        to your actual support email address. The current placeholder is: <strong>{SUPPORT_EMAIL}</strong>.
+                  <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                      <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Configuration Required</AlertTitle>
+                      <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+                        For this form to deliver feature requests, the developer must update the 
+                        <code> SUPPORT_EMAIL </code> constant in the file <code>src/app/feature-request/page.tsx</code> 
+                        to a valid support email address. The current placeholder is: <strong>{SUPPORT_EMAIL}</strong>. 
+                        Without this change, the "Prepare Email" button will attempt to use this placeholder.
                       </AlertDescription>
                   </Alert>
                   <FormField
@@ -219,3 +229,5 @@ Submitted from ${APP_NAME} Feature Request Form
     </div>
   );
 }
+
+    
