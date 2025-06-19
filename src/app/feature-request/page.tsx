@@ -49,7 +49,6 @@ const categories = [
   { value: "other", label: "Other" },
 ];
 
-// IMPORTANT: Developer - This email is now set as per user request.
 const SUPPORT_EMAIL = "webcodar37@gmail.com"; 
 
 export default function FeatureRequestPage() {
@@ -84,23 +83,27 @@ Submitted from ${APP_NAME} Feature Request Form
     const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
     if (typeof window !== "undefined") {
-      // Attempt to open email client
-      window.location.href = mailtoLink;
+      console.log("Generated mailto link (for debugging):", mailtoLink); // Added for debugging
       
-      // Provide feedback
-      toast({
-        title: "Preparing Your Email",
-        description: "Your email client should open shortly with a pre-filled message. Please review and send it.",
-        duration: 7000,
-      });
-      
-      // Reset the form after attempting to open the mail client
+      try {
+        window.location.href = mailtoLink;
+        toast({
+          title: "Preparing Your Email",
+          description: "Your email client should open shortly with a pre-filled message. Please review and send it from your email application.",
+          duration: 7000,
+        });
+      } catch (error) {
+        console.error("Error trying to open mailto link:", error);
+        toast({
+          title: "Could Not Open Email Client",
+          description: "There was an issue trying to open your email client. You can copy the details from the console (F12) to send manually.",
+          variant: "destructive",
+          duration: 10000,
+        });
+      }
       form.reset();
-
     } else {
-       // Fallback for environments where window.location.href might not work as expected (e.g., some server-side contexts if misconfigured)
-       // Though this is a client component, it's a safety net.
-       console.warn("Feature Request (Mailto Fallback - window.location.href issue?):", {
+       console.warn("Feature Request (Mailto Fallback - window is undefined):", {
         to: SUPPORT_EMAIL,
         subject,
         body,
@@ -144,23 +147,22 @@ Submitted from ${APP_NAME} Feature Request Form
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CardContent className="space-y-6 pt-2">
-                  {SUPPORT_EMAIL.includes("example.com") || SUPPORT_EMAIL.includes("placeholder.com") ? (
+                  {SUPPORT_EMAIL === "webcodar37@gmail.com" ? (
+                     <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                        <Info className="h-5 w-5" />
+                        <AlertTitle className="font-semibold">Ready to Go!</AlertTitle>
+                        <AlertDescription>
+                            This form is configured to send feature requests to: <strong>{SUPPORT_EMAIL}</strong>. Submitting will attempt to open your email client.
+                        </AlertDescription>
+                    </Alert>
+                  ) : (
                     <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700">
                         <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                         <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Configuration Required</AlertTitle>
                         <AlertDescription className="text-yellow-700 dark:text-yellow-400">
                           For this form to deliver feature requests, the developer must update the 
-                          <code> SUPPORT_EMAIL </code> constant in the file <code>src/app/feature-request/page.tsx</code> 
-                          to a valid support email address. The current placeholder is: <strong>{SUPPORT_EMAIL}</strong>. 
-                          Without this change, the "Prepare Email" button will attempt to use this placeholder.
-                        </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
-                        <Info className="h-5 w-5" />
-                        <AlertTitle className="font-semibold">Ready to Go!</AlertTitle>
-                        <AlertDescription>
-                            This form is configured to send feature requests to: <strong>{SUPPORT_EMAIL}</strong>. Submitting will open your email client.
+                          <code> SUPPORT_EMAIL </code> constant in this file (<code>src/app/feature-request/page.tsx</code>) 
+                          to a valid support email address. The current value is: <strong>{SUPPORT_EMAIL}</strong>.
                         </AlertDescription>
                     </Alert>
                   )}
@@ -220,7 +222,7 @@ Submitted from ${APP_NAME} Feature Request Form
                     )}
                   />
                 </CardContent>
-                <CardFooter className="bg-muted/30 p-6 border-t">
+                <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start">
                   <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? (
                       <Send className="mr-2 h-5 w-5 animate-pulse" />
@@ -229,6 +231,9 @@ Submitted from ${APP_NAME} Feature Request Form
                     )}
                     Prepare Email for Request
                   </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    After clicking, your email application should open with a pre-filled message. You will need to press "Send" in your email client.
+                  </p>
                 </CardFooter>
               </form>
             </Form>
@@ -239,6 +244,4 @@ Submitted from ${APP_NAME} Feature Request Form
     </div>
   );
 }
-    
-
     
