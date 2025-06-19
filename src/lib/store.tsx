@@ -190,7 +190,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
           id: crypto.randomUUID(),
           dueDate: nextDueDate,
           columnId: DEFAULT_COLUMNS[0].id,
-          subtasks: taskToMove.subtasks.map(st => ({ ...st, completed: false })),
+          subtasks: (taskToMove.subtasks || []).map(st => ({ ...st, completed: false })),
           createdAt: new Date(),
           updatedAt: new Date(),
           timeSpentSeconds: 0,
@@ -232,7 +232,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       const { taskId, subtask } = action.payload;
       const newTasks = state.tasks.map(task => {
         if (task.id === taskId) {
-          const updatedTask = { ...task, subtasks: [...task.subtasks, subtask] };
+          const updatedTask = { ...task, subtasks: [...(task.subtasks || []), subtask] };
           return updatedTask;
         }
         return task;
@@ -246,7 +246,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
       const { taskId, subtaskId } = action.payload;
       const newTasks = state.tasks.map(task => {
         if (task.id === taskId) {
-          const updatedSubtasks = task.subtasks.map(st =>
+          const updatedSubtasks = (task.subtasks || []).map(st =>
             st.id === subtaskId ? { ...st, completed: !st.completed } : st
           );
           const updatedTask = { ...task, subtasks: updatedSubtasks };
@@ -265,7 +265,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
             if (task.id === taskId) {
                 const updatedTask = {
                     ...task,
-                    subtasks: task.subtasks.map(st =>
+                    subtasks: (task.subtasks || []).map(st =>
                         st.id === updatedSubtask.id ? updatedSubtask : st
                     ),
                 };
@@ -284,7 +284,7 @@ function kanbanReducer(state: KanbanState, action: KanbanAction): KanbanState {
             if (task.id === taskId) {
                 const updatedTask = {
                     ...task,
-                    subtasks: task.subtasks.filter(st => st.id !== subtaskId),
+                    subtasks: (task.subtasks || []).filter(st => st.id !== subtaskId),
                 };
                 return updatedTask;
             }
@@ -348,7 +348,11 @@ const parseTaskDateForStorage = (dateString?: string | Date): Date | undefined =
 };
 
 const parseTaskForStorage = (task: any): Task => ({
-    ...task,
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    columnId: task.columnId,
+    priority: task.priority,
     dueDate: parseTaskDateForStorage(task.dueDate),
     createdAt: parseTaskDateForStorage(task.createdAt) || new Date(),
     updatedAt: parseTaskDateForStorage(task.updatedAt) || new Date(),
@@ -386,29 +390,14 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
   }, [authContextGuestId]);
 
 
-  const handlePermissionDeniedError = useCallback((operation: string, path: string, error: any, contextUserId?: string | null, sdkUserId?: string | null, sdkUserEmail?: string | null) => {
-    const configuredProjectIdInEnv = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'NOT SET (Check .env!)';
-    const expectedRule = `// Firestore Rule for path '${path}':\nmatch /${path.split('/')[0]}/{userId} {\n  allow read, write: if request.auth != null && request.auth.uid == userId;\n}`;
-
-    const detailedMessage = `Could not ${operation} board data for path "${path}". This is likely due to Firestore security rules. (Error: ${error.code || 'UNKNOWN'} - ${error.message})
-    \n➡️ App's Configured Firebase Project ID (from .env): ${configuredProjectIdInEnv}
-    \n🔑 Context User ID (attempted operation for): ${contextUserId || 'N/A'}
-    \n🕵️ Firebase SDK Authenticated User ID (at time of error): ${sdkUserId || 'N/A'} (Email: ${sdkUserEmail || 'N/A'})
-    \n\n📋 Expected Firestore Rule for this path:
-    ${expectedRule}
-    \n\n🔥 ACTION REQUIRED:
-    1. Go to Firebase Console -> Firestore Database -> Rules.
-    2. Verify the Project ID in your browser's URL EXACTLY matches the "App's Configured Firebase Project ID" logged above.
-    3. Ensure the Firestore rules are EXACTLY as specified in README.md and are PUBLISHED.
-    4. If rules and Project ID match, verify the "SDK Authenticated User ID" above is what you expect and matches the "Context User ID".`;
-
-    console.error(`[KanbanProvider] DETAILED PERMISSION_DENIED: Operation: ${operation}, Path: ${path}, ContextUID: ${contextUserId}, SdkUID: ${sdkUserId}, SdkEmail: ${sdkUserEmail}, Configured Project ID: ${configuredProjectIdInEnv}, Error:`, error);
+  const handlePermissionDeniedError = useCallback((operation: string, errorDetails: string) => {
+    // The errorDetails should now come directly from kanban-service with context
     dispatch({ type: "SET_ERROR", payload: `Failed to ${operation} board data due to permissions.` });
     toast({
-      title: `Board Data Access Error (${operation}) - PERMISSION_DENIED`,
-      description: detailedMessage,
+      title: `Board Data Access Error: ${operation.charAt(0).toUpperCase() + operation.slice(1)} Failed`,
+      description: errorDetails, // This will contain the detailed message from kanban-service
       variant: "destructive",
-      duration: 30000,
+      duration: 30000, 
     });
   }, [toast]);
 
@@ -424,31 +413,28 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
     if (contextUserAtLoadTime?.uid === identifierToLoad) {
       const userIdToLoad = contextUserAtLoadTime.uid;
-      const currentSdkUser = firebaseAuthInstance.currentUser;
-      if (!currentSdkUser || currentSdkUser.uid !== userIdToLoad) {
-        console.error(`[KanbanProvider] loadData: SDK user mismatch or null during user data load. SDK User: ${currentSdkUser?.uid}, Expected: ${userIdToLoad}. Aborting Firestore load.`);
-        dispatch({ type: "SET_ERROR", payload: "Authentication state error during data load." });
-        dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
-        return;
-      }
-      console.log(`[KanbanProvider] loadData: Logged-in user mode (UID: ${userIdToLoad}). Fetching from Firestore.`);
+      console.log(`[KanbanProvider] loadData: Logged-in user mode (UID: ${userIdToLoad}). Fetching from Firestore via server action.`);
       try {
-        const firestoreData = await getUserKanbanData(userIdToLoad);
+        const firestoreData = await getUserKanbanData(userIdToLoad); // This is now a server action call
         if (isMounted.current) {
           if (firestoreData) {
             dispatch({ type: "SET_INITIAL_DATA", payload: firestoreData });
           } else {
+            // This case might occur if getUserKanbanData returns null (e.g., due to internal error before Firestore call)
+            // Or if Firestore has no data (which returns empty arrays in the payload)
+            console.warn(`[KanbanProvider] loadData: No data returned from getUserKanbanData for user ${userIdToLoad}. Initializing with empty state.`);
             dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
           }
         }
       } catch (error: any) {
-        console.error(`[KanbanProvider] loadData: Firestore error for user ${userIdToLoad}:`, error);
+        console.error(`[KanbanProvider] loadData: Error CAUGHT from getUserKanbanData (Server Action) for user ${userIdToLoad}:`, error.message);
         if (isMounted.current) {
-          if (error.code === 'permission-denied' || error.code === 7) {
-            handlePermissionDeniedError('load', `userKanbanData/${userIdToLoad}`, error, userIdToLoad, currentSdkUser?.uid, currentSdkUser?.email);
+          if (error.message && error.message.startsWith('Firestore permission denied')) {
+            handlePermissionDeniedError('load', error.message);
           } else {
-            dispatch({ type: "SET_ERROR", payload: "Failed to load tasks from cloud." });
+            dispatch({ type: "SET_ERROR", payload: `Failed to load tasks from cloud. Detail: ${error.message || 'Unknown error.'}` });
           }
+          // Fallback to empty state on any error
           dispatch({ type: "SET_INITIAL_DATA", payload: { tasks: [], columns: DEFAULT_COLUMNS.map(c => ({ ...c, taskIds: [] })) } });
         }
       }
@@ -477,12 +463,12 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         }
       }
     } else {
-      console.warn(`[KanbanProvider] loadData: Identifier '${identifierToLoad}' does not match current contextUser or guestId. This should not happen if called correctly. Aborting specific load.`);
+      console.warn(`[KanbanProvider] loadData: Identifier '${identifierToLoad}' does not match current contextUser or guestId. Aborting specific load.`);
       dispatch({ type: "SET_LOADING", payload: false });
       if (!state.isDataInitialized) dispatch({ type: "SET_DATA_INITIALIZED", payload: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, handlePermissionDeniedError]); // Removed state.isLoading from deps, it's managed inside.
+  }, [dispatch, handlePermissionDeniedError]); 
 
   useEffect(() => {
     isMounted.current = true;
@@ -568,22 +554,22 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser; // Check client-side SDK auth *at the moment of save*
-      const userForSaveAttempt = authUserRef.current; // Auth user from React context *when save was scheduled*
-      const guestForSaveAttempt = guestIdRef.current; // Guest ID from React context *when save was scheduled*
+      const clientSdkUserAtSaveTime = firebaseAuthInstance.currentUser; 
+      const userForSaveAttempt = authUserRef.current; 
+      const guestForSaveAttempt = guestIdRef.current; 
 
       console.log(
         `[KanbanProvider] Debounced Save TIMEOUT EXECUTING. ` +
-        `SDKUser (CLIENT-SIDE at save time): ${sdkUserAtSaveTime?.uid} (Email: ${sdkUserAtSaveTime?.email}), ` +
+        `Client SDK User (at save time): ${clientSdkUserAtSaveTime?.uid} (Email: ${clientSdkUserAtSaveTime?.email}), ` +
         `AuthUserRef (at schedule time): ${userForSaveAttempt?.uid}, GuestIdRef (at schedule time): ${guestForSaveAttempt}, Tasks: ${state.tasks.length}`
       );
 
-      if (sdkUserAtSaveTime) { // If CLIENT-SIDE SDK says user is authenticated AT THIS MOMENT
-        const userIdForSave = sdkUserAtSaveTime.uid;
+      if (clientSdkUserAtSaveTime) { 
+        const userIdForSave = clientSdkUserAtSaveTime.uid;
 
         if (userForSaveAttempt && userForSaveAttempt.uid !== userIdForSave) {
-          console.error(`[KanbanProvider] CRITICAL AUTH MISMATCH (Client-Side): AuthContext user (at schedule) ${userForSaveAttempt.uid} vs SDK user (at save) ${userIdForSave}. Aborting save.`);
-          toast({ title: "Save Error", description: "Critical authentication mismatch detected. Please re-login.", variant: "destructive" });
+          console.error(`[KanbanProvider] CRITICAL AUTH MISMATCH (Client-Side Save Prep): AuthContext user (at schedule) ${userForSaveAttempt.uid} vs SDK user (at save) ${userIdForSave}. Aborting save call.`);
+          toast({ title: "Save Error", description: "Critical authentication mismatch detected before saving. Please re-login.", variant: "destructive" });
           return;
         }
         if (!userForSaveAttempt && guestForSaveAttempt) {
@@ -600,13 +586,13 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             description: task.description,
             columnId: task.columnId,
             dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
-            priority: task.priority,
-            tags: task.tags || [],
-            subtasks: (task.subtasks || []).map(st => ({ id: st.id, title: st.title, completed: st.completed })),
-            dependencies: task.dependencies || [],
-            recurrenceRule: task.recurrenceRule ? { type: task.recurrenceRule.type } : undefined,
             createdAt: formatISO(task.createdAt),
             updatedAt: formatISO(task.updatedAt),
+            subtasks: (task.subtasks || []).map(st => ({ id: st.id, title: st.title, completed: st.completed })),
+            recurrenceRule: task.recurrenceRule ? { type: task.recurrenceRule.type } : undefined,
+            priority: task.priority,
+            tags: task.tags || [],
+            dependencies: task.dependencies || [],
             timerActive: typeof task.timerActive === 'boolean' ? task.timerActive : false,
             timeSpentSeconds: typeof task.timeSpentSeconds === 'number' ? task.timeSpentSeconds : 0,
             timerStartTime: typeof task.timerStartTime === 'number' ? task.timerStartTime : null,
@@ -617,29 +603,22 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             title: col.title,
             taskIds: col.taskIds || [],
           }));
-          await saveUserKanbanData(userIdForSave, sanitizedTasksForFirestore, sanitizedColumnsForFirestore); // Call server action
+          await saveUserKanbanData(userIdForSave, sanitizedTasksForFirestore, sanitizedColumnsForFirestore); 
           console.log(`[KanbanProvider] Successfully saved data via server action for user ${userIdForSave}`);
-        } catch (error: any) { // Catch errors from saveUserKanbanData (server action)
-            console.error(`[KanbanProvider] Error CAUGHT from saveUserKanbanData (Server Action) for user ${userIdForSave}:`, error.message, error.code, error);
-            if (error.message && error.message.toLowerCase().includes('firestore permission denied')) {
-                // The error message from kanban-service already includes good details
-                toast({
-                    title: "Save Failed: Permission Denied by Firestore",
-                    description: error.message, // This will contain the detailed message from kanban-service
-                    variant: "destructive",
-                    duration: 20000,
-                });
+        } catch (error: any) { 
+            console.error(`[KanbanProvider] Error CAUGHT from saveUserKanbanData (Server Action) for user ${userIdForSave}:`, error.message);
+            if (error.message && error.message.startsWith('Firestore permission denied')) {
+                handlePermissionDeniedError('save', error.message);
             } else if (error.message && error.message.toLowerCase().includes('invalid user id parameter')) {
                  toast({ title: "Save Error", description: `Internal Error: ${error.message}`, variant: "destructive" });
             } else {
-                // Generic error from the service
                 toast({ title: "Save Error", description: `Failed to save tasks to cloud. Detail: ${error.message || 'Unknown error from kanban-service.'}`, variant: "destructive" });
             }
         }
-      } else if (guestForSaveAttempt) { // sdkUserAtSaveTime is NULL client-side, but a guest session was active when save was scheduled
-        if (userForSaveAttempt) { // This means user was logged in when scheduled, but logged out by save time.
+      } else if (guestForSaveAttempt) { 
+        if (userForSaveAttempt) { 
              console.warn(`[KanbanProvider] Debounced SAVE SKIPPED for GUEST ${guestForSaveAttempt}: User ${userForSaveAttempt.uid} was active at schedule, but SDK user is now null. Not saving guest data over potential user session loss/logout.`);
-        } else { // Guest was active at schedule, and still seems to be guest (no SDK user)
+        } else { 
             console.log(`[KanbanProvider] Debounced SAVE: Guest user mode (Guest ID ref: ${guestForSaveAttempt}). Saving to localStorage. Tasks: ${state.tasks.length}`);
             if (typeof window !== 'undefined') {
                 try {
@@ -667,7 +646,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                 }
             }
         }
-      } else { // sdkUserAtSaveTime is NULL client-side, and NO guest session was active when save was scheduled
+      } else { 
         console.warn(
           `[KanbanProvider] Debounced SAVE SKIPPED (TIMEOUT EXECUTION): No valid authenticated user (CLIENT-SIDE SDK check null) and no guest ID (ref). Data not saved.`
         );
@@ -685,9 +664,9 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     state.tasks,
     state.columns,
     state.isDataInitialized,
-    authContextUser, // Dependency: Re-schedule if authContextUser changes
-    authContextGuestId, // Dependency: Re-schedule if authContextGuestId changes
-    authLoading, // Dependency: Re-schedule if authLoading changes
+    authContextUser, 
+    authContextGuestId, 
+    authLoading, 
     dispatch,
     toast,
     handlePermissionDeniedError,
@@ -705,3 +684,4 @@ export function useKanban() {
   return context;
 }
 
+    
