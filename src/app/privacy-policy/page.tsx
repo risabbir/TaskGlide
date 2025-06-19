@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Privacy Policy
@@ -39,7 +39,7 @@ export default function PrivacyPolicyPage() {
                 <li><strong>Task Data:</strong> All tasks, descriptions, due dates, priorities, tags, subtasks, dependencies, recurrence rules, column assignments, and any other related data you create and manage within the application.</li>
                 <li><strong>Guest ID:</strong> A unique anonymous Guest ID is generated and stored in your browser's localStorage to identify your session's data locally.</li>
                 <li><strong>Theme Preference:</strong> Your selected theme (light/dark) is stored in localStorage.</li>
-                <li><strong>AI Feature Data:</strong> If you use AI-powered features (e.g., enhance description, suggest tags), the relevant task data (like title, description) is sent from your browser directly to the AI service provider (Google AI via Genkit) to generate suggestions. This data is processed according to Google's privacy policies. {APP_NAME} itself does not store the AI-generated suggestions beyond their temporary display in the app, unless you explicitly save them as part of your task data (which is then stored locally in your browser).</li>
+                <li><strong>AI Feature Data:</strong> If you use AI-powered features (e.g., enhance description, suggest tags), the relevant task data (like title, description) is sent from your browser directly to an AI service provider to generate suggestions. This data is processed according to the AI provider's privacy policies. {APP_NAME} itself does not store the AI-generated suggestions beyond their temporary display in the app, unless you explicitly save them as part of your task data (which is then stored locally in your browser).</li>
               </ul>
                <p className="mt-2">No personally identifiable information (like your name or email address) is collected, stored, or transmitted by the {APP_NAME} application itself in guest mode.</p>
             </Section>
@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
             </Section>
             
             <Section title="Sharing Your Information">
-              We do not share your locally stored guest data with any third parties. If you use AI features, the necessary task context is shared directly from your browser with Google AI as described above.
+              We do not share your locally stored guest data with any third parties. If you use AI features, the necessary task context is shared directly from your browser with the AI service provider as described above.
             </Section>
 
             <Section title="Your Data Rights (Guest Mode)">

@@ -29,7 +29,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
 import { Lightbulb, Send, Info } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const featureRequestSchema = z.object({
   title: z.string().min(5, "Please provide a concise title (min 5 characters).").max(100, "Title is too long (max 100 characters)."),
@@ -50,7 +50,7 @@ const categories = [
 ];
 
 // IMPORTANT: Developer - Replace this with your actual support email address!
-const SUPPORT_EMAIL = "support@taskglide.example.com";
+const SUPPORT_EMAIL = "webcodar37@gmail.com"; // Placeholder
 
 export default function FeatureRequestPage() {
   const { toast } = useToast();
@@ -88,7 +88,7 @@ Submitted from ${APP_NAME} Feature Request Form
       toast({
         title: "Opening Email Client",
         description: "Your email client should open shortly. Please complete and send your feature request from there.",
-        duration: 7000, // Give more time for email client to open
+        duration: 7000,
       });
     } else {
        console.log("Feature Request Data (Mailto Fallback):", {
@@ -103,14 +103,13 @@ Submitted from ${APP_NAME} Feature Request Form
         duration: 7000,
       });
     }
-    // Do not reset the form immediately, user might want to copy details if mailto fails.
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Suggest a Feature
@@ -138,8 +137,9 @@ Submitted from ${APP_NAME} Feature Request Form
                 <CardContent className="space-y-6 pt-2">
                   <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700">
                       <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <AlertTitle className="text-blue-700 dark:text-blue-500 font-semibold">Developer Note</AlertTitle>
                       <AlertDescription className="text-blue-700 dark:text-blue-300">
-                        <strong>Developer Note:</strong> For this form to work, please update the 
+                        For this form to work, please update the 
                         <code> SUPPORT_EMAIL </code> constant in <code>src/app/feature-request/page.tsx</code> 
                         to your actual support email address. The current placeholder is: <strong>{SUPPORT_EMAIL}</strong>.
                       </AlertDescription>
