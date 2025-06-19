@@ -26,11 +26,14 @@ To get started with the application:
     pnpm dev
     ```
 2.  Open [http://localhost:9002](http://localhost:9002) (or the port specified in `package.json`) with your browser.
-3.  The application should prompt you to "Continue as Guest" or automatically start a guest session.
+3.  The application should show the main task board. If no guest session is active, the header will prompt you to "Continue as Guest", leading to the guest access page.
 
-## AI Features (Optional Setup)
+## AI Features
 
-TaskGlide includes AI-powered features (like enhancing task descriptions, suggesting tags, etc.) which use Genkit with Google AI (Gemini models).
+TaskGlide includes AI-powered features (like enhancing task descriptions, suggesting tags, etc.) which use Genkit with Google AI (Gemini models). These features are available within the application.
+
+**For Developers (Optional Local AI Testing):**
+If you are a developer and wish to run or test the Genkit AI flows locally:
 
 1.  **Get a Google AI API Key:**
     *   You can obtain an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
@@ -44,9 +47,9 @@ TaskGlide includes AI-powered features (like enhancing task descriptions, sugges
         ```
     *   Replace `YOUR_GOOGLE_AI_API_KEY_HERE` with the actual key you obtained.
     *   **Restart your Next.js development server** after creating or modifying the `.env` file for the changes to take effect.
-    *   The Genkit `googleAI` plugin will automatically use this environment variable.
+    *   The Genkit `googleAI` plugin will automatically use this environment variable for local Genkit development.
 
-**Note:** Firebase Project ID and other Firebase-related environment variables (`NEXT_PUBLIC_FIREBASE_...`) are **no longer required** for the core task management functionality as it relies on local storage. However, if you intend to use Genkit's Firebase integration for other purposes in the future (not currently used by this version), you might need them. For AI features, only `GOOGLE_API_KEY` is essential.
+**Note:** Firebase Project ID and other Firebase-related environment variables (`NEXT_PUBLIC_FIREBASE_...`) are **no longer required** for the core task management functionality as it relies on local storage. For AI features used within the app, no user-side API key input is required by guests. The developer-side API key (above) is only for local Genkit flow testing.
 
 ## Troubleshooting Common Errors (General Web App Issues)
 
@@ -65,7 +68,7 @@ npm run dev
 
 Open [http://localhost:9002](http://localhost:9002) (or the port specified in `package.json`) with your browser.
 
-To run Genkit flows locally for testing AI features (if `GOOGLE_API_KEY` is set up):
+To run Genkit flows locally for testing AI features (if `GOOGLE_API_KEY` is set up by the developer):
 ```bash
 npm run genkit:dev
 ```

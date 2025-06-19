@@ -18,7 +18,7 @@ export default function TermsOfServicePage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Terms of Service
@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
             </Section>
             
             <Section title="6. AI Features">
-              The Service may offer AI-powered features (e.g., through Genkit and Google AI). Use of these features may require you to configure your own API key from the AI service provider. Your use of these features is subject to the terms and policies of the respective AI service provider (e.g., Google). {APP_NAME} makes no warranties regarding the accuracy, completeness, or suitability of AI-generated content. You are solely responsible for how you use such content and for any associated API costs from the provider.
+              The Service offers AI-powered features (e.g., through Genkit and Google AI). Your use of these features is subject to the terms and policies of the respective AI service provider (e.g., Google). {APP_NAME} makes no warranties regarding the accuracy, completeness, or suitability of AI-generated content. You are solely responsible for how you use such content.
             </Section>
 
             <Section title="7. Disclaimer of Warranties">

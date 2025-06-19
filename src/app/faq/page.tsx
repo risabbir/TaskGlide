@@ -34,7 +34,7 @@ const faqs = [
   {
     id: "free-to-use",
     question: `Is ${APP_NAME} free to use?`,
-    answer: `Yes, ${APP_NAME} is completely free to use in its current guest-only mode. AI-powered features, if used, might require you to set up your own Google AI API key in the application's .env file. Google AI has its own usage policies and potential costs if you exceed their free tiers. The core task management functionality itself does not require this API key.`,
+    answer: `Yes, ${APP_NAME} is completely free to use in its current guest-only mode. AI-powered features are available to assist with task management.`,
   },
   {
     id: "organize-tasks",
@@ -60,12 +60,13 @@ const faqs = [
   {
     id: "ai-features",
     question: `Are there any AI features in ${APP_NAME}?`,
-    answer: `Yes! If you configure your Google AI API key in the .env file, ${APP_NAME} can leverage AI (via Genkit and Google AI) to assist you with:
+    answer: `Yes! ${APP_NAME} leverages AI (via Genkit and Google AI) to assist you with:
       - Enhancing Task Descriptions
       - Suggesting Tags for tasks
       - Suggesting Subtasks to break down larger tasks
       - Suggesting a Focus Batch of tasks to work on
-      - Providing Task Insights with actionable suggestions.`,
+      - Providing Task Insights with actionable suggestions.
+      These features are designed to help you manage your tasks more effectively.`,
   },
   {
     id: "registered-accounts",
@@ -83,7 +84,7 @@ export default function FAQPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-3xl mx-auto"> 
+        <div className="max-w-3xl"> 
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Frequently Asked Questions
