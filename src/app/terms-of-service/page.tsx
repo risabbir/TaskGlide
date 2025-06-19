@@ -17,9 +17,8 @@ export default function TermsOfServicePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      {/* Rely on RootLayout for container and horizontal padding. Add vertical padding as needed. */}
       <main className="flex-grow py-8">
-        <div className="max-w-3xl mx-auto"> {/* This internal max-width can stay */}
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Terms of Service
@@ -31,47 +30,51 @@ export default function TermsOfServicePage() {
 
           <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-xl border space-y-8">
             <Section title="1. Acceptance of Terms">
-              By accessing and using {APP_NAME} (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. Currently, the Service operates in a guest-only mode where data is stored in your browser's local storage. Any participation in this Service will constitute acceptance of this agreement. If you do not agree to abide by these terms, please do not use this Service.
+              By accessing and using {APP_NAME} (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. Currently, the Service operates in a guest-only mode where data is stored in your browser's local storage. Your use of this Service constitutes acceptance of this agreement. If you do not agree to abide by these terms, please do not use this Service.
             </Section>
 
             <Section title="2. Description of Service (Guest Mode)">
-              {APP_NAME} is a task management tool. In its current guest mode, data is stored locally in your browser. The Service is provided "as is," and {APP_NAME} (and its creators) assume no responsibility for the timeliness, deletion, mis-delivery, or failure to store any user data due to browser issues, clearing of local storage, or other factors outside of the application's direct control. You are responsible for managing your browser data.
+              {APP_NAME} is a task management tool. In its current guest-only mode, all data you create (tasks, columns, etc.) is stored locally in your web browser's `localStorage`. The Service is provided "as is," and {APP_NAME} (and its creators) assume no responsibility for the timeliness, deletion, mis-delivery, or failure to store any user data due to browser issues, manual clearing of local storage by the user, device failure, or other factors outside of the application's direct control. You are solely responsible for managing and backing up your browser data if desired.
             </Section>
 
-            <Section title="3. User Accounts (Guest Mode)">
-              No user accounts are created in the traditional sense. A unique anonymous Guest ID is generated and stored locally to associate your task data within your browser. This data is not accessible if you use a different browser, device, or clear your local storage.
+            <Section title="3. User Data in Guest Mode">
+              No user accounts are created in the traditional sense. A unique anonymous Guest ID is generated and stored locally to associate your task data within your browser. This data is not accessible if you use a different browser, device, clear your local storage, or use incognito/private browsing modes. You acknowledge that data stored in `localStorage` is subject to browser limitations and actions.
             </Section>
 
             <Section title="4. User Conduct">
-              You agree not to use the Service to create or store content that is unlawful, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, libelous, invasive of another's privacy, hateful, or racially, ethnically, or otherwise objectionable.
+              You agree not to use the Service to create or store content that is unlawful, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, libelous, invasive of another's privacy, hateful, or racially, ethnically, or otherwise objectionable. You are responsible for all content you input into the Service.
             </Section>
 
             <Section title="5. Intellectual Property">
-              The Service and its original content (excluding user-generated task data), features, and functionality are and will remain the exclusive property of {APP_NAME}'s creators and its licensors.
+              The Service and its original content (excluding user-generated task data), features, and functionality are and will remain the exclusive property of {APP_NAME}'s creators and its licensors. The {APP_NAME} name and logo are trademarks of their respective owners.
             </Section>
             
             <Section title="6. AI Features">
-              The Service may utilize AI features (e.g., powered by Genkit and Google AI), which may require you to configure your own API key. Your use of these features is subject to the terms and policies of the AI service provider (e.g., Google). We make no warranties regarding the accuracy, completeness, or suitability of AI-generated content. You are solely responsible for how you use it.
+              The Service may offer AI-powered features (e.g., through Genkit and Google AI). Use of these features may require you to configure your own API key from the AI service provider. Your use of these features is subject to the terms and policies of the respective AI service provider (e.g., Google). {APP_NAME} makes no warranties regarding the accuracy, completeness, or suitability of AI-generated content. You are solely responsible for how you use such content and for any associated API costs from the provider.
             </Section>
 
             <Section title="7. Disclaimer of Warranties">
-              The Service is provided on an "as is" and "as available" basis. {APP_NAME} and its creators disclaim all warranties of any kind, express or implied, including, without limitation, the warranties of merchantability, fitness for a particular purpose, and non-infringement. We make no warranty that the Service will be error-free or that access thereto will be continuous or uninterrupted. You use the Service at your own discretion and risk.
+              The Service is provided on an "as is" and "as available" basis. {APP_NAME} and its creators expressly disclaim all warranties of any kind, whether express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. We make no warranty that the Service will be error-free, secure, or that access thereto will be continuous or uninterrupted. You use the Service at your own discretion and risk.
             </Section>
 
             <Section title="8. Limitation of Liability">
-              In no event will {APP_NAME} or its creators be liable with respect to any subject matter of this agreement under any contract, negligence, strict liability, or other legal or equitable theory for: (i) any special, incidental, or consequential damages; (ii) the cost of procurement for substitute products or services; (iii) for interruption of use or loss or corruption of data (especially locally stored data); or (iv) for any amounts that exceed the fees paid by you to {APP_NAME} (if any). {APP_NAME} shall have no liability for any failure or delay due to matters beyond their reasonable control.
+              In no event shall {APP_NAME} or its creators be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses (even if {APP_NAME} has been advised of the possibility of such damages), resulting from the use or the inability to use the Service, especially concerning data loss from `localStorage` in guest mode. Your sole remedy for dissatisfaction with the Service is to stop using the Service.
             </Section>
 
             <Section title="9. Changes to Terms">
-              {APP_NAME} reserves the right, at its sole discretion, to modify or replace these Terms at any time. We will make reasonable efforts to provide notice of material changes. Your continued use of the Service after any such changes constitutes your acceptance of the new Terms.
+              {APP_NAME} reserves the right, at its sole discretion, to modify or replace these Terms at any time. We will endeavor to provide notice of material changes on this page or through the Service. Your continued use of the Service after any such changes constitutes your acceptance of the new Terms.
             </Section>
 
             <Section title="10. Governing Law">
-             These Terms shall be governed and construed in accordance with the laws of the jurisdiction in which the creators of {APP_NAME} reside, without regard to its conflict of law provisions. (For a real app, specify the jurisdiction).
+             These Terms shall be governed and construed in accordance with the laws of the jurisdiction in which the creators of {APP_NAME} reside, without regard to its conflict of law provisions. (For a real app, the specific jurisdiction would be stated here).
+            </Section>
+            
+            <Section title="11. Future Functionality (Registered Accounts)">
+             These terms primarily cover the current guest-only mode. If registered user accounts are introduced, these Terms of Service will be updated, and additional terms may apply to account holders.
             </Section>
             
             <div className="text-sm text-muted-foreground pt-6 border-t border-dashed">
-              <p>If you have any questions about these Terms, please contact us (as this is a demo project, a real contact method would be provided here for a production app).</p>
+              <p>If you have any questions about these Terms, please use the "Request a Feature" page to contact us (as this is a demo project, a real contact method would be provided here for a production app).</p>
             </div>
           </div>
         </div>

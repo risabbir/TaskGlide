@@ -17,7 +17,7 @@ const faqs = [
   {
     id: "what-is-app",
     question: `What is ${APP_NAME}?`,
-    answer: `${APP_NAME} is an intuitive personal task management application designed to help you organize your projects, track your progress, and boost your productivity. You can create tasks, set priorities, due dates, add tags, subtasks, and manage them on a visual Kanban board. It also features AI-powered assistance for enhancing descriptions, suggesting tags, and more. Currently, it operates in a guest-only mode, storing data in your browser.`,
+    answer: `${APP_NAME} is an intuitive personal task management application designed to help you organize your projects, track your progress, and boost your productivity. You can create tasks, set priorities, due dates, add tags, subtasks, and manage them on a visual Kanban board. It also features AI-powered assistance for enhancing descriptions, suggesting tags, and more. Currently, it operates in a guest-only mode, storing all data in your browser's local storage.`,
   },
   {
     id: "create-task",
@@ -29,12 +29,12 @@ const faqs = [
   {
     id: "data-safety",
     question: "Where is my data stored in guest mode?",
-    answer: `In the current guest-only mode, all your task data and your Guest ID are stored locally in your web browser's localStorage. This data is not transmitted to any external servers and is only accessible from the specific browser you are using. Clearing your browser's cache or site data for ${APP_NAME} will remove this local data.`,
+    answer: `In the current guest-only mode, all your task data (tasks, columns, settings) and your unique Guest ID are stored locally in your web browser's localStorage. This data is not transmitted to any external servers and is only accessible from the specific browser and device you are using.`,
   },
   {
     id: "free-to-use",
     question: `Is ${APP_NAME} free to use?`,
-    answer: `Yes, ${APP_NAME} is free to use in its current guest-only mode. AI features might require a Google AI API key, which has its own usage policies and potential costs if you exceed free tiers.`,
+    answer: `Yes, ${APP_NAME} is completely free to use in its current guest-only mode. AI-powered features, if used, might require you to set up your own Google AI API key in the application's .env file. Google AI has its own usage policies and potential costs if you exceed their free tiers. The core task management functionality itself does not require this API key.`,
   },
   {
     id: "organize-tasks",
@@ -53,20 +53,25 @@ const faqs = [
     question: "How can I ensure my guest data isn't lost?",
     answer: `Your guest data is stored in your browser's local storage. To avoid losing it:
       - Do not clear your browser's cache, cookies, or site-specific data for ${APP_NAME}.
-      - Using a different browser, device, or private/incognito mode will result in a new, empty session.
-      - There is currently no cloud backup for guest data. The "Guest Info" page (accessible via the guest icon) shows your Guest ID and provides an option to clear your local data and start a new session.`,
+      - Using a different browser, device, or a private/incognito window will result in a new, empty session.
+      - There is currently no cloud backup or account synchronization for guest data. 
+      - The "Guest Info" page (accessible via the guest icon in the header/bottom navigation) shows your current Guest ID and provides an option to "Clear All Data & Start New Guest Session," which will wipe your locally stored tasks and begin a new empty session. Be cautious with this option.`,
   },
   {
     id: "ai-features",
     question: `Are there any AI features in ${APP_NAME}?`,
-    answer: `Yes! ${APP_NAME} leverages AI (via Genkit and Google AI, requires your own API key setup in .env) to assist you with:
-      - **Enhancing Task Descriptions**
-      - **Suggesting Tags**
-      - **Suggesting Subtasks**
-      - **Suggesting Task Priority**
-      - **Suggesting Focus Batch**
-      - **Task Insights**`,
+    answer: `Yes! If you configure your Google AI API key in the .env file, ${APP_NAME} can leverage AI (via Genkit and Google AI) to assist you with:
+      - Enhancing Task Descriptions
+      - Suggesting Tags for tasks
+      - Suggesting Subtasks to break down larger tasks
+      - Suggesting a Focus Batch of tasks to work on
+      - Providing Task Insights with actionable suggestions.`,
   },
+  {
+    id: "registered-accounts",
+    question: "Will there be user accounts or cloud sync in the future?",
+    answer: "The ability to sign up for an account to save and sync your data across devices is a planned feature. For now, TaskGlide operates in a guest-only mode using local browser storage.",
+  }
 ];
 
 export default function FAQPage() {
@@ -77,9 +82,8 @@ export default function FAQPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      {/* Rely on RootLayout for container and horizontal padding. Add vertical padding as needed. */}
       <main className="flex-grow py-8">
-        <div className="max-w-3xl mx-auto"> {/* This internal max-width can stay if content should be narrower */}
+        <div className="max-w-3xl mx-auto"> 
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Frequently Asked Questions

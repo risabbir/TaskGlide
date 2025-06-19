@@ -36,7 +36,7 @@ const featureRequestSchema = z.object({
   category: z.enum(["ui_ux", "new_functionality", "ai_feature", "improvement", "other"], {
     errorMap: () => ({ message: "Please select a category." }),
   }),
-  email: z.string().email("Please enter a valid email address.").optional().or(z.literal('')),
+  // Email field removed as mailto: will use the user's client.
 });
 
 type FeatureRequestFormData = z.infer<typeof featureRequestSchema>;
@@ -48,6 +48,9 @@ const categories = [
   { value: "improvement", label: "Existing Feature Improvement" },
   { value: "other", label: "Other" },
 ];
+
+// IMPORTANT: Replace this with your actual support email address.
+const SUPPORT_EMAIL = "support@taskglide.example.com";
 
 export default function FeatureRequestPage() {
   const { toast } = useToast();
@@ -62,31 +65,62 @@ export default function FeatureRequestPage() {
       title: "",
       description: "",
       category: undefined,
-      email: "",
     },
   });
 
   function onSubmit(data: FeatureRequestFormData) {
-    console.log("Feature Request Submitted:", data);
-    toast({
-      title: "Feature Request Submitted!",
-      description: "Thank you for your suggestion. We've received your feature request and will review it.",
-    });
-    form.reset();
+    const subject = `Feature Request: ${data.title} [${data.category}]`;
+    const body = `
+Feature Title: ${data.title}
+Category: ${categories.find(c => c.value === data.category)?.label || data.category}
+
+Description:
+${data.description}
+
+---
+Submitted from ${APP_NAME} Feature Request Form
+    `;
+
+    const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    if (typeof window !== "undefined") {
+      window.location.href = mailtoLink;
+      toast({
+        title: "Opening Email Client",
+        description: "Your email client should open shortly to send your feature request. Please complete sending it there.",
+      });
+    } else {
+       // Fallback or server-side scenario (though this is a client component)
+       console.log("Feature Request Data (Mailto Fallback):", {
+        to: SUPPORT_EMAIL,
+        subject,
+        body,
+      });
+      toast({
+        title: "Request Prepared",
+        description: "Please manually send an email with your request details.",
+        variant: "default"
+      });
+    }
+    // Do not reset the form immediately, user might want to copy details if mailto fails.
+    // form.reset();
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      {/* Rely on RootLayout for container and horizontal padding. Add vertical padding as needed. */}
       <main className="flex-grow py-8">
-        <div className="max-w-2xl mx-auto"> {/* This internal max-width can stay */}
+        <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Suggest a Feature
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
               Have an idea to make {APP_NAME} even better? We&apos;d love to hear it!
+              This form will open your default email client.
+            </p>
+             <p className="mt-1 text-sm text-muted-foreground">
+              (Make sure to replace the placeholder email in the code if you are the developer!)
             </p>
           </div>
 
@@ -97,7 +131,7 @@ export default function FeatureRequestPage() {
                 Your Feature Idea
               </CardTitle>
               <CardDescription>
-                Fill out the form below to submit your feature request.
+                Fill out the form below. This will prepare an email for you to send.
               </CardDescription>
             </CardHeader>
             <Form {...form}>
@@ -158,19 +192,6 @@ export default function FeatureRequestPage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Your Email (Optional)</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="you@example.com (for updates, if any)" {...field} className="text-base h-11" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-6 border-t">
                   <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={form.formState.isSubmitting}>
@@ -179,7 +200,7 @@ export default function FeatureRequestPage() {
                     ) : (
                       <Send className="mr-2 h-5 w-5" />
                     )}
-                    Submit Request
+                    Prepare Email for Request
                   </Button>
                 </CardFooter>
               </form>
