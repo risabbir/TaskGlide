@@ -1,16 +1,44 @@
 
 "use client";
 
-import { SignInForm } from "@/components/auth/sign-in-form";
+import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/lib/constants";
 import Link from "next/link";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, User } from "lucide-react";
 import { useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SignInPage() {
+  const { startNewGuestSession, loading, guestId } = useAuth();
+  const router = useRouter();
+
   useEffect(() => {
-    document.title = `Sign In | ${APP_NAME}`;
+    document.title = `Access ${APP_NAME}`;
   }, []);
+  
+  useEffect(() => {
+    // If already a guest and tries to visit signin, redirect to home
+    if (!loading && guestId) {
+      router.push('/');
+    }
+  }, [loading, guestId, router]);
+
+
+  const handleGuestLogin = () => {
+    startNewGuestSession(false); // false: don't clear data, just start if not started
+    router.push("/"); 
+  };
+
+  if (loading) {
+     return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
+        <LayoutDashboard className="h-12 w-12 text-primary animate-pulse mb-4" />
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
@@ -21,11 +49,22 @@ export default function SignInPage() {
             {APP_NAME}
           </span>
         </Link>
-        <p className="text-muted-foreground">
-          Welcome back! Access your tasks and continue your productivity journey.
+        <p className="text-muted-foreground max-w-sm">
+          Organize your tasks and boost productivity. Continue as a guest to get started right away!
         </p>
       </div>
-      <SignInForm />
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Welcome to {APP_NAME}</CardTitle>
+          <CardDescription>Access your tasks by continuing as a guest.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <Button onClick={handleGuestLogin} className="w-full" size="lg">
+            <User className="mr-2 h-5 w-5" />
+            Continue as Guest
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

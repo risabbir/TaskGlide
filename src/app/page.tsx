@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, useEffect } from "react"; // Added useEffect
 import dynamic from 'next/dynamic';
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -10,9 +10,12 @@ import { useKanban } from "@/lib/store";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, User } from "lucide-react"; // Added User
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/auth-context"; // Added useAuth
+import { useRouter } from "next/navigation"; // Added useRouter
+import { APP_NAME } from "@/lib/constants";
 
 // Dynamic imports for components that might be heavy or not immediately needed
 const TaskModal = dynamic(() => import('@/components/task/task-modal').then(mod => mod.TaskModal), {
@@ -96,44 +99,66 @@ function QuickActionsBar() {
 function PageContent() {
   const { state, dispatch } = useKanban();
   const { isFilterSidebarOpen, isTaskModalOpen } = state;
+  const { guestId, loading: authLoading, startNewGuestSession } = useAuth();
+  const router = useRouter();
 
+  useEffect(() => {
+    if (!authLoading && !guestId) {
+      // If auth is done loading and there's no guestId, prompt to start a session.
+      // This could be a modal or a redirect to a dedicated "start guest" page.
+      // For simplicity here, we'll use the sign-in page which now offers "Continue as Guest".
+      router.push('/auth/signin');
+    }
+  }, [authLoading, guestId, router, startNewGuestSession]);
+  
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
 
+  if (authLoading || !guestId) {
+    return (
+        <div className="flex flex-col min-h-screen bg-background items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Initializing your session...</p>
+        </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      <QuickActionsBar />
-      <main className="flex-grow flex flex-col overflow-hidden">
-        <KanbanBoard />
-      </main>
-      <Footer />
-      
-      {isTaskModalOpen && (
-        <Suspense fallback={<TaskModalSkeleton />}>
-          <TaskModal />
-        </Suspense>
-      )}
+    // Added container and padding here, removed from RootLayout
+    <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow px-[8%] sm:px-[10px] pt-2 sm:pt-[10px]">
+      <div className="flex flex-col min-h-screen bg-background">
+        <Header />
+        <QuickActionsBar />
+        <main className="flex-grow flex flex-col overflow-hidden">
+          <KanbanBoard />
+        </main>
+        <Footer />
+        
+        {isTaskModalOpen && (
+          <Suspense fallback={<TaskModalSkeleton />}>
+            <TaskModal />
+          </Suspense>
+        )}
 
-      <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
-        <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col border-l shadow-xl">
-            <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
-              <SheetTitle className="text-xl">Filters & Sort</SheetTitle>
-              <SheetDescription>
-                Refine your view of tasks on the board.
-              </SheetDescription>
-            </SheetHeader>
-            <Suspense fallback={<SidebarSkeleton />}>
-              <FilterSidebar />
-            </Suspense>
-        </SheetContent>
-      </Sheet>
-      
-      <Suspense fallback={null}>
-        <Confetti />
-      </Suspense>
+        <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
+          <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col border-l shadow-xl">
+              <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
+                <SheetTitle className="text-xl">Filters & Sort</SheetTitle>
+                <SheetDescription>
+                  Refine your view of tasks on the board.
+                </SheetDescription>
+              </SheetHeader>
+              <Suspense fallback={<SidebarSkeleton />}>
+                <FilterSidebar />
+              </Suspense>
+          </SheetContent>
+        </Sheet>
+        
+        <Suspense fallback={null}>
+          <Confetti />
+        </Suspense>
+      </div>
     </div>
   );
 }

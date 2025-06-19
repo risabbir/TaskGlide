@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, SlidersHorizontal, Plus, Search, UserCircle2, LogIn } from "lucide-react";
+import { Home, SlidersHorizontal, Plus, Search, User as GuestIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
@@ -22,7 +22,7 @@ import { XCircle } from "lucide-react";
 
 export function BottomNavigation() {
   const { dispatch, state: kanbanState } = useKanban();
-  const { user, loading: authLoading } = useAuth();
+  const { isGuest, loading: authLoading } = useAuth(); // Only need isGuest and authLoading
   const pathname = usePathname();
 
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -78,11 +78,12 @@ export function BottomNavigation() {
   let navItems = [...navItemsBase];
   if (authLoading) {
     // Placeholder for loading state if needed
-  } else if (user) {
-    navItems.push({ href: "/profile", label: "Profile", icon: UserCircle2, isActiveOverride: pathname === "/profile" });
-  } else {
-    navItems.push({ href: "/auth/signin", label: "Sign In", icon: LogIn, isActiveOverride: pathname === "/auth/signin" });
+  } else if (isGuest) { // Always show Guest/Profile icon if guest mode is active or potentially active
+    navItems.push({ href: "/profile", label: "Guest", icon: GuestIcon, isActiveOverride: pathname === "/profile" });
+  } else { // If not loading and not a guest (e.g. no guestId yet), link to sign-in to start guest session
+    navItems.push({ href: "/auth/signin", label: "Start", icon: GuestIcon, isActiveOverride: pathname.startsWith("/auth") });
   }
+
 
   return (
     <>
@@ -116,7 +117,7 @@ export function BottomNavigation() {
             }
             
             const itemWrapperClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1.5 rounded-lg", // Increased padding from p-1 to p-1.5
+              "group flex flex-col items-center justify-center h-full w-full p-1.5 rounded-lg",
               "transition-all duration-150 ease-in-out",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
               isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30 active:scale-95"

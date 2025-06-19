@@ -2,16 +2,14 @@
 {
   "App": {
     "name": "TaskGlide",
-    "description": "Herramienta integral de gestión de tareas."
+    "description": "Herramienta integral de gestión de tareas. (Modo Invitado)"
   },
   "Header": {
     "appName": "TaskGlide",
     "newTask": "Nueva Tarea",
     "filtersSort": "Filtros y Orden",
-    "profile": "Perfil",
-    "signOut": "Cerrar Sesión",
-    "signIn": "Iniciar Sesión",
-    "signUp": "Registrarse",
+    "guestOptions": "Opciones de Invitado",
+    "startGuestSession": "Iniciar Sesión de Invitado",
     "searchTasks": "Buscar tareas..."
   },
   "BottomNavigation": {
@@ -19,24 +17,24 @@
     "filters": "Filtros",
     "addTask": "Añadir Tarea",
     "search": "Buscar",
-    "profile": "Perfil",
-    "signIn": "Iniciar Sesión"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Cambiar idioma"
+    "guest": "Invitado"
   },
   "AuthPages": {
-    "forgotPasswordTitle": "Contraseña Olvidada | {appName}",
-    "forgotPasswordTagline": "Restablece tu contraseña para recuperar el acceso a tu cuenta.",
-    "signInTitle": "Iniciar Sesión | {appName}",
-    "signInTagline": "¡Bienvenido de nuevo! Accede a tus tareas y continúa tu viaje de productividad.",
-    "signUpTitle": "Registrarse | {appName}",
-    "signUpTagline": "Únete a {appName} hoy para organizar tus tareas y aumentar la productividad. <br /> O haz clic en el logo para continuar como invitado."
+    "accessAppName": "Acceder a {appName}",
+    "signInTaglineGuest": "Organiza tus tareas y aumenta tu productividad. ¡Continúa como invitado para empezar ahora mismo!"
   },
   "ProfilePage": {
-    "title": "Perfil y Configuración | {appName}",
-    "loadingText": "Cargando perfil...",
-    "pageTitle": "Perfil y Configuración",
-    "pageDescription": "Administra tu información personal, preferencias y configuraciones de seguridad de la cuenta."
+    "titleGuest": "Información de Invitado | {appName}",
+    "loadingTextGuest": "Cargando información de invitado...",
+    "pageTitleGuest": "Información de Usuario Invitado",
+    "pageDescriptionGuest": "Actualmente estás navegando y gestionando tareas como invitado.",
+    "guestSessionDetails": "Detalles de tu Sesión de Invitado",
+    "currentGuestId": "ID de Invitado Actual:",
+    "localDataAlertTitle": "Almacenamiento de Datos Local",
+    "localDataAlertDescription": "Los datos de tus tareas se guardan localmente en este navegador. Limpiar la caché de tu navegador o los datos del sitio para {appName} eliminará esta información. Tus datos no se sincronizan con la nube en modo invitado.",
+    "clearDataButton": "Borrar Todos los Datos e Iniciar Nueva Sesión de Invitado",
+    "noActiveSessionTitle": "No Hay Sesión de Invitado Activa",
+    "noActiveSessionDescription": "Por favor, inicia una sesión de invitado para gestionar tus tareas.",
+    "startButton": "Iniciar Sesión de Invitado"
   }
 }

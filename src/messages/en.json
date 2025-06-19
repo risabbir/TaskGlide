@@ -2,16 +2,14 @@
 {
   "App": {
     "name": "TaskGlide",
-    "description": "Comprehensive Task Management Tool."
+    "description": "Comprehensive Task Management Tool. (Guest Mode)"
   },
   "Header": {
     "appName": "TaskGlide",
     "newTask": "New Task",
     "filtersSort": "Filters & Sort",
-    "profile": "Profile",
-    "signOut": "Sign Out",
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
+    "guestOptions": "Guest Options",
+    "startGuestSession": "Start Guest Session",
     "searchTasks": "Search tasks..."
   },
   "BottomNavigation": {
@@ -19,24 +17,24 @@
     "filters": "Filters",
     "addTask": "Add Task",
     "search": "Search",
-    "profile": "Profile",
-    "signIn": "Sign In"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Change language"
+    "guest": "Guest"
   },
   "AuthPages": {
-    "forgotPasswordTitle": "Forgot Password | {appName}",
-    "forgotPasswordTagline": "Reset your password to regain access to your account.",
-    "signInTitle": "Sign In | {appName}",
-    "signInTagline": "Welcome back! Access your tasks and continue your productivity journey.",
-    "signUpTitle": "Sign Up | {appName}",
-    "signUpTagline": "Join {appName} today to organize your tasks and boost productivity. <br /> Or, click the logo to continue as a guest."
+    "accessAppName": "Access {appName}",
+    "signInTaglineGuest": "Organize your tasks and boost productivity. Continue as a guest to get started right away!"
   },
   "ProfilePage": {
-    "title": "Profile & Settings | {appName}",
-    "loadingText": "Loading profile...",
-    "pageTitle": "Profile & Settings",
-    "pageDescription": "Manage your personal information, preferences, and account security settings."
+    "titleGuest": "Guest Information | {appName}",
+    "loadingTextGuest": "Loading guest information...",
+    "pageTitleGuest": "Guest User Information",
+    "pageDescriptionGuest": "You are currently browsing and managing tasks as a guest.",
+    "guestSessionDetails": "Your Guest Session Details",
+    "currentGuestId": "Current Guest ID:",
+    "localDataAlertTitle": "Local Data Storage",
+    "localDataAlertDescription": "Your task data is saved locally in this browser. Clearing your browser's cache or site data for {appName} will remove this information. Your data is not synced to the cloud in guest mode.",
+    "clearDataButton": "Clear All Data & Start New Guest Session",
+    "noActiveSessionTitle": "No Active Guest Session",
+    "noActiveSessionDescription": "Please start a guest session to manage your tasks.",
+    "startButton": "Start Guest Session"
   }
 }

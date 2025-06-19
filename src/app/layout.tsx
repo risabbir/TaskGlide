@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -31,7 +31,8 @@ export default function RootLayout({
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`} suppressHydrationWarning={true}>
         <AuthProvider>
           <KanbanProvider>
-            <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow pb-16 md:pb-0">
+            {/* Removed max-w-7xl and custom padding from here, apply it in page.tsx or specific layouts if needed */}
+            <div className="w-full flex flex-col flex-grow pb-16 md:pb-0">
               {children}
             </div>
             <Toaster />

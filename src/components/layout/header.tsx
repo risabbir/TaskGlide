@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, LayoutDashboard, XCircle, PlusCircle, LogOut, UserCircle2, SlidersHorizontal, User as GuestIcon, LogIn } from "lucide-react"; 
+import { Search, LayoutDashboard, XCircle, PlusCircle, SlidersHorizontal, User as GuestIcon } from "lucide-react"; 
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import Link from "next/link";
@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { APP_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -35,7 +35,7 @@ interface HeaderProps {
 export function Header({ children }: HeaderProps) {
   const { dispatch, state } = useKanban();
   const { filters } = state;
-  const { user, signOut, loading: authLoading, guestId, isGuest } = useAuth();
+  const { guestId, isGuest, loading: authLoading, startNewGuestSession } = useAuth();
   
   const [desktopSearchTerm, setDesktopSearchTerm] = useState(filters.searchTerm ?? "");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -74,7 +74,7 @@ export function Header({ children }: HeaderProps) {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [desktopSearchTerm, dispatch]);
+  }, [desktopSearchTerm]);
 
 
   const handleDesktopSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,19 +111,10 @@ export function Header({ children }: HeaderProps) {
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
-
-  const getInitials = (name?: string | null, email?: string | null) => {
-    if (name) {
-      return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-    }
-    if (email) {
-        const parts = email.split("@")[0];
-        if (parts) {
-            return parts.substring(0, 2).toUpperCase();
-        }
-        return email.substring(0,1).toUpperCase();
-    }
-    return "G"; // Guest User fallback
+  
+  const handleStartNewGuestSession = () => {
+    startNewGuestSession(true); // true to clear previous data
+    // Optionally, navigate or let KanbanProvider handle re-render
   };
 
   return (
@@ -184,38 +175,8 @@ export function Header({ children }: HeaderProps) {
             <div className="flex items-center">
               {authLoading ? (
                 <Skeleton className="h-9 w-9 rounded-full" />
-              ) : user ? (
-                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                      <Avatar className="h-8 w-8 border-2 border-primary/30 hover:border-primary transition-colors">
-                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
-                         <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">{getInitials(user.displayName, user.email)}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none truncate">{user.displayName || user.email || "User"}</p>
-                        {user.displayName && <p className="text-xs leading-none text-muted-foreground truncate">{user.email}</p>}
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <UserCircle2 className="mr-2 h-4 w-4" />
-                        Profile & Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               ) : isGuest && guestId ? (
-                <DropdownMenu>
+                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                      <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
                       <Avatar className="h-8 w-8 border-2 border-muted hover:border-primary/50 transition-colors">
@@ -235,34 +196,21 @@ export function Header({ children }: HeaderProps) {
                     <DropdownMenuSeparator />
                      <DropdownMenuItem asChild>
                       <Link href="/profile">
-                        <UserCircle2 className="mr-2 h-4 w-4" />
+                        <GuestIcon className="mr-2 h-4 w-4" />
                         Guest Info & Options
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <div className="p-1 space-y-1">
-                        <Button asChild size="sm" className="w-full justify-start text-sm">
-                           <Link href="/auth/signup">
-                                <PlusCircle className="mr-2 h-4 w-4" /> Sign Up to Save Data
-                           </Link>
-                        </Button>
-                        <Button variant="outline" asChild size="sm" className="w-full justify-start text-sm">
-                           <Link href="/auth/signin">
-                                <LogIn className="mr-2 h-4 w-4" /> Log In to Existing Account
-                           </Link>
-                        </Button>
-                    </div>
+                    <DropdownMenuItem onClick={handleStartNewGuestSession}>
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Clear Data & New Session
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" asChild className="px-2 sm:px-3 text-sm">
-                    <Link href="/auth/signin">Sign In</Link>
-                  </Button>
-                  <Button size="sm" asChild className="px-2 sm:px-3 text-sm">
-                    <Link href="/auth/signup">Sign Up</Link>
-                  </Button>
-                </div>
+                // This case should ideally not be reached if auto-start guest session is implemented or if app always navigates to /auth/signin first
+                <Button variant="outline" size="sm" onClick={() => startNewGuestSession(false)}>
+                  Continue as Guest
+                </Button>
               )}
             </div>
           </div>
