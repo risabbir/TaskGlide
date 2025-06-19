@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, LayoutDashboard, XCircle, PlusCircle, SlidersHorizontal, User as GuestIcon, UserPlus, LogIn } from "lucide-react"; 
+import { Search, LayoutDashboard, XCircle, PlusCircle, SlidersHorizontal, User as GuestIcon, LogIn } from "lucide-react"; 
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import Link from "next/link";
@@ -24,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { APP_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -211,46 +210,18 @@ export function Header({ children }: HeaderProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                // Not a guest and not loading: Show "Continue as Guest" and "Sign Up (Coming Soon)"
+                // Not a guest and not loading: Show "Continue as Guest"
                 <div className="flex items-center gap-2">
                     <Button asChild size="sm">
                         <Link href="/auth/signin">
                             <LogIn className="mr-1.5 h-4 w-4" /> Continue as Guest
                         </Link>
                     </Button>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="outline" size="sm" disabled className="cursor-not-allowed opacity-70">
-                                    <UserPlus className="mr-1.5 h-4 w-4" /> Sign Up
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Registered accounts coming soon!</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    {/* Sign Up button removed from here */}
                 </div>
               )}
             </div>
-             {/* "Sign Up Coming Soon" button also shown when guest is logged in, but separate for clarity */}
-            {isGuest && guestId && !authLoading && (
-                <div className="hidden sm:flex items-center ml-2">
-                     <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="outline" size="sm" disabled className="cursor-not-allowed opacity-70">
-                                    <UserPlus className="mr-1.5 h-4 w-4" /> Sign Up
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Registered accounts coming soon!</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
-            )}
-
+            {/* Sign Up button removed from here */}
           </div>
         </div>
       </header>

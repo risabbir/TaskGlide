@@ -3,7 +3,7 @@
 
 import React, { useEffect } from "react";
 import { Header } from "@/components/layout/header";
-import { LayoutDashboard, User as GuestIcon, AlertCircle, XCircle } from "lucide-react";
+import { LayoutDashboard, User as GuestIcon, AlertCircle, XCircle, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { APP_NAME } from "@/lib/constants";
@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 export default function ProfilePage() {
@@ -94,10 +96,22 @@ export default function ProfilePage() {
                   </AlertDescription>
                 </Alert>
             </CardContent>
-            <CardFooter className="pt-6 border-t bg-muted/20">
+            <CardFooter className="pt-6 border-t bg-muted/20 flex-col sm:flex-row justify-between items-center gap-4">
               <Button variant="destructive" onClick={handleClearAndNewSession} className="w-full sm:w-auto">
                 <XCircle className="mr-2 h-4 w-4" /> Clear All Data & Start New Guest Session
               </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" disabled className="w-full sm:w-auto cursor-not-allowed opacity-70">
+                      <UserPlus className="mr-2 h-4 w-4" /> Sign Up for Account
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Registered accounts coming soon!</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </CardFooter>
           </Card>
         </div>
