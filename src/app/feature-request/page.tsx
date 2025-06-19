@@ -28,10 +28,10 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send, Info, AlertTriangle } from "lucide-react";
+import { Lightbulb, Send, Info, AlertTriangle, MailQuestion } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Schema defining the form fields and their validation rules (conditions)
+// Schema defining the form fields and their validation rules
 const featureRequestSchema = z.object({
   title: z.string().min(5, "Please provide a concise title (min 5 characters).").max(100, "Title is too long (max 100 characters)."),
   description: z.string().min(10, "Please describe your feature in detail (min 10 characters).").max(2000, "Description is too long (max 2000 characters)."),
@@ -50,14 +50,15 @@ const categories = [
   { value: "other", label: "Other" },
 ];
 
-// IMPORTANT: Replace this with your actual support email address.
+// THIS IS THE EMAIL ADDRESS WHERE THE FEATURE REQUESTS WILL BE SENT.
+// Ensure this is a valid email address you monitor.
 const SUPPORT_EMAIL = "webcodar37@gmail.com"; 
 
 export default function FeatureRequestPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    document.title = `Feature Request | ${APP_NAME}`;
+    document.title = `Suggest a Feature | ${APP_NAME}`;
   }, []);
 
   const form = useForm<FeatureRequestFormData>({
@@ -71,7 +72,7 @@ export default function FeatureRequestPage() {
 
   function onSubmit(data: FeatureRequestFormData) {
     // Step 1: Construct the email subject using form data.
-    const subject = `Feature Request: ${data.title} (Category: ${data.category})`;
+    const subject = `Feature Request for ${APP_NAME}: ${data.title} (Category: ${data.category})`;
 
     // Step 2: Construct the email body using form data.
     const body = `
@@ -79,6 +80,7 @@ Dear ${APP_NAME} Team,
 
 I would like to request the following feature:
 
+--------------------------------------------------
 Feature Title:
 ${data.title}
 
@@ -87,42 +89,50 @@ ${categories.find(c => c.value === data.category)?.label || data.category}
 
 Detailed Description:
 ${data.description}
+--------------------------------------------------
 
----
-Submitted from the ${APP_NAME} Feature Request Form.
-(User will send this from their email client)
+Thank you for considering this feature.
+
+(This email was prepared by the ${APP_NAME} Feature Request Form. The user will send this from their email client.)
     `;
 
-    // Step 3: Create the mailto link.
+    // Step 3: Create the mailto link. This is a special URL that tells the browser
+    // to try and open the user's default email application.
     const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
     // FOR DEBUGGING: Log the generated mailto link to the browser console.
-    // You can copy this link and paste it into your browser's address bar if the email client doesn't open.
+    // If the email client doesn't open, you can copy this link and paste it
+    // into your browser's address bar to test it manually.
     console.log("--- DEBUG: Generated mailto link ---");
     console.log(mailtoLink);
+    console.log("--- Details for manual email (if mailto fails) ---");
+    console.log("To:", SUPPORT_EMAIL);
+    console.log("Subject:", subject);
+    console.log("Body:", body);
     console.log("------------------------------------");
     
     if (typeof window !== "undefined") {
       try {
         // Step 4: Attempt to open the user's default email client.
+        // This will open a new email draft in their email app (Outlook, Mail, etc.)
         window.location.href = mailtoLink;
         
         // Step 5: Inform the user about the next step.
         toast({
-          title: "Email Draft Prepared",
-          description: "Your email client should open with a pre-filled message. Please review it and press 'Send' in your email application to submit your request.",
-          duration: 10000, // Longer duration for user to read
+          title: "Email Draft Prepared!",
+          description: "Your email application should open with a pre-filled message. Please review the details and click 'Send' in your email application to submit your request.",
+          duration: 15000, // Longer duration for user to read and act
         });
       } catch (error) {
         console.error("Error trying to open mailto link:", error);
         toast({
-          title: "Could Not Open Email Client",
-          description: `There was an issue opening your email client. Please copy the request details from the console (Press F12, go to Console tab) and send manually to ${SUPPORT_EMAIL}.`,
+          title: "Could Not Open Email Client Automatically",
+          description: `We tried to open your email app, but it didn't work. This can happen if no default email client is set up on your computer. \n\nPlease manually send an email with your feature request. Details have been logged to your browser's console (Press F12, go to Console tab). \n\nEmail to: ${SUPPORT_EMAIL}`,
           variant: "destructive",
-          duration: 15000,
+          duration: 20000, // Even longer for manual action
         });
       }
-      // Step 6: Reset the form fields.
+      // Step 6: Reset the form fields after attempting to open the email client.
       form.reset();
     } else {
        // Fallback if window is not defined (should not happen in normal client-side execution)
@@ -132,10 +142,10 @@ Submitted from the ${APP_NAME} Feature Request Form.
         body,
       });
       toast({
-        title: "Request Prepared (Manual Send Needed)",
-        description: `Could not automatically open your email client. Please copy the details (title: ${data.title}, description: ${data.description}, category: ${data.category}) and send your request manually to ${SUPPORT_EMAIL}.`,
+        title: "Request Details Prepared (Manual Send Required)",
+        description: `Could not automatically open your email client. Please copy the details (title: ${data.title}, description: ${data.description}, category: ${data.category}) and send your request manually to ${SUPPORT_EMAIL}. Details also in browser console.`,
         variant: "default",
-        duration: 15000,
+        duration: 20000,
       });
     }
   }
@@ -145,15 +155,16 @@ Submitted from the ${APP_NAME} Feature Request Form.
       <Header />
       <main className="flex-grow py-8">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
+          <div className="text-center mb-10">
+            <MailQuestion className="mx-auto h-12 w-12 text-primary mb-4" />
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Suggest a Feature
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Have an idea to make ${APP_NAME} even better? We&apos;d love to hear it!
+            <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
+              Have an idea to make {APP_NAME} even better? Fill out the form below.
             </p>
-             <p className="mt-1 text-sm text-muted-foreground">
-              Submitting this form will prepare an email in your default email client.
+             <p className="mt-2 text-md text-primary/90 font-medium">
+              Important: Submitting this form will prepare an email in <strong className="text-primary">your computer's default email application</strong>. You will need to press "Send" there.
             </p>
           </div>
 
@@ -164,31 +175,31 @@ Submitted from the ${APP_NAME} Feature Request Form.
                 Your Feature Idea
               </CardTitle>
               <CardDescription>
-                Fill out the form below. This will prepare an email for you to send using your default email application.
+                Tell us about your suggestion. After you submit, an email draft will open for you to send.
               </CardDescription>
             </CardHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CardContent className="space-y-6 pt-2">
                   {SUPPORT_EMAIL === "webcodar37@gmail.com" ? (
-                     <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                     <Alert variant="default" className="bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300">
                         <Info className="h-5 w-5" />
-                        <AlertTitle className="font-semibold">Ready to Go!</AlertTitle>
+                        <AlertTitle className="font-semibold">Form is Ready!</AlertTitle>
                         <AlertDescription>
-                            This form is configured to send feature requests to: <strong>{SUPPORT_EMAIL}</strong>. Submitting will attempt to open your email client.
+                            This form is configured to prepare emails for: <strong>{SUPPORT_EMAIL}</strong>.
                         </AlertDescription>
                     </Alert>
-                  ) : (
+                  ) : SUPPORT_EMAIL.includes("example.com") || SUPPORT_EMAIL === "" ? (
                     <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700">
                         <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                        <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Configuration Required</AlertTitle>
+                        <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Configuration Needed</AlertTitle>
                         <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-                          For this form to deliver feature requests, the developer must update the 
-                          <code> SUPPORT_EMAIL </code> constant in this file (<code>src/app/feature-request/page.tsx</code>) 
-                          to a valid support email address. The current value is: <strong>{SUPPORT_EMAIL}</strong>.
+                          The <code>SUPPORT_EMAIL</code> in <code>src/app/feature-request/page.tsx</code> 
+                          is currently set to a placeholder (<strong>{SUPPORT_EMAIL || "empty"}</strong>). 
+                          Please update it to your actual support email address.
                         </AlertDescription>
                     </Alert>
-                  )}
+                  ) : null}
                   <FormField
                     control={form.control}
                     name="title"
@@ -245,7 +256,7 @@ Submitted from the ${APP_NAME} Feature Request Form.
                     )}
                   />
                 </CardContent>
-                <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start">
+                <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start gap-3">
                   <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? (
                       <Send className="mr-2 h-5 w-5 animate-pulse" />
@@ -254,8 +265,12 @@ Submitted from the ${APP_NAME} Feature Request Form.
                     )}
                     Prepare Email for Request
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    After clicking, your email application should open. Please review and send the email from there.
+                  <p className="text-xs text-muted-foreground">
+                    After clicking, your default email application should open with a pre-filled draft. 
+                    <strong className="text-foreground"> Please review the email and press "Send" in your email app to submit your request.</strong>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    If your email app doesn't open, check your browser console (F12) for details to send manually.
                   </p>
                 </CardFooter>
               </form>
