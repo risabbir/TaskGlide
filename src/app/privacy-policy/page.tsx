@@ -17,8 +17,9 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
+      {/* Rely on RootLayout for container and horizontal padding. Add vertical padding as needed. */}
+      <main className="flex-grow py-8">
+        <div className="max-w-3xl mx-auto"> {/* This internal max-width can stay */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Privacy Policy

@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
-// Removed: import { Separator } from "@/components/ui/separator"; // No longer needed
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -25,22 +24,20 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!authLoading && !isGuest) { 
-      // If not loading and not a guest (meaning no guestId),
-      // redirect to sign-in which will offer to start a guest session.
       router.push('/auth/signin'); 
     }
   }, [isGuest, authLoading, router]);
 
   const handleClearAndNewSession = () => {
-    startNewGuestSession(true); // true to clear data
-    router.push('/'); // Navigate to home after starting new session
+    startNewGuestSession(true); 
+    router.push('/'); 
   };
 
   if (authLoading) { 
     return (
       <>
         <Header /> 
-        <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4 bg-background">
+        <div className="flex flex-grow flex-col items-center justify-center p-4 bg-background">
           <LayoutDashboard className="h-12 w-12 text-primary animate-pulse" />
           <p className="mt-4 text-muted-foreground">Loading guest information...</p>
         </div>
@@ -49,11 +46,10 @@ export default function ProfilePage() {
   }
 
   if (!isGuest || !guestId) {
-     // This case should ideally be handled by the useEffect redirect, but as a fallback:
      return (
       <>
         <Header /> 
-        <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4 bg-background text-center">
+        <div className="flex flex-grow flex-col items-center justify-center p-4 bg-background text-center">
           <GuestIcon className="h-12 w-12 text-primary mb-4" />
           <p className="text-xl font-semibold text-foreground mb-2">No Active Guest Session</p>
           <p className="text-muted-foreground mb-6">Please start a guest session to manage your tasks.</p>
@@ -68,7 +64,8 @@ export default function ProfilePage() {
   return (
     <>
       <Header />
-      <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center bg-gradient-to-br from-background via-secondary/5 to-background dark:from-background dark:via-card/10 dark:to-background py-8 px-4 sm:px-6 lg:px-8">
+      {/* Removed outer padding and centering classes, relying on RootLayout's container */}
+      <div className="flex flex-grow flex-col items-center bg-gradient-to-br from-background via-secondary/5 to-background dark:from-background dark:via-card/10 dark:to-background py-8">
         <div className="w-full max-w-2xl space-y-8"> 
           <div className="flex flex-col items-center text-center mb-8">
             <GuestIcon className="mr-3 h-10 w-10 text-primary/80 mb-3" />

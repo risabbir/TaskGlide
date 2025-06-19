@@ -29,12 +29,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
 import { Lightbulb, Send } from "lucide-react";
-import type { Metadata } from 'next';
-
-// export const metadata: Metadata = { // Uncomment if converting to Server Component and handling metadata generation
-//   title: `Feature Request | ${APP_NAME}`,
-//   description: `Suggest new features or improvements for ${APP_NAME}. We value your feedback!`,
-// };
 
 const featureRequestSchema = z.object({
   title: z.string().min(5, "Please provide a concise title (min 5 characters).").max(100, "Title is too long (max 100 characters)."),
@@ -74,7 +68,6 @@ export default function FeatureRequestPage() {
 
   function onSubmit(data: FeatureRequestFormData) {
     console.log("Feature Request Submitted:", data);
-    // Simulate submission (e.g., API call, send to backend)
     toast({
       title: "Feature Request Submitted!",
       description: "Thank you for your suggestion. We've received your feature request and will review it.",
@@ -85,8 +78,9 @@ export default function FeatureRequestPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
+      {/* Rely on RootLayout for container and horizontal padding. Add vertical padding as needed. */}
+      <main className="flex-grow py-8">
+        <div className="max-w-2xl mx-auto"> {/* This internal max-width can stay */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Suggest a Feature

@@ -10,7 +10,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// Removed: import { Separator } from "@/components/ui/separator";
 
 export default function SignInPage() {
   const { startNewGuestSession, loading, guestId } = useAuth();
@@ -21,7 +20,6 @@ export default function SignInPage() {
   }, []);
   
   useEffect(() => {
-    // If already a guest and tries to visit signin, redirect to home
     if (!loading && guestId) {
       router.push('/');
     }
@@ -29,7 +27,7 @@ export default function SignInPage() {
 
 
   const handleGuestLogin = () => {
-    startNewGuestSession(false); // false: don't clear data, just start if not started
+    startNewGuestSession(false); 
     router.push("/"); 
   };
 
@@ -65,14 +63,6 @@ export default function SignInPage() {
             <User className="mr-2 h-5 w-5" />
             Continue as Guest
           </Button>
-          {/* Removed Separator and OR text
-          <div className="relative my-2">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                OR
-              </span>
-          </div>
-          */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -87,7 +77,6 @@ export default function SignInPage() {
           </TooltipProvider>
         </CardContent>
         <CardFooter>
-            {/* Optional: Add a footer link back to the main site or for help */}
         </CardFooter>
       </Card>
     </div>

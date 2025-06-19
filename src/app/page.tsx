@@ -14,7 +14,6 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
-// Removed: import { useRouter } from "next/navigation";
 import { APP_NAME } from "@/lib/constants";
 
 // Dynamic imports for components that might be heavy or not immediately needed
@@ -69,7 +68,8 @@ const FocusBatchModalSkeleton = () => (
 function QuickActionsBar() {
   const [isFocusBatchModalOpen, setIsFocusBatchModalOpen] = useState(false);
   return (
-    <div className="container mx-auto px-4 py-3">
+    // Container and specific padding for QuickActionsBar if different from root layout
+    <div className="py-3"> 
       <div className="bg-card p-3 sm:p-4 rounded-xl shadow-lg border flex flex-col sm:flex-row items-center gap-3">
         <div className="w-full sm:flex-grow">
           <QuickAddTask />
@@ -99,18 +99,13 @@ function QuickActionsBar() {
 function PageContent() {
   const { state, dispatch } = useKanban();
   const { isFilterSidebarOpen, isTaskModalOpen } = state;
-  const { guestId, loading: authLoading } = useAuth(); // Removed startNewGuestSession and router from here
+  const { guestId, loading: authLoading } = useAuth(); 
 
-  // Removed useEffect that redirected to /auth/signin.
-  // The Header component will now handle prompting the user if no guest session is active.
-  
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
-
-  // Show loading indicator until auth state (especially guestId) is determined.
-  // Or if there's no guestId yet, the header will show "Continue as Guest" button.
-  if (authLoading && !guestId) { // Initial load, guestId not yet confirmed from storage
+  
+  if (authLoading && !guestId) {
     return (
         <div className="flex flex-col min-h-screen bg-background items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -120,54 +115,47 @@ function PageContent() {
   }
 
   return (
-    // Added container and padding here, removed from RootLayout
-    <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow px-[8%] sm:px-[10px] pt-2 sm:pt-[10px]">
-      <div className="flex flex-col min-h-screen bg-background">
-        <Header />
-        {/* Only render QuickActionsBar and KanbanBoard if a guest session is active or auth is done loading
-            If no guestId, Header will show a button to start one.
-        */}
-        {(!authLoading || guestId) && (
-            <>
-                <QuickActionsBar />
-                <main className="flex-grow flex flex-col overflow-hidden">
-                <KanbanBoard />
-                </main>
-            </>
-        )}
-        {authLoading && !guestId && ( // Placeholder for board area while auth is determining guestId
-            <div className="flex-grow flex items-center justify-center">
-                 {/* Optionally, a less intrusive loader or just wait for header to guide */}
-            </div>
-        )}
-
-
-        <Footer />
-        
-        {isTaskModalOpen && (
-          <Suspense fallback={<TaskModalSkeleton />}>
-            <TaskModal />
-          </Suspense>
-        )}
-
-        <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
-          <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col border-l shadow-xl">
-              <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
-                <SheetTitle className="text-xl">Filters & Sort</SheetTitle>
-                <SheetDescription>
-                  Refine your view of tasks on the board.
-                </SheetDescription>
-              </SheetHeader>
-              <Suspense fallback={<SidebarSkeleton />}>
-                <FilterSidebar />
-              </Suspense>
-          </SheetContent>
-        </Sheet>
-        
-        <Suspense fallback={null}>
-          <Confetti />
+    // Removed the outer container div from here, as RootLayout now handles it.
+    // This div now represents the direct content of the page within RootLayout's container.
+    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height,_4rem)_-_var(--bottom-nav-height,_4rem))] bg-background"> {/* Adjust min-height if header/footer heights change */}
+      <Header />
+      {(!authLoading || guestId) && (
+          <>
+              <QuickActionsBar />
+              <main className="flex-grow flex flex-col overflow-hidden">
+              <KanbanBoard />
+              </main>
+          </>
+      )}
+      {authLoading && !guestId && (
+          <div className="flex-grow flex items-center justify-center">
+          </div>
+      )}
+      <Footer />
+      
+      {isTaskModalOpen && (
+        <Suspense fallback={<TaskModalSkeleton />}>
+          <TaskModal />
         </Suspense>
-      </div>
+      )}
+
+      <Sheet open={isFilterSidebarOpen} onOpenChange={toggleFilterSidebar}>
+        <SheetContent className="w-full sm:w-[400px] p-0 flex flex-col border-l shadow-xl">
+            <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
+              <SheetTitle className="text-xl">Filters & Sort</SheetTitle>
+              <SheetDescription>
+                Refine your view of tasks on the board.
+              </SheetDescription>
+            </SheetHeader>
+            <Suspense fallback={<SidebarSkeleton />}>
+              <FilterSidebar />
+            </Suspense>
+        </SheetContent>
+      </Sheet>
+      
+      <Suspense fallback={null}>
+        <Confetti />
+      </Suspense>
     </div>
   );
 }

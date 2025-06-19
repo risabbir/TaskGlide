@@ -31,8 +31,8 @@ export default async function RootLayout({
       <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen flex flex-col`} suppressHydrationWarning={true}>
         <AuthProvider>
           <KanbanProvider>
-            {/* Removed max-w-7xl and custom padding from here, apply it in page.tsx or specific layouts if needed */}
-            <div className="w-full flex flex-col flex-grow pb-16 md:pb-0">
+            {/* Apply consistent container and padding here */}
+            <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow px-4 sm:px-6 lg:px-8 pt-2 sm:pt-3 pb-16 md:pb-0">
               {children}
             </div>
             <Toaster />
