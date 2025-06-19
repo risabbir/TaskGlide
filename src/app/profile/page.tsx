@@ -95,7 +95,7 @@ export default function ProfilePage() {
               <Button variant="destructive" onClick={handleClearAndNewSession} className="w-full sm:w-auto">
                 <XCircle className="mr-2 h-4 w-4" /> Clear All Data & Start New Guest Session
               </Button>
-              <TooltipProvider>
+              <TooltipProvider delayDuration={0}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     {/* Wrap disabled button in a span for tooltip to work */}
@@ -106,7 +106,7 @@ export default function ProfilePage() {
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Registered accounts coming soon!</p>
+                    <p>Coming Soon!</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

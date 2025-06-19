@@ -63,7 +63,7 @@ export default function SignInPage() {
             <User className="mr-2 h-5 w-5" />
             Continue as Guest
           </Button>
-          <TooltipProvider>
+          <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
                 {/* Wrap disabled button in a span for tooltip to work */}
@@ -74,7 +74,7 @@ export default function SignInPage() {
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Registered accounts coming soon!</p>
+                <p>Coming Soon!</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
