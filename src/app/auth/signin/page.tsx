@@ -66,9 +66,12 @@ export default function SignInPage() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="lg" disabled className="w-full cursor-not-allowed opacity-70">
-                  <UserPlus className="mr-2 h-5 w-5" /> Sign Up
-                </Button>
+                {/* Wrap disabled button in a span for tooltip to work */}
+                <span tabIndex={0} className="inline-block w-full">
+                  <Button variant="outline" size="lg" disabled className="w-full cursor-not-allowed opacity-70">
+                    <UserPlus className="mr-2 h-5 w-5" /> Sign Up
+                  </Button>
+                </span>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Registered accounts coming soon!</p>

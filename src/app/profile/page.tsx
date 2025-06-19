@@ -3,7 +3,7 @@
 
 import React, { useEffect } from "react";
 import { Header } from "@/components/layout/header";
-import { LayoutDashboard, AlertCircle, XCircle, UserPlus } from "lucide-react"; // Removed GuestIcon as it's no longer used in the title
+import { LayoutDashboard, AlertCircle, XCircle, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { APP_NAME } from "@/lib/constants";
@@ -50,7 +50,6 @@ export default function ProfilePage() {
       <>
         <Header /> 
         <div className="flex flex-grow flex-col items-center justify-center p-4 bg-background text-center">
-          {/* Icon for "No Active Guest Session" state, more distinct than a generic user icon */}
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-12 w-12 text-primary mb-4 lucide lucide-user-round-question"><path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"/><path d="M19.5 16.5C19.5 16.5 17 14 12 14C7 14 4.5 16.5 4.5 16.5"/><path d="M12 20.5V20.51"/><path d="M12 17.5A2.504 2.504 0 0 0 9.543 16.71"/><path d="M12 14.5C10.053 14.5 8.499 15.562 7.5 17.002"/></svg>
           <p className="text-xl font-semibold text-foreground mb-2">No Active Guest Session</p>
           <p className="text-muted-foreground mb-6">Please start a guest session to manage your tasks.</p>
@@ -68,7 +67,6 @@ export default function ProfilePage() {
       <div className="flex flex-grow flex-col items-center bg-gradient-to-br from-background via-secondary/5 to-background dark:from-background dark:via-card/10 dark:to-background py-8">
         <div className="w-full max-w-2xl space-y-8"> 
           <div className="flex flex-col items-center text-center mb-8">
-            {/* Icon removed from the main title of the Guest Information page */}
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mt-3">
               Guest User Information
             </h1>
@@ -100,9 +98,12 @@ export default function ProfilePage() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" disabled className="w-full sm:w-auto cursor-not-allowed opacity-70">
-                      <UserPlus className="mr-2 h-4 w-4" /> Sign Up for Account
-                    </Button>
+                    {/* Wrap disabled button in a span for tooltip to work */}
+                    <span tabIndex={0} className="inline-block w-full sm:w-auto">
+                      <Button variant="outline" disabled className="w-full sm:w-auto cursor-not-allowed opacity-70">
+                        <UserPlus className="mr-2 h-4 w-4" /> Sign Up for Account
+                      </Button>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Registered accounts coming soon!</p>
@@ -116,5 +117,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
