@@ -31,6 +31,7 @@ import { APP_NAME } from "@/lib/constants";
 import { Lightbulb, Send, Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Schema defining the form fields and their validation rules (conditions)
 const featureRequestSchema = z.object({
   title: z.string().min(5, "Please provide a concise title (min 5 characters).").max(100, "Title is too long (max 100 characters)."),
   description: z.string().min(10, "Please describe your feature in detail (min 10 characters).").max(2000, "Description is too long (max 2000 characters)."),
@@ -49,6 +50,7 @@ const categories = [
   { value: "other", label: "Other" },
 ];
 
+// IMPORTANT: Replace this with your actual support email address.
 const SUPPORT_EMAIL = "webcodar37@gmail.com"; 
 
 export default function FeatureRequestPage() {
@@ -68,41 +70,62 @@ export default function FeatureRequestPage() {
   });
 
   function onSubmit(data: FeatureRequestFormData) {
-    const subject = `Feature Request: ${data.title} [${data.category}]`;
-    const body = `
-Feature Title: ${data.title}
-Category: ${categories.find(c => c.value === data.category)?.label || data.category}
+    // Step 1: Construct the email subject using form data.
+    const subject = `Feature Request: ${data.title} (Category: ${data.category})`;
 
-Description:
+    // Step 2: Construct the email body using form data.
+    const body = `
+Dear ${APP_NAME} Team,
+
+I would like to request the following feature:
+
+Feature Title:
+${data.title}
+
+Category:
+${categories.find(c => c.value === data.category)?.label || data.category}
+
+Detailed Description:
 ${data.description}
 
 ---
-Submitted from ${APP_NAME} Feature Request Form
+Submitted from the ${APP_NAME} Feature Request Form.
+(User will send this from their email client)
     `;
 
+    // Step 3: Create the mailto link.
     const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
+    // FOR DEBUGGING: Log the generated mailto link to the browser console.
+    // You can copy this link and paste it into your browser's address bar if the email client doesn't open.
+    console.log("--- DEBUG: Generated mailto link ---");
+    console.log(mailtoLink);
+    console.log("------------------------------------");
+    
     if (typeof window !== "undefined") {
-      console.log("Generated mailto link (for debugging):", mailtoLink); // Added for debugging
-      
       try {
+        // Step 4: Attempt to open the user's default email client.
         window.location.href = mailtoLink;
+        
+        // Step 5: Inform the user about the next step.
         toast({
-          title: "Preparing Your Email",
-          description: "Your email client should open shortly with a pre-filled message. Please review and send it from your email application.",
-          duration: 7000,
+          title: "Email Draft Prepared",
+          description: "Your email client should open with a pre-filled message. Please review it and press 'Send' in your email application to submit your request.",
+          duration: 10000, // Longer duration for user to read
         });
       } catch (error) {
         console.error("Error trying to open mailto link:", error);
         toast({
           title: "Could Not Open Email Client",
-          description: "There was an issue trying to open your email client. You can copy the details from the console (F12) to send manually.",
+          description: `There was an issue opening your email client. Please copy the request details from the console (Press F12, go to Console tab) and send manually to ${SUPPORT_EMAIL}.`,
           variant: "destructive",
-          duration: 10000,
+          duration: 15000,
         });
       }
+      // Step 6: Reset the form fields.
       form.reset();
     } else {
+       // Fallback if window is not defined (should not happen in normal client-side execution)
        console.warn("Feature Request (Mailto Fallback - window is undefined):", {
         to: SUPPORT_EMAIL,
         subject,
@@ -110,9 +133,9 @@ Submitted from ${APP_NAME} Feature Request Form
       });
       toast({
         title: "Request Prepared (Manual Send Needed)",
-        description: "Could not automatically open your email client. Please copy the details and send your request manually.",
+        description: `Could not automatically open your email client. Please copy the details (title: ${data.title}, description: ${data.description}, category: ${data.category}) and send your request manually to ${SUPPORT_EMAIL}.`,
         variant: "default",
-        duration: 10000,
+        duration: 15000,
       });
     }
   }
@@ -130,7 +153,7 @@ Submitted from ${APP_NAME} Feature Request Form
               Have an idea to make ${APP_NAME} even better? We&apos;d love to hear it!
             </p>
              <p className="mt-1 text-sm text-muted-foreground">
-              Submitting this form will attempt to open your default email client.
+              Submitting this form will prepare an email in your default email client.
             </p>
           </div>
 
@@ -232,7 +255,7 @@ Submitted from ${APP_NAME} Feature Request Form
                     Prepare Email for Request
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">
-                    After clicking, your email application should open with a pre-filled message. You will need to press "Send" in your email client.
+                    After clicking, your email application should open. Please review and send the email from there.
                   </p>
                 </CardFooter>
               </form>
