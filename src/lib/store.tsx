@@ -486,8 +486,6 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     isMounted.current = true;
-    // Use authContextUser and authContextGuestId directly from useAuth() in this effect's scope
-    // as they represent the latest state from AuthProvider.
     const activeIdentifier = authContextUser?.uid || authContextGuestId;
 
     console.log(`[KanbanProvider] Mount/Auth Effect | Auth loading: ${authLoading}, Current Identifier (from context): ${activeIdentifier}, Prev Identifier (ref): ${lastAuthIdentifierRef.current}, Data Initialized: ${state.isDataInitialized}`);
@@ -558,7 +556,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     console.log(
       `[KanbanProvider] Debounced Save effect: Data/Auth context changed. Scheduling save. ` +
       `Tasks: ${state.tasks.length}, Columns: ${state.columns.length}, ` +
-      `ContextUser: ${authContextUser?.uid}, GuestID: ${authContextGuestId}, AuthLoading: ${authLoading}`
+      `ContextUser: ${authUserRef.current?.uid}, GuestID: ${guestIdRef.current}, AuthLoading: ${authLoading}`
     );
 
     debounceTimeoutRef.current = setTimeout(async () => {
@@ -570,9 +568,8 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Use direct SDK check AT THE MOMENT OF SAVE
-      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser; 
-      const userForSaveAttempt = authUserRef.current; // This is the context user *when the effect was scheduled*
+      const sdkUserAtSaveTime = firebaseAuthInstance.currentUser;
+      const userForSaveAttempt = authUserRef.current;
       const guestForSaveAttempt = guestIdRef.current;
 
       console.log(
@@ -581,11 +578,9 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
         `AuthUserRef (at schedule time): ${userForSaveAttempt?.uid}, GuestIdRef (at schedule time): ${guestForSaveAttempt}, Tasks: ${state.tasks.length}`
       );
 
-      // Primary check: Is there an SDK user right NOW?
       if (sdkUserAtSaveTime) {
         const userIdForSave = sdkUserAtSaveTime.uid;
 
-        // Sanity check: does SDK user match the user context for whom this save was scheduled?
         if (userForSaveAttempt && userForSaveAttempt.uid !== userIdForSave) {
           console.warn(`[KanbanProvider] Debounced SAVE: Auth context mismatch. Save was scheduled for ${userForSaveAttempt.uid}, but SDK user is now ${userIdForSave}. Saving for current SDK user ${userIdForSave}.`);
         } else if (!userForSaveAttempt && guestForSaveAttempt) {
@@ -596,20 +591,31 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
           `[KanbanProvider] Attempting to save for authenticated user ${userIdForSave} (confirmed by SDK). Tasks: ${state.tasks.length}, Columns: ${state.columns.length}`
         );
         try {
-          const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => ({
-            ...task,
-            dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
-            createdAt: formatISO(task.createdAt),
-            updatedAt: formatISO(task.updatedAt),
-            subtasks: (task.subtasks || []).map(st => ({ id: st.id, title: st.title, completed: st.completed })),
-            recurrenceRule: task.recurrenceRule ? { type: task.recurrenceRule.type } : undefined,
-            priority: task.priority,
-          }));
+           const sanitizedTasksForFirestore: TaskForFirestore[] = state.tasks.map(task => {
+            const sanitizedTask: TaskForFirestore = {
+              id: task.id,
+              title: task.title,
+              description: task.description,
+              columnId: task.columnId,
+              tags: task.tags || [], // Ensure tags is an array
+              dependencies: task.dependencies || [], // Ensure dependencies is an array
+              timerActive: typeof task.timerActive === 'boolean' ? task.timerActive : false,
+              timeSpentSeconds: typeof task.timeSpentSeconds === 'number' ? task.timeSpentSeconds : 0,
+              timerStartTime: typeof task.timerStartTime === 'number' ? task.timerStartTime : null,
+              priority: task.priority,
+              dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
+              createdAt: formatISO(task.createdAt),
+              updatedAt: formatISO(task.updatedAt),
+              subtasks: (task.subtasks || []).map(st => ({ id: st.id, title: st.title, completed: st.completed })),
+              recurrenceRule: task.recurrenceRule ? { type: task.recurrenceRule.type } : undefined,
+            };
+            return sanitizedTask;
+          });
 
           const sanitizedColumnsForFirestore: ColumnForFirestore[] = state.columns.map(col => ({
             id: col.id,
             title: col.title,
-            taskIds: col.taskIds,
+            taskIds: col.taskIds || [], // Ensure taskIds is an array
           }));
           await saveUserKanbanData(userIdForSave, sanitizedTasksForFirestore, sanitizedColumnsForFirestore);
           console.log(`[KanbanProvider] Successfully saved data to Firestore for user ${userIdForSave}`);
@@ -627,7 +633,6 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
             }
         }
       } else if (guestForSaveAttempt) {
-         // Only save as guest if there's NO SDK user and the save was scheduled for this guest
         if (userForSaveAttempt) {
              console.warn(`[KanbanProvider] Debounced SAVE SKIPPED for GUEST ${guestForSaveAttempt}: Save was scheduled for USER ${userForSaveAttempt.uid}, but SDK user is now null. Not saving guest data over potential user session loss.`);
         } else {
@@ -639,13 +644,16 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
                         dueDate: task.dueDate ? formatISO(task.dueDate) : undefined,
                         createdAt: formatISO(task.createdAt),
                         updatedAt: formatISO(task.updatedAt),
+                        subtasks: (task.subtasks || []).map(st => ({ id: st.id, title: st.title, completed: st.completed })),
+                        tags: task.tags || [],
+                        dependencies: task.dependencies || [],
                     }));
                     localStorage.setItem(GUEST_TASKS_STORAGE_KEY, JSON.stringify(tasksToSaveForGuest));
 
                     const columnsStateToSaveForGuest = state.columns.map(col => ({
                         id: col.id,
                         title: col.title,
-                        taskIds: col.taskIds,
+                        taskIds: col.taskIds || [],
                     }));
                     localStorage.setItem(GUEST_COLUMNS_STORAGE_KEY, JSON.stringify(columnsStateToSaveForGuest));
                     console.log("[KanbanProvider] Successfully saved guest data to localStorage.");
@@ -672,7 +680,7 @@ export function KanbanProvider({ children }: { children: ReactNode }) {
     state.tasks,
     state.columns,
     state.isDataInitialized,
-    authContextUser, 
+    authContextUser,
     authContextGuestId,
     authLoading,
     dispatch,
@@ -691,5 +699,3 @@ export function useKanban() {
   }
   return context;
 }
-
-    
