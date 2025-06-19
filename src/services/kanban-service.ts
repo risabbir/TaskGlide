@@ -100,31 +100,41 @@ export async function getUserKanbanData(userId: string): Promise<{ tasks: Task[]
 }
 
 export async function saveUserKanbanData(
-  userId: string, 
+  userId: string, // This is the userId from the client, who the client *thinks* is logged in
   tasks: TaskForFirestore[],
   columns: ColumnForFirestore[]
 ): Promise<void> {
   const functionStartTime = Date.now();
   const configuredProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "NOT SET (Check .env!)";
-  console.log(`[KanbanService] saveUserKanbanData CALLED for userId: ${userId}. Tasks: ${tasks.length}, Cols: ${columns.length}. Configured Project ID: ${configuredProjectId}`);
+
+  // Log the state of firebaseAuth.currentUser in this server action context
+  const sdkCurrentUserInServerAction = firebaseAuth.currentUser;
+  console.log(
+    `[KanbanService] saveUserKanbanData (Server Action) CALLED for intended userId (param): ${userId}. ` +
+    `SDK currentUser in ServerAction context: ${sdkCurrentUserInServerAction?.uid} (Email: ${sdkCurrentUserInServerAction?.email}). ` +
+    `Configured Project ID: ${configuredProjectId}. Tasks: ${tasks.length}, Cols: ${columns.length}.`
+  );
 
   if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-    console.error(`[KanbanService] saveUserKanbanData ERROR: Invalid userId parameter received from caller: '${userId}'. Aborting save.`);
-    throw new Error("Invalid user ID provided to saveUserKanbanData by the calling function.");
+    console.error(`[KanbanService] saveUserKanbanData (Server Action) ERROR: Invalid 'userId' parameter received: '${userId}'. Aborting save.`);
+    throw new Error(`Invalid user ID parameter provided to saveUserKanbanData: '${userId}'.`);
   }
 
-  const currentSdkUserAtSave = firebaseAuth.currentUser;
-
-  if (!currentSdkUserAtSave) {
-    console.warn(`[KanbanService] saveUserKanbanData WARNING: SDK currentUser is NULL in server action context when trying to save data for userId (passed from client): ${userId}. Proceeding with save attempt, relying on Firestore rules.`);
-  } else if (currentSdkUserAtSave.uid !== userId) {
-    console.warn(`[KanbanService] saveUserKanbanData WARNING: Mismatch between userId parameter ('${userId}') and SDK currentUser.uid ('${currentSdkUserAtSave.uid}') in server action context. Proceeding with save attempt using passed userId '${userId}', relying on Firestore rules.`);
-  } else {
-    console.log(`[KanbanService] saveUserKanbanData: SDK auth check confirmed user ${userId} (SDK UID: ${currentSdkUserAtSave.uid}, Email: ${currentSdkUserAtSave.email}) in server action context. Proceeding with Firestore write.`);
+  // Log if there's a mismatch or if SDK user is null, but proceed to attempt the write.
+  // Firestore rules (request.auth.uid == userId) will be the ultimate arbiter.
+  if (!sdkCurrentUserInServerAction) {
+    console.warn(`[KanbanService] saveUserKanbanData (Server Action) WARNING: SDK currentUser is NULL in ServerAction context for operation intended for userId (param) '${userId}'. Firestore rules will be the sole enforcer of auth.`);
+  } else if (sdkCurrentUserInServerAction.uid !== userId) {
+    console.warn(
+      `[KanbanService] saveUserKanbanData (Server Action) WARNING: Mismatch between intended userId (param '${userId}') and SDK currentUser in ServerAction context ('${sdkCurrentUserInServerAction.uid}'). ` +
+      `This means Firestore rules (if 'request.auth.uid == pathUserId') will likely deny if the path uses '${userId}' but 'request.auth.uid' is '${sdkCurrentUserInServerAction.uid}'. ` +
+      `Proceeding with path based on param '${userId}'.`
+    );
   }
 
-  const docPath = `userKanbanData/${userId}`;
-  console.log(`[KanbanService] Attempting to SET doc to path: "${docPath}" in project "${configuredProjectId}" for user: ${userId}. Tasks count: ${tasks.length}, Columns count: ${columns.length}`);
+  const docPath = `userKanbanData/${userId}`; // Use the userId passed from the client for the path
+  console.log(`[KanbanService] Attempting to SET doc to path: "${docPath}" in project "${configuredProjectId}" for user (param): ${userId}.`);
+
   try {
     const docRef = doc(db, 'userKanbanData', userId);
     const dataToSave: UserKanbanDataFromFirestore = {
@@ -133,13 +143,18 @@ export async function saveUserKanbanData(
       firestoreLastUpdated: serverTimestamp() as Timestamp,
     };
     await setDoc(docRef, dataToSave);
-    console.log(`[KanbanService] Successfully saved Kanban data for path "${docPath}" (User: ${userId}, Operation took ${Date.now() - functionStartTime}ms)`);
+    console.log(`[KanbanService] Successfully SET doc for path "${docPath}" (User param: ${userId}, Operation took ${Date.now() - functionStartTime}ms)`);
   } catch (error: any) {
-    console.error(`[KanbanService] Firestore error in SET operation for path "${docPath}" (User: ${userId}, Project: ${configuredProjectId}, Took ${Date.now() - functionStartTime}ms):`, error.message, error.code, error);
+    console.error(
+      `[KanbanService] Firestore error in SET operation for path "${docPath}" (User param: ${userId}, Project: ${configuredProjectId}, Took ${Date.now() - functionStartTime}ms). ` +
+      `SDK User in ServerAction context (at call time): ${sdkCurrentUserInServerAction?.uid}. Error:`, error.message, error.code, error
+    );
     if (error.code === 'permission-denied' || error.code === 7) {
-        console.error(`[KanbanService] PERMISSION_DENIED saving to path ${docPath}. Ensure Firestore rules for project '${configuredProjectId}' allow write access for UID '${userId}'. Path was 'userKanbanData/${userId}'. Rule should be 'allow write: if request.auth != null && request.auth.uid == userId;'`);
+        // This is the expected error if auth state is not correctly propagated/recognized by Firestore for the server action's request
+        throw new Error(`Firestore permission denied for user '${userId}' on path '${docPath}'. SDK auth state in server action was: ${sdkCurrentUserInServerAction ? `'${sdkCurrentUserInServerAction.uid}'` : 'null'}. (Original Firestore code: ${error.code})`);
     }
-    throw error; 
+    // Re-throw other Firestore errors
+    throw error;
   }
 }
     
