@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, Suspense, useEffect } from "react"; // Added useEffect
+import React, { useState, Suspense, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -10,11 +10,11 @@ import { useKanban } from "@/lib/store";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, User } from "lucide-react"; // Added User
+import { Sparkles, Loader2 } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/auth-context"; // Added useAuth
-import { useRouter } from "next/navigation"; // Added useRouter
+import { useAuth } from "@/contexts/auth-context";
+// Removed: import { useRouter } from "next/navigation";
 import { APP_NAME } from "@/lib/constants";
 
 // Dynamic imports for components that might be heavy or not immediately needed
@@ -99,27 +99,22 @@ function QuickActionsBar() {
 function PageContent() {
   const { state, dispatch } = useKanban();
   const { isFilterSidebarOpen, isTaskModalOpen } = state;
-  const { guestId, loading: authLoading, startNewGuestSession } = useAuth();
-  const router = useRouter();
+  const { guestId, loading: authLoading } = useAuth(); // Removed startNewGuestSession and router from here
 
-  useEffect(() => {
-    if (!authLoading && !guestId) {
-      // If auth is done loading and there's no guestId, prompt to start a session.
-      // This could be a modal or a redirect to a dedicated "start guest" page.
-      // For simplicity here, we'll use the sign-in page which now offers "Continue as Guest".
-      router.push('/auth/signin');
-    }
-  }, [authLoading, guestId, router, startNewGuestSession]);
+  // Removed useEffect that redirected to /auth/signin.
+  // The Header component will now handle prompting the user if no guest session is active.
   
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
 
-  if (authLoading || !guestId) {
+  // Show loading indicator until auth state (especially guestId) is determined.
+  // Or if there's no guestId yet, the header will show "Continue as Guest" button.
+  if (authLoading && !guestId) { // Initial load, guestId not yet confirmed from storage
     return (
         <div className="flex flex-col min-h-screen bg-background items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-            <p className="text-muted-foreground">Initializing your session...</p>
+            <p className="text-muted-foreground">Initializing {APP_NAME}...</p>
         </div>
     );
   }
@@ -129,10 +124,24 @@ function PageContent() {
     <div className="w-full max-w-7xl mx-auto flex flex-col flex-grow px-[8%] sm:px-[10px] pt-2 sm:pt-[10px]">
       <div className="flex flex-col min-h-screen bg-background">
         <Header />
-        <QuickActionsBar />
-        <main className="flex-grow flex flex-col overflow-hidden">
-          <KanbanBoard />
-        </main>
+        {/* Only render QuickActionsBar and KanbanBoard if a guest session is active or auth is done loading
+            If no guestId, Header will show a button to start one.
+        */}
+        {(!authLoading || guestId) && (
+            <>
+                <QuickActionsBar />
+                <main className="flex-grow flex flex-col overflow-hidden">
+                <KanbanBoard />
+                </main>
+            </>
+        )}
+        {authLoading && !guestId && ( // Placeholder for board area while auth is determining guestId
+            <div className="flex-grow flex items-center justify-center">
+                 {/* Optionally, a less intrusive loader or just wait for header to guide */}
+            </div>
+        )}
+
+
         <Footer />
         
         {isTaskModalOpen && (

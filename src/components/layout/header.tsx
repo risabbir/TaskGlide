@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Search, LayoutDashboard, XCircle, PlusCircle, SlidersHorizontal, User as GuestIcon } from "lucide-react"; 
+import { Search, LayoutDashboard, XCircle, PlusCircle, SlidersHorizontal, User as GuestIcon, UserPlus, LogIn } from "lucide-react"; 
 import { useKanban } from "@/lib/store";
 import React, { useState, useEffect, type ReactNode, useRef } from "react";
 import Link from "next/link";
@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { APP_NAME } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,8 +114,7 @@ export function Header({ children }: HeaderProps) {
   };
   
   const handleStartNewGuestSession = () => {
-    startNewGuestSession(true); // true to clear previous data
-    // Optionally, navigate or let KanbanProvider handle re-render
+    startNewGuestSession(true); 
   };
 
   return (
@@ -160,21 +160,25 @@ export function Header({ children }: HeaderProps) {
                 <span className="sr-only">Search Tasks</span>
             </Button>
             
-            <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2.5 sm:px-3 hidden md:inline-flex text-sm">
-              <PlusCircle className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">New Task</span>
-            </Button>
-            
-            <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex text-muted-foreground hover:text-primary hover:border-primary/50" onClick={toggleFilterSidebar}>
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="sr-only">Filters & Sort</span>
-            </Button>
+            {isGuest && (
+              <>
+                <Button size="sm" onClick={handleOpenNewTaskModal} className="px-2.5 sm:px-3 hidden md:inline-flex text-sm">
+                  <PlusCircle className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">New Task</span>
+                </Button>
+                
+                <Button variant="outline" size="icon" className="h-9 w-9 hidden md:inline-flex text-muted-foreground hover:text-primary hover:border-primary/50" onClick={toggleFilterSidebar}>
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Filters & Sort</span>
+                </Button>
+              </>
+            )}
             
             <ThemeToggle />
 
             <div className="flex items-center">
               {authLoading ? (
-                <Skeleton className="h-9 w-9 rounded-full" />
+                <Skeleton className="h-9 w-24 rounded-md" /> 
               ) : isGuest && guestId ? (
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -207,12 +211,46 @@ export function Header({ children }: HeaderProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                // This case should ideally not be reached if auto-start guest session is implemented or if app always navigates to /auth/signin first
-                <Button variant="outline" size="sm" onClick={() => startNewGuestSession(false)}>
-                  Continue as Guest
-                </Button>
+                // Not a guest and not loading: Show "Continue as Guest" and "Sign Up (Coming Soon)"
+                <div className="flex items-center gap-2">
+                    <Button asChild size="sm">
+                        <Link href="/auth/signin">
+                            <LogIn className="mr-1.5 h-4 w-4" /> Continue as Guest
+                        </Link>
+                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" disabled className="cursor-not-allowed opacity-70">
+                                    <UserPlus className="mr-1.5 h-4 w-4" /> Sign Up
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Registered accounts coming soon!</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
               )}
             </div>
+             {/* "Sign Up Coming Soon" button also shown when guest is logged in, but separate for clarity */}
+            {isGuest && guestId && !authLoading && (
+                <div className="hidden sm:flex items-center ml-2">
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" disabled className="cursor-not-allowed opacity-70">
+                                    <UserPlus className="mr-1.5 h-4 w-4" /> Sign Up
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Registered accounts coming soon!</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            )}
+
           </div>
         </div>
       </header>

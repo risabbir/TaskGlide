@@ -100,7 +100,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
   });
 
   const isInProgressColumn = task.columnId === 'inprogress';
-  const isInWorkingColumn = isInProgressColumn; // Simplified as 'review' is removed
+  const isInWorkingColumn = isInProgressColumn; 
 
 
   const toggleExpand = (e?: React.MouseEvent) => {
@@ -144,7 +144,7 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
       <Card
         className={cn(
-          "mb-2.5 shadow-sm hover:shadow-md transition-shadow duration-200 group/task-card rounded-lg",
+          "mb-2.5 shadow-sm hover:shadow-md transition-shadow duration-200 group/task-card rounded-lg min-w-0 overflow-hidden", // Added min-w-0 and overflow-hidden
           !isExpanded && "cursor-pointer",
           isOverdue && "border-destructive border-2 ring-1 ring-destructive/30",
           hasIncompletePrerequisites && isInWorkingColumn && "border-yellow-500 border-2 ring-1 ring-yellow-300",
@@ -428,4 +428,3 @@ const TaskCardComponent = ({ task, columns }: TaskCardProps) => {
 }
 
 export const TaskCard = React.memo(TaskCardComponent);
-
