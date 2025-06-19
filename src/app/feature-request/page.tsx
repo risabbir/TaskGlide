@@ -49,8 +49,8 @@ const categories = [
   { value: "other", label: "Other" },
 ];
 
-// IMPORTANT: Developer - Replace this with your actual support email address!
-const SUPPORT_EMAIL = "webcodar37@gmail.com"; // Placeholder
+// IMPORTANT: Developer - This email is now set as per user request.
+const SUPPORT_EMAIL = "webcodar37@gmail.com"; 
 
 export default function FeatureRequestPage() {
   const { toast } = useToast();
@@ -144,16 +144,26 @@ Submitted from ${APP_NAME} Feature Request Form
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CardContent className="space-y-6 pt-2">
-                  <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                      <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Configuration Required</AlertTitle>
-                      <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-                        For this form to deliver feature requests, the developer must update the 
-                        <code> SUPPORT_EMAIL </code> constant in the file <code>src/app/feature-request/page.tsx</code> 
-                        to a valid support email address. The current placeholder is: <strong>{SUPPORT_EMAIL}</strong>. 
-                        Without this change, the "Prepare Email" button will attempt to use this placeholder.
-                      </AlertDescription>
-                  </Alert>
+                  {SUPPORT_EMAIL.includes("example.com") || SUPPORT_EMAIL.includes("placeholder.com") ? (
+                    <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                        <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Configuration Required</AlertTitle>
+                        <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+                          For this form to deliver feature requests, the developer must update the 
+                          <code> SUPPORT_EMAIL </code> constant in the file <code>src/app/feature-request/page.tsx</code> 
+                          to a valid support email address. The current placeholder is: <strong>{SUPPORT_EMAIL}</strong>. 
+                          Without this change, the "Prepare Email" button will attempt to use this placeholder.
+                        </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                        <Info className="h-5 w-5" />
+                        <AlertTitle className="font-semibold">Ready to Go!</AlertTitle>
+                        <AlertDescription>
+                            This form is configured to send feature requests to: <strong>{SUPPORT_EMAIL}</strong>. Submitting will open your email client.
+                        </AlertDescription>
+                    </Alert>
+                  )}
                   <FormField
                     control={form.control}
                     name="title"
@@ -229,5 +239,6 @@ Submitted from ${APP_NAME} Feature Request Form
     </div>
   );
 }
+    
 
     
