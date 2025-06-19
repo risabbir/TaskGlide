@@ -28,11 +28,13 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send, AlertTriangle, Loader2, ExternalLink } from "lucide-react";
+import { Lightbulb, Send, AlertTriangle, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// THIS IS A PLACEHOLDER. Replace with your actual Cloud Function URL after deploying it.
-const FEATURE_REQUEST_FUNCTION_URL = "YOUR_CLOUD_FUNCTION_URL_HERE";
+// --- Configuration ---
+// This is the email address where feature requests will be directed.
+const SUPPORT_EMAIL = "webcodar37@gmail.com";
+// --- End Configuration ---
 
 const featureRequestSchema = z.object({
   title: z.string().min(5, "Please provide a concise title (min 5 characters).").max(100, "Title is too long (max 100 characters)."),
@@ -54,7 +56,7 @@ const categories = [
 
 export default function FeatureRequestPage() {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Still useful for UI feedback during mailto generation
 
   useEffect(() => {
     document.title = `Suggest a Feature | ${APP_NAME}`;
@@ -70,47 +72,41 @@ export default function FeatureRequestPage() {
   });
 
   async function onSubmit(data: FeatureRequestFormData) {
-    if (FEATURE_REQUEST_FUNCTION_URL === "YOUR_CLOUD_FUNCTION_URL_HERE") {
+    setIsSubmitting(true);
+
+    const subject = `Feature Request: ${data.title} (${data.category})`;
+    const body = `
+Feature Title: ${data.title}
+Category: ${categories.find(c => c.value === data.category)?.label || data.category}
+
+Description:
+${data.description}
+
+---
+Submitted from ${APP_NAME}
+    `;
+
+    const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    console.log("Generated mailto link (for debugging):", mailtoLink);
+
+    try {
+      // Attempt to open the mail client
+      window.location.href = mailtoLink;
+      
       toast({
-        title: "Configuration Needed",
-        description: "The feature request submission URL is not configured. Please update it in the code.",
+        title: "Email Draft Prepared!",
+        description: "Your email client should open shortly with a pre-filled message. Please review and send it from your email application.",
+        duration: 10000, // Longer duration for user to read
+      });
+      form.reset();
+    } catch (error) {
+      console.error("Error trying to open mailto link:", error);
+      toast({
+        title: "Could Not Open Email Client",
+        description: "We tried to open your email client but failed. You can manually copy the details or try again.",
         variant: "destructive",
         duration: 10000,
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(FEATURE_REQUEST_FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Feature Request Submitted!",
-          description: result.message || "Thank you for your feedback.",
-        });
-        form.reset();
-      } else {
-        toast({
-          title: "Submission Failed",
-          description: result.message || "Could not submit your feature request. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error submitting feature request:", error);
-      toast({
-        title: "Submission Error",
-        description: "An error occurred. Please check your connection or try again later.",
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -121,14 +117,14 @@ export default function FeatureRequestPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto"> {/* Centering the content block */}
           <div className="text-center mb-10">
             <Lightbulb className="mx-auto h-12 w-12 text-primary mb-4" />
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Suggest a Feature
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
-              Have an idea to make {APP_NAME} even better? Fill out the form below and we'll send it directly to our team.
+              Have an idea to make {APP_NAME} even better? Fill out the form below.
             </p>
           </div>
 
@@ -145,25 +141,16 @@ export default function FeatureRequestPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CardContent className="space-y-6 pt-2">
-                  {FEATURE_REQUEST_FUNCTION_URL === "YOUR_CLOUD_FUNCTION_URL_HERE" && (
-                    <Alert variant="destructive" className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600">
-                        <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                        <AlertTitle className="text-yellow-700 dark:text-yellow-500 font-semibold">Developer Action Required</AlertTitle>
-                        <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-                          This form is set up to send data to a backend Cloud Function.
-                          The <code>FEATURE_REQUEST_FUNCTION_URL</code> in <code>src/app/feature-request/page.tsx</code> 
-                          needs to be replaced with your deployed Cloud Function's HTTP trigger URL.
-                          <a 
-                            href="https://firebase.google.com/docs/functions/http-events" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="block mt-1.5 text-xs font-medium text-yellow-800 dark:text-yellow-300 hover:underline"
-                          >
-                            Learn about HTTP Triggers <ExternalLink className="inline-block h-3 w-3 ml-0.5" />
-                          </a>
+                    <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600">
+                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <AlertTitle className="text-blue-700 dark:text-blue-300 font-semibold">How Submission Works</AlertTitle>
+                        <AlertDescription className="text-blue-700 dark:text-blue-400">
+                            This form will prepare an email in your <strong>default email application</strong> (like Outlook, Apple Mail, etc.).
+                            You will need to <strong>click "Send" in your email app</strong> to submit the request.
+                            This form is configured to send to: <strong>{SUPPORT_EMAIL}</strong>.
                         </AlertDescription>
                     </Alert>
-                  )}
+
                   <FormField
                     control={form.control}
                     name="title"
@@ -222,16 +209,12 @@ export default function FeatureRequestPage() {
                   />
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start gap-3">
-                  <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={isSubmitting || FEATURE_REQUEST_FUNCTION_URL === "YOUR_CLOUD_FUNCTION_URL_HERE"}>
-                    {isSubmitting ? (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="mr-2 h-5 w-5" />
-                    )}
-                    {isSubmitting ? "Submitting..." : "Submit Feature Request"}
+                  <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={isSubmitting}>
+                    <Send className="mr-2 h-5 w-5" />
+                    {isSubmitting ? "Preparing Email..." : "Prepare Email for Request"}
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Your suggestion will be sent directly to our team for review.
+                   <p className="text-xs text-muted-foreground">
+                    Clicking above will open your email client with the details pre-filled.
                   </p>
                 </CardFooter>
               </form>
