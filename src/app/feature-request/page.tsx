@@ -28,12 +28,13 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send, AlertTriangle, Info } from "lucide-react";
+import { Lightbulb, Send, AlertTriangle, Info, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // --- Configuration ---
-// This is the email address where feature requests will be directed.
-const SUPPORT_EMAIL = "webcodar37@gmail.com";
+// IMPORTANT: Replace this placeholder with your actual Firebase Cloud Function URL
+// after you deploy the function (see backend setup instructions).
+const FEATURE_REQUEST_FUNCTION_URL = "YOUR_CLOUD_FUNCTION_URL_HERE";
 // --- End Configuration ---
 
 const featureRequestSchema = z.object({
@@ -56,7 +57,7 @@ const categories = [
 
 export default function FeatureRequestPage() {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false); // Still useful for UI feedback during mailto generation
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     document.title = `Suggest a Feature | ${APP_NAME}`;
@@ -74,37 +75,50 @@ export default function FeatureRequestPage() {
   async function onSubmit(data: FeatureRequestFormData) {
     setIsSubmitting(true);
 
-    const subject = `Feature Request: ${data.title} (${data.category})`;
-    const body = `
-Feature Title: ${data.title}
-Category: ${categories.find(c => c.value === data.category)?.label || data.category}
-
-Description:
-${data.description}
-
----
-Submitted from ${APP_NAME}
-    `;
-
-    const mailtoLink = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    console.log("Generated mailto link (for debugging):", mailtoLink);
+    if (FEATURE_REQUEST_FUNCTION_URL === "YOUR_CLOUD_FUNCTION_URL_HERE") {
+        toast({
+            title: "Configuration Needed",
+            description: "The feature request submission URL is not configured. Please contact the site administrator or check the developer console.",
+            variant: "destructive",
+            duration: 10000,
+        });
+        console.error("ERROR: FEATURE_REQUEST_FUNCTION_URL is not set in src/app/feature-request/page.tsx. Please deploy your Firebase Cloud Function and update this URL.");
+        setIsSubmitting(false);
+        return;
+    }
 
     try {
-      // Attempt to open the mail client
-      window.location.href = mailtoLink;
-      
-      toast({
-        title: "Email Draft Prepared!",
-        description: "Your email client should open shortly with a pre-filled message. Please review and send it from your email application.",
-        duration: 10000, // Longer duration for user to read
+      const response = await fetch(FEATURE_REQUEST_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
-      form.reset();
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast({
+          title: "Feature Request Submitted!",
+          description: "Thank you for your feedback. Your suggestion has been sent.",
+          duration: 7000,
+        });
+        form.reset();
+      } else {
+        console.error("Submission Error from backend:", result);
+        toast({
+          title: "Submission Failed",
+          description: result.error || "Could not submit your feature request. Please try again later.",
+          variant: "destructive",
+          duration: 10000,
+        });
+      }
     } catch (error) {
-      console.error("Error trying to open mailto link:", error);
+      console.error("Error submitting feature request:", error);
       toast({
-        title: "Could Not Open Email Client",
-        description: "We tried to open your email client but failed. You can manually copy the details or try again.",
+        title: "Network Error",
+        description: "Could not reach the submission service. Please check your internet connection or try again later.",
         variant: "destructive",
         duration: 10000,
       });
@@ -117,7 +131,7 @@ Submitted from ${APP_NAME}
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-2xl mx-auto"> {/* Centering the content block */}
+        <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <Lightbulb className="mx-auto h-12 w-12 text-primary mb-4" />
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -143,11 +157,11 @@ Submitted from ${APP_NAME}
                 <CardContent className="space-y-6 pt-2">
                     <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600">
                         <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <AlertTitle className="text-blue-700 dark:text-blue-300 font-semibold">How Submission Works</AlertTitle>
+                        <AlertTitle className="text-blue-700 dark:text-blue-300 font-semibold">Developer Note: Backend Required</AlertTitle>
                         <AlertDescription className="text-blue-700 dark:text-blue-400">
-                            This form will prepare an email in your <strong>default email application</strong> (like Outlook, Apple Mail, etc.).
-                            You will need to <strong>click "Send" in your email app</strong> to submit the request.
-                            This form is configured to send to: <strong>{SUPPORT_EMAIL}</strong>.
+                            This form is configured to send data to a backend Firebase Cloud Function.
+                            Ensure the function is deployed and the `FEATURE_REQUEST_FUNCTION_URL` constant in this file (`src/app/feature-request/page.tsx`) is updated with the correct URL.
+                            If the URL is still set to the placeholder `YOUR_CLOUD_FUNCTION_URL_HERE`, submissions will fail.
                         </AlertDescription>
                     </Alert>
 
@@ -210,11 +224,11 @@ Submitted from ${APP_NAME}
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start gap-3">
                   <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={isSubmitting}>
-                    <Send className="mr-2 h-5 w-5" />
-                    {isSubmitting ? "Preparing Email..." : "Prepare Email for Request"}
+                    {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
+                    {isSubmitting ? "Submitting..." : "Submit Feature Request"}
                   </Button>
                    <p className="text-xs text-muted-foreground">
-                    Clicking above will open your email client with the details pre-filled.
+                    This will send your request directly to the team.
                   </p>
                 </CardFooter>
               </form>
