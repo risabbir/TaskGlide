@@ -214,7 +214,9 @@ export function Header({ children }: HeaderProps) {
                 <div className="flex items-center gap-2">
                     <Button asChild size="sm">
                         <Link href="/auth/signin">
-                            <LogIn className="mr-1.5 h-4 w-4" /> Continue as Guest
+                            <LogIn className="mr-1.5 h-4 w-4" />
+                            <span className="sm:hidden">Guest</span>
+                            <span className="hidden sm:inline">Continue as Guest</span>
                         </Link>
                     </Button>
                     {/* Sign Up button removed from here */}
@@ -272,3 +274,4 @@ export function Header({ children }: HeaderProps) {
     </>
   );
 }
+    
