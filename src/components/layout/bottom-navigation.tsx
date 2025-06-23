@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, XCircle } from "lucide-react"; // For search modal
+import { Search, XCircle, LayoutGrid, SlidersHorizontal } from "lucide-react"; // For search modal
 
 // NavItem component for individual items, handles Link vs Button
 interface NavItemProps {
@@ -98,9 +98,7 @@ export function BottomNavigation() {
         <div className="relative grid grid-cols-5 items-center text-center max-w-md mx-auto">
           
           <NavItem href="/" label="Board" isActive={pathname === "/"}>
-            <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
-            </svg>
+            <LayoutGrid className="w-6 h-6 mb-1" />
           </NavItem>
 
           <NavItem 
@@ -133,14 +131,13 @@ export function BottomNavigation() {
             label="Filter" 
             isActive={kanbanState.isFilterSidebarOpen}
           >
-            <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 10h12M9 15h6" />
-            </svg>
+            <SlidersHorizontal className="w-6 h-6 mb-1" />
           </NavItem>
 
           <NavItem href="/profile" label="Guest" isActive={pathname === "/profile"}>
             <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a8.25 8.25 0 0115 0" />
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a8.25 8.25 0 0115 0" />
             </svg>
           </NavItem>
 
