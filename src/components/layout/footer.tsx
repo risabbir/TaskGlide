@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { APP_NAME, DEVELOPER_NAME, DEVELOPER_URL } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
@@ -47,7 +46,7 @@ export function Footer() {
             &copy; {currentYear} {APP_NAME}. All Rights Reserved.
           </p>
           <p className="mt-1">
-            Crafted by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a> with Firebase Studio & Gemini.
+            A project by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a>. Powered by Gemini.
           </p>
         </div>
       </div>
