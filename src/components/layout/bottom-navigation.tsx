@@ -3,12 +3,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Plus, SlidersHorizontal, User as ProfileIcon, LogIn, XCircle } from "lucide-react";
+import { Home, Search, Plus, SlidersHorizontal, User as ProfileIcon, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { XCircle } from "lucide-react";
 
 // NavLink component for individual items
 interface NavLinkProps {
@@ -50,18 +51,27 @@ const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isAc
     return <div className="flex-1 h-full">{content}</div>;
   }
 
-  const buttonContent = <button className="w-full h-full">{content}</button>;
+  // Use a button for action-based links for better accessibility
+  const interactiveElement = (
+    <button className="w-full h-full" onClick={action}>
+      {content}
+    </button>
+  );
 
   if (href) {
     return (
       <Link href={href} legacyBehavior>
-        <a onClick={action} className="flex-1 h-full">{buttonContent}</a>
+        <a className="flex-1 h-full">{interactiveElement}</a>
       </Link>
     );
   }
-  return <div onClick={action} className="flex-1 h-full cursor-pointer">{buttonContent}</div>;
-};
 
+  return (
+    <div className="flex-1 h-full cursor-pointer">
+      {interactiveElement}
+    </div>
+  );
+};
 
 export function BottomNavigation() {
   const { dispatch, state: kanbanState } = useKanban();
@@ -77,8 +87,7 @@ export function BottomNavigation() {
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters?.searchTerm, isSearchModalOpen]);
+  }, [filters?.searchTerm, isSearchModalOpen, modalSearchTerm]);
 
   const handleOpenNewTaskModal = () => {
     dispatch({ type: "OPEN_TASK_MODAL", payload: null });
@@ -97,6 +106,12 @@ export function BottomNavigation() {
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
+
+  // Do not render on non-mobile screens
+  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+    // You can also use a hook like useMediaQuery for a more React-idiomatic way
+    return null;
+  }
 
   return (
     <>
