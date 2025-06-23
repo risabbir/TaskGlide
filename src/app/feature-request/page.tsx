@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { APP_NAME } from "@/lib/constants";
-import { Send, Lightbulb } from "lucide-react";
+import { Send, Lightbulb, Info } from "lucide-react";
 import { CommunitySupportSection } from "@/components/layout/community-support-section";
 
 export default function FeatureRequestPage() {
@@ -87,11 +87,11 @@ export default function FeatureRequestPage() {
                                 <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="UX Enhancement">UX Enhancement (e.g., visual improvements, navigation)</SelectItem>
-                                <SelectItem value="New Functionality">New Functionality (e.g., a completely new tool/feature)</SelectItem>
-                                <SelectItem value="AI Feature Suggestion">AI Feature Suggestion (e.g., smart recommendations, automation)</SelectItem>
-                                <SelectItem value="Existing Feature Improvement">Existing Feature Improvement (e.g., making an existing feature better)</SelectItem>
-                                <SelectItem value="Others">Others (Please specify in description)</SelectItem>
+                                <SelectItem value="UX Enhancement">UX Enhancement</SelectItem>
+                                <SelectItem value="New Functionality">New Functionality</SelectItem>
+                                <SelectItem value="AI Feature Suggestion">AI Feature Suggestion</SelectItem>
+                                <SelectItem value="Existing Feature Improvement">Existing Feature Improvement</SelectItem>
+                                <SelectItem value="Others">Others</SelectItem>
                             </SelectContent>
                         </Select>
                         <input type="hidden" name="category" value={category} />
