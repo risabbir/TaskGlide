@@ -3,12 +3,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, SlidersHorizontal, Plus, Search, User as GuestIcon, LogIn } from "lucide-react";
+import { Home, SlidersHorizontal, Plus, Search, User as GuestIcon, LogIn, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useRef } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -18,11 +19,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { XCircle } from "lucide-react";
 
 export function BottomNavigation() {
   const { dispatch, state: kanbanState } = useKanban();
-  const { isGuest, loading: authLoading } = useAuth(); // Only need isGuest and authLoading
+  const { isGuest, loading: authLoading } = useAuth();
   const pathname = usePathname();
 
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -30,7 +30,7 @@ export function BottomNavigation() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const filters = kanbanState.filters;
-   
+
   useEffect(() => {
     if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
         setModalSearchTerm(filters?.searchTerm ?? "");
@@ -87,87 +87,54 @@ export function BottomNavigation() {
 
   return (
     <>
-      <div className="fixed md:hidden bottom-3 left-3 right-3 z-40 h-16 rounded-2xl bg-background/80 backdrop-blur-md shadow-lg border">
-        <nav className="flex h-full items-center justify-around px-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const label = item.label;
-            
-            let isActive = item.isActiveOverride;
-            if (item.isActiveOverride === undefined && item.href && !item.isCentral) {
-                isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-            }
+      <TooltipProvider delayDuration={0}>
+        <div className="fixed md:hidden bottom-4 inset-x-0 z-40 w-auto mx-auto">
+          <nav className="flex h-14 items-center justify-center gap-2 rounded-full bg-background/80 backdrop-blur-md shadow-lg border p-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const label = item.label;
+              
+              let isActive = item.isActiveOverride;
+              if (item.isActiveOverride === undefined && item.href && !item.isCentral) {
+                  isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              }
 
-            if (item.isCentral) {
-              return (
-                <Button
-                  key={label}
-                  variant="default"
-                  className={cn(
-                    "relative -top-3.5 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center",
-                    "transition-all duration-200 ease-in-out hover:bg-primary/90 active:bg-primary/80 transform hover:scale-105 active:scale-95",
-                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  )}
-                  onClick={item.action}
-                  aria-label={label}
-                >
-                  <Icon className="h-7 w-7" />
+              const buttonProps = {
+                variant: isActive ? "secondary" : item.isCentral ? "default" : "ghost" as any,
+                size: "icon" as any,
+                className: cn(
+                  "rounded-full h-10 w-10 transition-all duration-300",
+                  isActive && "text-primary shadow-inner scale-110",
+                  item.isCentral && "h-11 w-11 text-primary-foreground hover:bg-primary/90 scale-110 shadow-md",
+                  !isActive && !item.isCentral && "text-muted-foreground"
+                ),
+                'aria-label': label,
+              };
+
+              const iconProps = {
+                className: cn("h-5 w-5", item.isCentral && "h-6 w-6")
+              };
+
+              const buttonContent = (
+                <Button {...buttonProps} onClick={item.href ? undefined : item.action}>
+                  <Icon {...iconProps} />
                 </Button>
               );
-            }
-            
-            const itemWrapperClasses = cn(
-              "group flex flex-col items-center justify-center h-full w-full p-1.5 rounded-lg",
-              "transition-colors duration-200 ease-out",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
-              isActive ? "" : "hover:bg-accent/90 active:bg-accent"
-            );
 
-            const iconClasses = cn(
-                "h-5 w-5 mb-0.5 transition-all duration-200 ease-out",
-                isActive ? "text-primary scale-110 -translate-y-1" : "text-muted-foreground group-hover:text-primary"
-            );
-            
-            const labelClasses = cn(
-                "text-[11px] leading-tight tracking-tight transition-colors duration-200 ease-out",
-                isActive ? "text-primary font-semibold" : "text-muted-foreground group-hover:text-primary"
-            );
-
-            const buttonContent = (
-              <>
-                <Icon className={iconClasses} />
-                <span className={labelClasses}>{label}</span>
-              </>
-            );
-
-            if (item.href) {
               return (
-                <Link key={label} href={item.href} passHref>
-                  <Button
-                    variant="ghost" 
-                    className={itemWrapperClasses}
-                    aria-label={label}
-                  >
-                    {buttonContent}
-                  </Button>
-                </Link>
+                <Tooltip key={label}>
+                  <TooltipTrigger asChild>
+                    {item.href ? <Link href={item.href}>{buttonContent}</Link> : buttonContent}
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={10}>
+                    <p>{label}</p>
+                  </TooltipContent>
+                </Tooltip>
               );
-            }
-
-            return (
-              <Button
-                key={label}
-                variant="ghost" 
-                className={itemWrapperClasses}
-                onClick={item.action}
-                aria-label={label}
-              >
-                {buttonContent}
-              </Button>
-            );
-          })}
-        </nav>
-      </div>
+            })}
+          </nav>
+        </div>
+      </TooltipProvider>
 
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">

@@ -40,8 +40,7 @@ export function BackToTopButton() {
         onClick={scrollToTop}
         className={cn(
           "group h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out",
-          // The new design: outline that fills on hover
-          "bg-background/80 backdrop-blur-sm border-primary/30 text-primary",
+          "bg-background/80 backdrop-blur-sm border-2 border-primary/30 text-primary",
           "hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-110",
           "focus:scale-110 focus:ring-2 focus:ring-ring focus:ring-offset-2",
           "active:scale-95",
