@@ -59,7 +59,7 @@ const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isAc
       </Link>
     );
   }
-  return <div onClick={action} className="flex-1 h-full">{buttonContent}</div>;
+  return <div onClick={action} className="flex-1 h-full cursor-pointer">{buttonContent}</div>;
 };
 
 
@@ -100,7 +100,7 @@ export function BottomNavigation() {
 
   return (
     <>
-      <div className="md:hidden fixed bottom-4 left-4 right-4 h-[72px] z-40 pointer-events-none">
+      <div className="md:hidden fixed bottom-4 left-4 right-4 h-[64px] z-40 pointer-events-none">
         
         {/* Floating Navigation Bar */}
         <div className="relative h-full w-full pointer-events-auto bg-background/80 backdrop-blur-lg rounded-2xl border border-border/80 shadow-lg">
@@ -122,7 +122,7 @@ export function BottomNavigation() {
             </div>
 
             {/* Spacer for central button */}
-            <div className="w-[88px] shrink-0"></div>
+            <div className="w-[72px] shrink-0"></div>
 
             {/* Right Side Items */}
             <div className="flex items-center justify-around w-full h-full">
@@ -136,13 +136,13 @@ export function BottomNavigation() {
               {authLoading ? (
                  <div className="flex flex-1 h-full flex-col items-center justify-center gap-1 w-16 text-muted-foreground/50">
                     <ProfileIcon className="h-6 w-6" />
-                    <span className="text-xs">Profile</span>
+                    <span className="text-xs">Guest</span>
                  </div>
               ) : isGuest ? (
                  <NavLink
                   href="/profile"
                   icon={ProfileIcon}
-                  label="Profile"
+                  label="Guest"
                   isActive={pathname === "/profile"}
                 />
               ) : (
@@ -159,20 +159,20 @@ export function BottomNavigation() {
         
         {/* Notch for the central button */}
         <div
-          className="absolute left-1/2 top-0 h-[34px] w-[88px] -translate-x-1/2 transform"
-          style={{ clipPath: 'path("M 0 34 C 4.5 34 4.5 0 8 0 L 80 0 C 83.5 0 83.5 34 88 34 L 0 34 Z")' }}
+          className="absolute left-1/2 top-0 h-[30px] w-[72px] -translate-x-1/2 transform"
+          style={{ clipPath: 'path("M 0 30 C 4.5 30 4.5 0 8 0 L 64 0 C 67.5 0 67.5 30 72 30 L 0 30 Z")' }}
         >
           <div className="h-full w-full bg-background" />
         </div>
 
         {/* Raised Central Button */}
-        <div className="absolute left-1/2 top-[-28px] -translate-x-1/2 transform">
+        <div className="absolute left-1/2 top-[-24px] -translate-x-1/2 transform">
           <Button
             onClick={handleOpenNewTaskModal}
-            className="h-[64px] w-[64px] rounded-full shadow-lg"
+            className="h-[56px] w-[56px] rounded-full shadow-lg"
             aria-label="Add new task"
           >
-            <Plus className="h-9 w-9 text-primary-foreground" />
+            <Plus className="h-8 w-8 text-primary-foreground" />
           </Button>
         </div>
 
