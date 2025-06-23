@@ -91,6 +91,11 @@ export function BottomNavigation() {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
   
+  // Hide bottom navigation on authentication pages
+  if (pathname.includes("/auth/")) {
+    return null;
+  }
+  
   return (
     <>
       {/* New Bottom Navigation Bar */}
