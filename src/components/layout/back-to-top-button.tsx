@@ -39,7 +39,7 @@ export function BackToTopButton() {
         size="icon"
         onClick={scrollToTop}
         className={cn(
-          "group h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out text-secondary-foreground",
+          "group h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out bg-secondary/80 text-secondary-foreground border",
           "hover:scale-110 hover:bg-secondary/90 active:scale-95",
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}

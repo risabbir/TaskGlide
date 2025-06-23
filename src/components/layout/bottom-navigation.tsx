@@ -86,7 +86,7 @@ export function BottomNavigation() {
   const handleModalSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     dispatch({ type: "SET_FILTERS", payload: { searchTerm: modalSearchTerm } });
-    setIsSearchModal-Open(false);
+    setIsSearchModalOpen(false);
   };
 
   return (
@@ -99,7 +99,7 @@ export function BottomNavigation() {
             className="h-16 w-16 rounded-full shadow-lg"
             aria-label="Add new task"
           >
-            <Plus className="h-12 w-12" />
+            <Plus className="h-14 w-14" />
           </Button>
         </div>
         
