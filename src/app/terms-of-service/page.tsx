@@ -20,7 +20,7 @@ export default function TermsOfServicePage() {
       <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl mt-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Terms of Service
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -66,7 +66,7 @@ export default function TermsOfServicePage() {
             </Section>
 
             <Section title="10. Governing Law">
-             These Terms shall be governed and construed in accordance with the laws of the jurisdiction in which the creators of {APP_NAME} reside, without regard to its conflict of law provisions. (For a real app, the specific jurisdiction would be stated here).
+             These Terms shall be governed and construed in accordance with the laws of the jurisdiction in which the creators of {APP_NAME} reside, without regard to its conflict of law provisions.
             </Section>
             
             <Section title="11. Future Functionality (Registered Accounts)">
@@ -74,7 +74,7 @@ export default function TermsOfServicePage() {
             </Section>
             
             <div className="text-sm text-muted-foreground pt-6 border-t border-dashed">
-              <p>If you have any questions about these Terms, please use the "Request a Feature" page to contact us (as this is a demo project, a real contact method would be provided here for a production app).</p>
+              <p>If you have any questions about these Terms, please use the "Request a Feature" page to contact us.</p>
             </div>
           </div>
         </div>

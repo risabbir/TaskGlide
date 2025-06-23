@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
       <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl mt-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Privacy Policy
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -86,7 +86,7 @@ export default function PrivacyPolicyPage() {
             </Section>
 
              <div className="text-sm text-muted-foreground pt-6 border-t border-dashed">
-              <p>If you have questions or comments about this policy, you may use the "Request a Feature" page to contact us (as this is a demo project, a real contact method would be provided here for a production app).</p>
+              <p>If you have questions or comments about this policy, you may use the "Request a Feature" page to contact us.</p>
             </div>
           </div>
         </div>
