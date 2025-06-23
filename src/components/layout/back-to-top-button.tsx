@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -32,7 +33,7 @@ export function BackToTopButton() {
   }, []);
 
   return (
-    <div className="fixed bottom-24 right-5 z-50 md:bottom-5">
+    <div className="fixed bottom-28 right-5 z-30 md:bottom-5">
       <Button
         variant="default"
         size="icon"

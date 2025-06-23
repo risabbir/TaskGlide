@@ -91,20 +91,20 @@ export function BottomNavigation() {
 
   return (
     <>
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-24 bg-transparent z-40">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-24 bg-transparent z-40 pointer-events-none">
         {/* Raised Central Button */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
           <Button
             onClick={handleOpenNewTaskModal}
-            className="h-20 w-20 rounded-full shadow-lg"
+            className="h-16 w-16 rounded-full shadow-lg"
             aria-label="Add new task"
           >
-            <Plus className="h-[72px] w-[72px]" />
+            <Plus className="h-9 w-9" />
           </Button>
         </div>
         
         {/* Navigation Bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-[72px] bg-background/90 backdrop-blur-lg border-t border-border/80 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+        <div className="absolute bottom-0 left-0 right-0 h-[72px] bg-background/90 backdrop-blur-lg border-t border-border/80 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] pointer-events-auto">
           <nav className="flex h-full items-center justify-around">
             {/* Left Side Items */}
             <div className="flex items-center justify-around w-full">
