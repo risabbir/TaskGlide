@@ -94,7 +94,7 @@ export default function FAQPage() {
             </p>
           </div>
           
-          <div className="bg-card text-card-foreground p-6 sm:p-8 rounded-xl shadow-xl border">
+          <div className="bg-card text-card-foreground p-6 sm:p-8 rounded-xl shadow-lg border">
             <Accordion type="single" collapsible className="w-full space-y-3">
               {faqs.map((faq) => (
                 <AccordionItem value={faq.id} key={faq.id} className="border-b last:border-b-0">

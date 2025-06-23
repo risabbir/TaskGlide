@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </div>
 
-          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-xl border space-y-8">
+          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-lg border space-y-8">
             <Section title="Introduction">
               Welcome to {APP_NAME}! This application currently operates in a guest-only mode. This Privacy Policy explains what information is collected and how it's used in this mode.
             </Section>

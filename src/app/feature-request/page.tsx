@@ -33,7 +33,7 @@ export default function FeatureRequestPage() {
             </p>
           </div>
 
-          <Card className="shadow-xl border">
+          <Card className="shadow-lg border">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl flex items-center">
                 Your Feature Idea

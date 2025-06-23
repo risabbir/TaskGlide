@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
             </p>
           </div>
 
-          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-xl border space-y-8">
+          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-lg border space-y-8">
             <Section title="1. Acceptance of Terms">
               By accessing and using {APP_NAME} (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. Currently, the Service operates in a guest-only mode where data is stored in your browser's local storage. Your use of this Service constitutes acceptance of this agreement. If you do not agree to abide by these terms, please do not use this Service.
             </Section>
