@@ -35,12 +35,12 @@ export function BackToTopButton() {
   return (
     <div className="fixed bottom-28 right-5 z-30 md:bottom-5">
       <Button
-        variant="default"
+        variant="secondary"
         size="icon"
         onClick={scrollToTop}
         className={cn(
-          "group h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out",
-          "hover:scale-110 active:scale-95",
+          "group h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out text-secondary-foreground",
+          "hover:scale-110 hover:bg-secondary/90 active:scale-95",
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
         aria-label="Go to top"
