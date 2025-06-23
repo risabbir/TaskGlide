@@ -50,14 +50,6 @@ export function Footer() {
           <p className="mt-1">
             A creation by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a>, brought to life with Firebase Studio & Gemini.
           </p>
-          <div className="mt-4 flex justify-center">
-            <Link href={GITHUB_URL} legacyBehavior>
-                <a target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                    <Github className="h-6 w-6" />
-                    <span className="sr-only">GitHub</span>
-                </a>
-            </Link>
-          </div>
         </div>
       </div>
     </footer>

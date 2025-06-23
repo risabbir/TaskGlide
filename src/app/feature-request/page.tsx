@@ -136,15 +136,15 @@ export default function FeatureRequestPage() {
 
           <Alert variant="default" className="bg-accent/50 border-accent">
             <Github className="h-5 w-5 text-primary" />
-            <AlertTitle className="font-semibold text-primary/90">Technical Issues or Contributions?</AlertTitle>
+            <AlertTitle className="font-semibold text-primary/90">Found a Bug or Love the App?</AlertTitle>
             <AlertDescription className="text-accent-foreground">
-              For bug reports, technical issues, or to contribute to the project, please visit our{' '}
+              For technical issues or bug reports, please head over to our{' '}
               <Link href={GITHUB_URL} legacyBehavior>
                 <a target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-primary/90">
                   GitHub repository
                 </a>
               </Link>
-              . You can open an issue there for a more technical discussion.
+              . If you enjoy using {APP_NAME}, consider giving it a star—it helps a lot! ⭐
             </AlertDescription>
           </Alert>
 

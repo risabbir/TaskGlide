@@ -5,7 +5,7 @@ import { ListTodo, Flame, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link 
 export const APP_NAME = "TaskGlide"; 
 export const DEVELOPER_NAME = "R.Sabbir";
 export const DEVELOPER_URL = "https://rsabbir.com";
-export const GITHUB_URL = "https://github.com/your-username/your-repo-name"; // Add your repository link here
+export const GITHUB_URL = "https://github.com/risabbir/TaskGlide"; // Add your repository link here
 
 export const GUEST_ID_STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, '_')}_guest_id_v1`;
 
@@ -40,5 +40,6 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   dueDateEnd: undefined,
   searchTerm: "",
 };
+
 
 
