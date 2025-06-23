@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
-import { Send } from "lucide-react";
+import { Send, Info } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function FeatureRequestPage() {
   useEffect(() => {
@@ -20,8 +21,8 @@ export default function FeatureRequestPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
-      <main className="flex-grow py-8">
-        <div className="max-w-2xl mx-auto">
+      <main className="flex-grow py-8 px-4">
+        <div className="max-w-2xl mx-auto space-y-8">
           
           <Card className="shadow-xl border">
             <CardHeader className="pb-4">
@@ -29,13 +30,11 @@ export default function FeatureRequestPage() {
                 Suggest an Improvement for {APP_NAME}
               </CardTitle>
               <CardDescription>
-                Your feedback is valuable. All suggestions are reviewed by our team.
+                This form submits your request directly to our team via Formspree.
               </CardDescription>
             </CardHeader>
-            {/* The form tag now handles the submission directly to Formspree */}
             <form action="https://formspree.io/f/mjkraydw" method="POST">
               <CardContent className="space-y-6 pt-2">
-                {/* Feature Title */}
                 <div className="space-y-2">
                   <Label htmlFor="featureTitle" className="text-base">Feature Title</Label>
                   <Input
@@ -48,7 +47,6 @@ export default function FeatureRequestPage() {
                   />
                 </div>
 
-                {/* Detailed Description */}
                 <div className="space-y-2">
                   <Label htmlFor="detailedDescription" className="text-base">Detailed Description</Label>
                   <Textarea
@@ -61,7 +59,6 @@ export default function FeatureRequestPage() {
                   />
                 </div>
 
-                {/* Category Dropdown */}
                 <div className="space-y-2">
                   <Label htmlFor="category" className="text-base">Category</Label>
                   <select
@@ -79,7 +76,6 @@ export default function FeatureRequestPage() {
                   </select>
                 </div>
                 
-                {/* Priority Dropdown */}
                  <div className="space-y-2">
                   <Label htmlFor="priority" className="text-base">Priority</Label>
                    <select
@@ -96,7 +92,6 @@ export default function FeatureRequestPage() {
                   </select>
                 </div>
 
-                {/* Email Address */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-base">Your Email Address (Optional)</Label>
                   <Input
@@ -116,6 +111,19 @@ export default function FeatureRequestPage() {
               </CardFooter>
             </form>
           </Card>
+          
+          <Alert variant="default" className="bg-accent/50 border-accent">
+            <Info className="h-5 w-5 text-primary" />
+            <AlertTitle className="font-semibold text-primary/90">What happens next?</AlertTitle>
+            <AlertDescription className="text-accent-foreground">
+                <ul className="list-disc list-outside pl-5 mt-2 space-y-1.5">
+                    <li>Your request will be sent directly to our team for review.</li>
+                    <li>We prioritize new features based on user needs and overall impact.</li>
+                    <li>If you provided your email, we may contact you for more details or to provide an update on your suggestion.</li>
+                </ul>
+            </AlertDescription>
+          </Alert>
+
         </div>
       </main>
       <Footer />
