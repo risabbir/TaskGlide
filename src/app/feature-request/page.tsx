@@ -25,7 +25,7 @@ export default function FeatureRequestPage() {
         <div className="max-w-2xl mx-auto space-y-8">
           
           <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Suggest an Improvement
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -33,7 +33,7 @@ export default function FeatureRequestPage() {
             </p>
           </div>
 
-          <Card className="shadow-lg border">
+          <Card className="shadow-md border">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl flex items-center">
                 Your Feature Idea
