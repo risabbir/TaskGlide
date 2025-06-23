@@ -10,13 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send } from "lucide-react";
+import { Send } from "lucide-react";
 
-// This component renders a standard HTML form styled with ShadCN components.
-// It submits directly to the Formspree endpoint provided.
 export default function FeatureRequestPage() {
   useEffect(() => {
-    document.title = `Feature Requests & Suggestions | ${APP_NAME}`;
+    document.title = `Suggest an Improvement | ${APP_NAME}`;
   }, []);
 
   return (
@@ -24,23 +22,14 @@ export default function FeatureRequestPage() {
       <Header />
       <main className="flex-grow py-8">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Share Your Ideas for {APP_NAME}
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
-              Have an idea to improve {APP_NAME}? We'd love to hear it. Use the form below to submit your feature requests and suggestions. Your input directly helps us shape the future of the app.
-            </p>
-          </div>
-
+          
           <Card className="shadow-xl border">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl flex items-center">
-                <Lightbulb className="mr-3 h-6 w-6 text-primary" />
-                Your Feature Idea
+                Suggest an Improvement for {APP_NAME}
               </CardTitle>
               <CardDescription>
-                This form submits your request directly to our team via Formspree.
+                Your feedback is valuable. All suggestions are reviewed by our team.
               </CardDescription>
             </CardHeader>
             {/* The form tag now handles the submission directly to Formspree */}
