@@ -16,7 +16,7 @@ import { Lightbulb, Send } from "lucide-react";
 // It submits directly to the Formspree endpoint provided.
 export default function FeatureRequestPage() {
   useEffect(() => {
-    document.title = `Suggest a Feature | ${APP_NAME}`;
+    document.title = `Feature Requests & Suggestions | ${APP_NAME}`;
   }, []);
 
   return (
@@ -26,10 +26,10 @@ export default function FeatureRequestPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Suggest a Feature
+              Share Your Ideas for {APP_NAME}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
-              Have an idea to make {APP_NAME} even better? Your feedback is invaluable.
+              Have an idea to improve {APP_NAME}? We'd love to hear it. Use the form below to submit your feature requests and suggestions. Your input directly helps us shape the future of the app.
             </p>
           </div>
 
