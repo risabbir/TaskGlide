@@ -5,16 +5,12 @@ import { SignUpForm } from "@/components/auth/sign-up-form";
 import { APP_NAME } from "@/lib/constants";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 export default function SignUpPage() {
-  const t = useTranslations("AuthPages");
-  const tApp = useTranslations("App");
-
   useEffect(() => {
-    document.title = `Sign Up | ${tApp("name")}`;
-  }, [tApp]);
+    document.title = `Sign Up | ${APP_NAME}`;
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
@@ -22,10 +18,10 @@ export default function SignUpPage() {
         <Link href="/" className="flex items-center space-x-2 group mb-2">
           <LayoutDashboard className="h-10 w-10 text-primary transition-transform group-hover:scale-110" />
           <span className="text-3xl font-bold text-foreground group-hover:text-primary transition-colors">
-            {tApp("name")}
+            {APP_NAME}
           </span>
         </Link>
-        <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: t("signUpTagline", { appName: tApp("name") }) }} />
+        <p className="text-muted-foreground">Create an account to save your tasks and settings.</p>
       </div>
       <SignUpForm />
     </div>

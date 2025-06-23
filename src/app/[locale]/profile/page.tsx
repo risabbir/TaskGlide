@@ -11,18 +11,15 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTranslations } from "next-intl";
+import { APP_NAME } from "@/lib/constants";
 
 export default function ProfilePage() {
   const { user, loading } = useAuth(); 
   const router = useRouter();
-  const t = useTranslations("ProfilePage");
-  const tApp = useTranslations("App");
-
 
   useEffect(() => {
-    document.title = `Your Profile | ${tApp("name")}`;
-  }, [tApp]);
+    document.title = `Your Profile | ${APP_NAME}`;
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) { 
@@ -36,7 +33,7 @@ export default function ProfilePage() {
         <Header /> 
         <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-4 bg-background">
           <LayoutDashboard className="h-12 w-12 text-primary animate-pulse" />
-          <p className="mt-4 text-muted-foreground">{t("loadingText")}</p>
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
         </div>
       </>
     );
@@ -49,9 +46,9 @@ export default function ProfilePage() {
         <div className="w-full max-w-4xl space-y-10"> 
           <div className="flex flex-col items-center text-center mb-10">
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl flex items-center">
-              <UserCog className="mr-3 h-8 w-8 text-primary/80" /> {t("pageTitle")}
+              <UserCog className="mr-3 h-8 w-8 text-primary/80" /> Account Settings
             </h1>
-            <p className="mt-2 text-md text-muted-foreground sm:text-lg max-w-xl">{t("pageDescription")}</p>
+            <p className="mt-2 text-md text-muted-foreground sm:text-lg max-w-xl">Manage your personal information and account settings.</p>
           </div>
           
           <Tabs defaultValue="profile" className="w-full">
