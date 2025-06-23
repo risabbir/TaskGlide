@@ -16,8 +16,8 @@ const KanbanColumnComponent = ({ column, tasks, allColumns }: KanbanColumnProps)
   const ColumnIcon = column.icon;
 
   return (
-    // Full width on mobile, specific widths on md+ and shrink-0 for horizontal scroll
-    <div className="flex flex-col w-full md:w-80 lg:w-[350px] shrink-0 bg-secondary/50 dark:bg-secondary/60 rounded-lg shadow-sm h-full">
+    // Full width on mobile, flex-1 on md+ to fill space, with a min-height
+    <div className="flex flex-col w-full md:flex-1 bg-secondary/50 dark:bg-secondary/60 rounded-lg shadow-sm h-full min-h-[300px]">
       <div className="flex items-center justify-between p-3 border-b sticky top-0 bg-secondary/80 dark:bg-secondary/90 backdrop-blur-sm z-10 rounded-t-lg">
         <div className="flex items-center gap-2 min-w-0">
           {ColumnIcon && <ColumnIcon className="h-5 w-5 text-primary shrink-0" />}

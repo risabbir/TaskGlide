@@ -4,11 +4,10 @@
 import { useKanban } from "@/lib/store";
 import type { Task, Column as ColumnType, FilterState, SortState } from "@/lib/types";
 import { KanbanColumn } from "./kanban-column";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ActiveFilterPills } from "@/components/filter-sort/active-filter-pills";
 import { isPast, isToday, isThisISOWeek, parseISO, startOfDay, endOfDay, isWithinInterval, isSameDay, isAfter, isBefore } from "date-fns";
-import React, { useMemo } from "react"; // Added useMemo
+import React, { useMemo } from "react";
 import { ClipboardList, PlusCircle, SearchX } from "lucide-react";
 import { DEFAULT_COLUMNS } from "@/lib/constants";
 
@@ -137,9 +136,8 @@ export function KanbanBoard() {
   return (
     <div className="flex flex-col flex-grow p-4 space-y-4 overflow-hidden">
       <ActiveFilterPills />
-      <ScrollArea className="flex-grow w-full md:h-auto">
-        <div className="flex flex-col md:flex-row gap-4 pb-4 md:whitespace-nowrap h-full">
-          {visibleColumns.map((column) => {
+      <div className="flex flex-col md:flex-row gap-4 h-full flex-grow">
+        {visibleColumns.map((column) => {
             // Filter tasks for the current column from the already filteredAndSortedTasks
             // The overall sort is applied first, then tasks are bucketed into columns.
             // If column-specific sort order different from global sort is needed, this logic would change.
@@ -162,11 +160,7 @@ export function KanbanBoard() {
               <p className="text-sm">Try adjusting your filter settings or clearing them.</p>
             </div>
           )}
-        </div>
-        <div className="hidden md:block mt-3">
-          <ScrollBar orientation="horizontal" forceMount />
-        </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
