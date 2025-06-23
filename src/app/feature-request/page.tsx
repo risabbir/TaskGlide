@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -24,7 +25,6 @@ export default function FeatureRequestPage() {
       <main className="flex-grow py-8">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <Lightbulb className="mx-auto h-12 w-12 text-primary mb-4" />
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Suggest a Feature
             </h1>
