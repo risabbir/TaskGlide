@@ -1,144 +1,22 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send, Info, Loader2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Lightbulb, Send } from "lucide-react";
 
-// --- Configuration ---
-// IMPORTANT: Replace this placeholder with your actual Firebase Cloud Function URL
-// after you deploy the function (see backend setup instructions).
-const FEATURE_REQUEST_FUNCTION_URL = "YOUR_CLOUD_FUNCTION_URL_HERE";
-// --- End Configuration ---
-
-const featureRequestSchema = z.object({
-  title: z.string().min(5, "Please provide a concise title (min 5 characters).").max(100, "Title is too long (max 100 characters)."),
-  description: z.string().min(10, "Please describe your feature in detail (min 10 characters).").max(2000, "Description is too long (max 2000 characters)."),
-  category: z.enum(["ui_ux", "new_functionality", "ai_feature", "improvement", "other"], {
-    errorMap: () => ({ message: "Please select a category." }),
-  }),
-  importance: z.enum(["low", "medium", "high"], {
-    errorMap: () => ({ message: "Please select an importance level." }),
-  }),
-  email: z.string().email("Please enter a valid email address.").optional().or(z.literal('')),
-});
-
-type FeatureRequestFormData = z.infer<typeof featureRequestSchema>;
-
-const categories = [
-  { value: "ui_ux", label: "UI/UX Enhancement" },
-  { value: "new_functionality", label: "New Functionality" },
-  { value: "ai_feature", label: "AI Feature Suggestion" },
-  { value: "improvement", label: "Existing Feature Improvement" },
-  { value: "other", label: "Other" },
-];
-
-const importanceLevels = [
-  { value: "low", label: "Nice to Have" },
-  { value: "medium", label: "Important" },
-  { value: "high", label: "Critical" },
-];
-
+// This component renders a standard HTML form styled with ShadCN components.
+// It submits directly to the Formspree endpoint provided.
 export default function FeatureRequestPage() {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   useEffect(() => {
     document.title = `Suggest a Feature | ${APP_NAME}`;
   }, []);
-
-  const form = useForm<FeatureRequestFormData>({
-    resolver: zodResolver(featureRequestSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      category: undefined,
-      email: "",
-      importance: "medium",
-    },
-  });
-
-  async function onSubmit(data: FeatureRequestFormData) {
-    setIsSubmitting(true);
-
-    if (FEATURE_REQUEST_FUNCTION_URL === "YOUR_CLOUD_FUNCTION_URL_HERE") {
-        toast({
-            title: "Configuration Needed",
-            description: "The feature request submission URL is not configured. Please contact the site administrator.",
-            variant: "destructive",
-            duration: 10000,
-        });
-        console.error("ERROR: FEATURE_REQUEST_FUNCTION_URL is not set in src/app/feature-request/page.tsx. Please deploy your Firebase Cloud Function and update this URL.");
-        setIsSubmitting(false);
-        return;
-    }
-
-    try {
-      const response = await fetch(FEATURE_REQUEST_FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data), // Sends all form data
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Feature Request Submitted!",
-          description: "Thank you for your feedback. Your suggestion has been sent.",
-          duration: 7000,
-        });
-        form.reset();
-      } else {
-        const result = await response.json().catch(() => ({ error: "An unknown error occurred."}));
-        console.error("Submission Error from backend:", result);
-        toast({
-          title: "Submission Failed",
-          description: result.error || "Could not submit your feature request. Please try again later.",
-          variant: "destructive",
-          duration: 10000,
-        });
-      }
-    } catch (error) {
-      console.error("Error submitting feature request:", error);
-      toast({
-        title: "Network Error",
-        description: "Could not reach the submission service. Please check your internet connection or try again later.",
-        variant: "destructive",
-        duration: 10000,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -151,7 +29,7 @@ export default function FeatureRequestPage() {
               Suggest a Feature
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
-              Have an idea to make {APP_NAME} even better? Fill out the form below.
+              Have an idea to make {APP_NAME} even better? Your feedback is invaluable.
             </p>
           </div>
 
@@ -162,132 +40,92 @@ export default function FeatureRequestPage() {
                 Your Feature Idea
               </CardTitle>
               <CardDescription>
-                Your feedback helps us improve {APP_NAME}!
+                This form submits your request directly to our team via Formspree.
               </CardDescription>
             </CardHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)}>
-                <CardContent className="space-y-6 pt-2">
-                    <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600">
-                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <AlertTitle className="text-blue-700 dark:text-blue-300 font-semibold">Developer Note: Backend Required</AlertTitle>
-                        <AlertDescription className="text-blue-700 dark:text-blue-400">
-                            This form is configured to send data (including the new `email` and `importance` fields) to a backend Firebase Cloud Function.
-                            Ensure the function is deployed and the `FEATURE_REQUEST_FUNCTION_URL` is updated. You must also update your Cloud Function code to handle and email these new fields.
-                        </AlertDescription>
-                    </Alert>
+            {/* The form tag now handles the submission directly to Formspree */}
+            <form action="https://formspree.io/f/mjkraydw" method="POST">
+              <CardContent className="space-y-6 pt-2">
+                {/* Feature Title */}
+                <div className="space-y-2">
+                  <Label htmlFor="featureTitle" className="text-base">Feature Title</Label>
+                  <Input
+                    id="featureTitle"
+                    name="featureTitle"
+                    type="text"
+                    placeholder="E.g., Add calendar view for tasks"
+                    required
+                    className="text-base h-11"
+                  />
+                </div>
 
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Feature Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="E.g., Add calendar view for tasks" {...field} className="text-base h-11" disabled={isSubmitting} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                {/* Detailed Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="detailedDescription" className="text-base">Detailed Description</Label>
+                  <Textarea
+                    id="detailedDescription"
+                    name="detailedDescription"
+                    rows={5}
+                    placeholder="Describe your feature, why it's useful, and how it might work..."
+                    required
+                    className="text-base min-h-[150px]"
                   />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Detailed Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe your feature, why it's useful, and how it might work..."
-                            {...field}
-                            className="text-base min-h-[150px]"
-                            rows={6}
-                            disabled={isSubmitting}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
+                </div>
+
+                {/* Category Dropdown */}
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-base">Category</Label>
+                  <select
+                    id="category"
                     name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Category</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
-                          <FormControl>
-                            <SelectTrigger className="text-base h-11">
-                              <SelectValue placeholder="Select a category..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.value} value={cat.value} className="text-base">
-                                {cat.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="importance"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3 rounded-lg border p-4">
-                        <FormLabel className="text-base font-semibold">How important is this feature to you?</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="flex flex-col sm:flex-row gap-4 pt-2"
-                            disabled={isSubmitting}
-                          >
-                            {importanceLevels.map((level) => (
-                              <FormItem key={level.value} className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value={level.value} />
-                                </FormControl>
-                                <FormLabel className="font-normal text-base">
-                                  {level.label}
-                                </FormLabel>
-                              </FormItem>
-                            ))}
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
+                    required
+                    className="flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="" disabled>Select a category</option>
+                    <option value="UX Enhancement">UX Enhancement</option>
+                    <option value="New Functionality">New Functionality</option>
+                    <option value="AI Feature Suggestion">AI Feature Suggestion</option>
+                    <option value="Existing Feature Improvement">Existing Feature Improvement</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
+                
+                {/* Priority Dropdown */}
+                 <div className="space-y-2">
+                  <Label htmlFor="priority" className="text-base">Priority</Label>
+                   <select
+                    id="priority"
+                    name="priority"
+                    required
+                    className="flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="" disabled>Select priority level</option>
+                    <option value="Low">Low</option>
+                    <option value="Nice to have">Nice to have</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+
+                {/* Email Address */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-base">Your Email Address (Optional)</Label>
+                  <Input
+                    id="email"
                     name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base">Your Email (Optional)</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="So we can follow up if needed" {...field} className="text-base h-11" disabled={isSubmitting} />
-                        </FormControl>
-                        <FormDescription>We'll only use this to contact you about your feature request.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    type="email"
+                    placeholder="name@example.com (for follow-up questions)"
+                    className="text-base h-11"
                   />
-                </CardContent>
-                <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start gap-3">
-                  <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
-                    {isSubmitting ? "Submitting..." : "Submit Feature Request"}
-                  </Button>
-                   <p className="text-xs text-muted-foreground">
-                    This will send your request directly to the development team.
-                  </p>
-                </CardFooter>
-              </form>
-            </Form>
+                </div>
+              </CardContent>
+              <CardFooter className="bg-muted/30 p-6 border-t">
+                <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11">
+                  <Send className="mr-2 h-5 w-5" />
+                  Submit Request
+                </Button>
+              </CardFooter>
+            </form>
           </Card>
         </div>
       </main>
@@ -295,5 +133,3 @@ export default function FeatureRequestPage() {
     </div>
   );
 }
-
-    
