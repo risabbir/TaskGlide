@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { BottomNavigation } from '@/components/layout/bottom-navigation';
 import { KanbanProvider } from '@/lib/store';
 import { APP_NAME } from '@/lib/constants';
+import { BackToTopButton } from '@/components/layout/back-to-top-button';
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -37,6 +38,7 @@ export default async function RootLayout({
             </div>
             <Toaster />
             <BottomNavigation />
+            <BackToTopButton />
           </KanbanProvider>
         </AuthProvider>
       </body>
