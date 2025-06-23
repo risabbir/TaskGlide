@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -87,45 +88,14 @@ export default function FeatureRequestPage() {
             </div>
 
             {/* What's Next Alert */}
-            <Alert variant="default" className="bg-card border-border">
+            <Alert variant="default" className="bg-accent/50 border-accent text-accent-foreground">
               <Send className="h-5 w-5 !text-primary mt-0.5" />
               <AlertTitle className="font-semibold text-foreground">What Happens Next?</AlertTitle>
-              <AlertDescription className="text-muted-foreground/90">
-                Here’s what to expect after you submit your idea.
-                <ul className="space-y-3 mt-4">
-                  <li className="flex items-start gap-3">
-                    <div className="flex-shrink-0"><CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" /></div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Submission Confirmation</h3>
-                      <p className="text-muted-foreground text-sm">After submitting, you'll see a confirmation that your request has been sent successfully.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="flex-shrink-0"><Users className="h-4 w-4 text-primary mt-0.5" /></div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Team Review</h3>
-                      <p className="text-muted-foreground text-sm">Our team carefully reviews every suggestion. We appreciate you taking the time to share your thoughts.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="flex-shrink-0"><ListChecks className="h-4 w-4 text-primary mt-0.5" /></div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Prioritization</h3>
-                      <p className="text-muted-foreground text-sm">We prioritize features based on overall user value, technical feasibility, and alignment with our goals for {APP_NAME}.</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="flex-shrink-0"><Mail className="h-4 w-4 text-primary mt-0.5" /></div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Follow-up (Optional)</h3>
-                      <p className="text-muted-foreground text-sm">If you provided an email address, we may contact you for further details or to share an update on your suggestion.</p>
-                    </div>
-                  </li>
-                </ul>
+              <AlertDescription className="text-accent-foreground/90">
+                After submitting, you'll see a confirmation that your request was sent. Our team reviews every suggestion and prioritizes them based on user value and our goals for {APP_NAME}. If you provide an email, we may contact you for more details.
               </AlertDescription>
             </Alert>
             
-
             {/* GitHub Info Alert */}
             <Alert variant="default" className="bg-accent/50 border-accent text-accent-foreground">
               <Github className="h-5 w-5 !text-primary mt-0.5" />
