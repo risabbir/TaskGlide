@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Plus, History, User as ProfileIcon, LogIn, XCircle } from "lucide-react";
+import { Home, Search, Plus, SlidersHorizontal, User as ProfileIcon, LogIn, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
@@ -94,6 +94,10 @@ export function BottomNavigation() {
     setIsSearchModalOpen(false);
   };
 
+  const toggleFilterSidebar = () => {
+    dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
+  };
+
   return (
     <>
       <div className="md:hidden fixed bottom-4 left-4 right-4 h-[72px] z-40 pointer-events-none">
@@ -106,7 +110,7 @@ export function BottomNavigation() {
               <NavLink
                 href="/"
                 icon={Home}
-                label="Home"
+                label="Board"
                 isActive={pathname === "/"}
               />
               <NavLink
@@ -123,10 +127,10 @@ export function BottomNavigation() {
             {/* Right Side Items */}
             <div className="flex items-center justify-around w-full h-full">
               <NavLink
-                icon={History}
-                label="History"
-                isActive={false}
-                disabled={true}
+                action={toggleFilterSidebar}
+                icon={SlidersHorizontal}
+                label="Filter"
+                isActive={kanbanState.isFilterSidebarOpen}
               />
               
               {authLoading ? (
