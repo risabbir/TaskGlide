@@ -28,6 +28,11 @@ export default function ProfilePage() {
     }
   }, [isGuest, authLoading, router]);
 
+  const handleClearAndNewSession = () => {
+    startNewGuestSession(true);
+    router.push('/');
+  };
+
   if (authLoading) { 
     return (
       <>
