@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
       <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Privacy Policy
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </div>
 
-          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-sm border space-y-8">
+          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-md border space-y-8">
             <Section title="Introduction">
               Welcome to {APP_NAME}! This application currently operates in a guest-only mode. This Privacy Policy explains what information is collected and how it's used in this mode.
             </Section>
@@ -84,10 +84,6 @@ export default function PrivacyPolicyPage() {
             <Section title="Changes to This Privacy Policy">
               We may update this privacy policy from time to time, especially if new features (like registered accounts) are introduced. We will notify you of any significant changes by posting the new privacy policy on this page and updating the "Last updated" date. You are advised to review this privacy policy periodically for any changes.
             </Section>
-
-             <div className="text-sm text-muted-foreground pt-6 border-t border-dashed">
-              <p>If you have questions or comments about this policy, you may use the "Request a Feature" page to contact us.</p>
-            </div>
           </div>
         </div>
       </main>
@@ -103,7 +99,7 @@ interface SectionProps {
 
 const Section: React.FC<SectionProps> = ({ title, children }) => (
   <section>
-    <h2 className="text-2xl font-semibold mb-3 text-primary flex items-center">
+    <h2 className="text-2xl font-semibold mb-4 text-primary flex items-center">
       <FileText size={20} className="mr-2.5" /> {title}
     </h2>
     <div className="text-muted-foreground leading-relaxed space-y-2 prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1">

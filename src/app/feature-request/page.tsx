@@ -8,11 +8,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
-import { Send, Info, Github } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Send, Github, FileText } from "lucide-react";
 import Link from "next/link";
+
+// Re-using the Section component from other pages for consistency.
+interface SectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const Section: React.FC<SectionProps> = ({ title, children }) => (
+  <section>
+    <h2 className="text-2xl font-semibold mb-4 text-primary flex items-center">
+      <FileText size={20} className="mr-2.5" /> {title}
+    </h2>
+    <div className="text-muted-foreground leading-relaxed space-y-4 prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1">
+      {children}
+    </div>
+  </section>
+);
+
 
 export default function FeatureRequestPage() {
   useEffect(() => {
@@ -23,30 +39,22 @@ export default function FeatureRequestPage() {
     <>
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-2xl mx-auto space-y-8">
-          
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Suggest an Improvement
             </h1>
-            <p className="mt-3 text-lg text-muted-foreground">
+            <p className="mt-4 text-lg text-muted-foreground">
               Have an idea to make {APP_NAME} better? We'd love to hear it.
             </p>
           </div>
 
-          <Card className="shadow-sm border">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl flex items-center">
-                Your Feature Idea
-              </CardTitle>
-              <CardDescription>
-                This form submits your request directly to our team via Formspree.
-              </CardDescription>
-            </CardHeader>
-            <form action="https://formspree.io/f/mjkraydw" method="POST">
-              <CardContent className="space-y-6 pt-2">
+          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-md border space-y-8">
+            <Section title="Your Feature Idea">
+              <p>This form submits your request directly to our team via Formspree.</p>
+              <form action="https://formspree.io/f/mjkraydw" method="POST" className="not-prose space-y-6 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="featureTitle" className="text-base">Feature Title</Label>
+                  <Label htmlFor="featureTitle" className="text-base font-medium">Feature Title</Label>
                   <Input
                     id="featureTitle"
                     name="featureTitle"
@@ -58,7 +66,7 @@ export default function FeatureRequestPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="detailedDescription" className="text-base">Detailed Description</Label>
+                  <Label htmlFor="detailedDescription" className="text-base font-medium">Detailed Description</Label>
                   <Textarea
                     id="detailedDescription"
                     name="detailedDescription"
@@ -70,7 +78,7 @@ export default function FeatureRequestPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-base">Category</Label>
+                  <Label htmlFor="category" className="text-base font-medium">Category</Label>
                   <select
                     id="category"
                     name="category"
@@ -87,7 +95,7 @@ export default function FeatureRequestPage() {
                 </div>
                 
                  <div className="space-y-2">
-                  <Label htmlFor="priority" className="text-base">Priority</Label>
+                  <Label htmlFor="priority" className="text-base font-medium">Priority</Label>
                    <select
                     id="priority"
                     name="priority"
@@ -103,7 +111,7 @@ export default function FeatureRequestPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-base">Your Email Address (Optional)</Label>
+                  <Label htmlFor="email" className="text-base font-medium">Your Email Address (Optional)</Label>
                   <Input
                     id="email"
                     name="email"
@@ -112,42 +120,43 @@ export default function FeatureRequestPage() {
                     className="text-base h-11"
                   />
                 </div>
-              </CardContent>
-              <CardFooter className="bg-muted/30 p-6 border-t">
-                <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11">
-                  <Send className="mr-2 h-5 w-5" />
-                  Submit Request
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-          
-          <Alert variant="default" className="bg-accent/50 border-accent">
-            <Info className="h-5 w-5 text-primary" />
-            <AlertTitle className="font-semibold text-primary/90">What happens next?</AlertTitle>
-            <AlertDescription className="text-accent-foreground">
+                
+                <div className="pt-2">
+                    <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11">
+                      <Send className="mr-2 h-5 w-5" />
+                      Submit Request
+                    </Button>
+                </div>
+              </form>
+            </Section>
+
+            <Section title="What Happens Next?">
                 <ul className="list-disc list-outside pl-5 mt-2 space-y-1.5">
                     <li>Your request will be sent directly to our team for review.</li>
                     <li>We prioritize new features based on user needs and overall impact.</li>
                     <li>If you provided your email, we may contact you for more details or to provide an update on your suggestion.</li>
                 </ul>
-            </AlertDescription>
-          </Alert>
+            </Section>
+            
+            <Section title="Bug Reports & Community">
+              <div className="flex items-start gap-4 not-prose">
+                <Github className="h-6 w-6 text-primary shrink-0 mt-1" />
+                <div>
+                    <h3 className="font-semibold text-foreground mb-1">Found a Bug or Love the App?</h3>
+                    <p className="text-muted-foreground">
+                      For technical issues or bug reports, please head over to our{' '}
+                      <Link href={GITHUB_URL} legacyBehavior>
+                        <a target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline-offset-4 hover:underline">
+                          GitHub repository
+                        </a>
+                      </Link>
+                      . If you enjoy using {APP_NAME}, consider giving it a star—it helps a lot! ⭐
+                    </p>
+                </div>
+              </div>
+            </Section>
 
-          <Alert variant="default" className="bg-accent/50 border-accent">
-            <Github className="h-5 w-5 text-primary" />
-            <AlertTitle className="font-semibold text-primary/90">Found a Bug or Love the App?</AlertTitle>
-            <AlertDescription className="text-accent-foreground">
-              For technical issues or bug reports, please head over to our{' '}
-              <Link href={GITHUB_URL} legacyBehavior>
-                <a target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-primary/90">
-                  GitHub repository
-                </a>
-              </Link>
-              . If you enjoy using {APP_NAME}, consider giving it a star—it helps a lot! ⭐
-            </AlertDescription>
-          </Alert>
-
+          </div>
         </div>
       </main>
       <Footer />
