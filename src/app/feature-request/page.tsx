@@ -41,7 +41,7 @@ export default function FeatureRequestPage() {
       <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Suggest an Improvement
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -130,14 +130,6 @@ export default function FeatureRequestPage() {
               </form>
             </Section>
 
-            <Section title="What Happens Next?">
-                <ul className="list-disc list-outside pl-5 mt-2 space-y-1.5">
-                    <li>Your request will be sent directly to our team for review.</li>
-                    <li>We prioritize new features based on user needs and overall impact.</li>
-                    <li>If you provided your email, we may contact you for more details or to provide an update on your suggestion.</li>
-                </ul>
-            </Section>
-            
             <Section title="Bug Reports & Community">
               <div className="flex items-start gap-4 not-prose">
                 <Github className="h-6 w-6 text-primary shrink-0 mt-1" />
