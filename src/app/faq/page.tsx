@@ -81,10 +81,10 @@ export default function FAQPage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <>
       <Header />
       <main className="flex-grow py-8">
-        <div className="max-w-3xl mx-auto"> 
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl mt-4">
               Frequently Asked Questions
@@ -116,6 +116,6 @@ export default function FAQPage() {
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 }

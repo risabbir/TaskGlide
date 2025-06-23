@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
   const lastUpdatedDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <>
       <Header />
       <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 }
 
