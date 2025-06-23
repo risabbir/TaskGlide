@@ -118,18 +118,18 @@ export function BottomNavigation() {
             
             const itemWrapperClasses = cn(
               "group flex flex-col items-center justify-center h-full w-full p-1.5 rounded-lg",
-              "transition-all duration-150 ease-in-out",
+              "transition-colors duration-200 ease-out",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
-              isActive ? "bg-primary/10" : "hover:bg-accent/90 active:bg-accent active:scale-95"
+              isActive ? "" : "hover:bg-accent/90 active:bg-accent"
             );
 
             const iconClasses = cn(
-                "h-5 w-5 mb-0.5 transition-all duration-150 ease-in-out group-hover:scale-110",
-                isActive ? "text-primary scale-105" : "text-muted-foreground group-hover:text-primary"
+                "h-5 w-5 mb-0.5 transition-all duration-200 ease-out",
+                isActive ? "text-primary scale-110 -translate-y-1" : "text-muted-foreground group-hover:text-primary"
             );
             
             const labelClasses = cn(
-                "text-[11px] leading-tight tracking-tight transition-colors duration-150 ease-in-out",
+                "text-[11px] leading-tight tracking-tight transition-colors duration-200 ease-out",
                 isActive ? "text-primary font-semibold" : "text-muted-foreground group-hover:text-primary"
             );
 

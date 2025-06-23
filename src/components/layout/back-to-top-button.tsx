@@ -40,16 +40,16 @@ export function BackToTopButton() {
         onClick={scrollToTop}
         className={cn(
           "group h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out",
-          // New style: Outline that fills on hover
+          // The new design: outline that fills on hover
           "bg-background/80 backdrop-blur-sm border-primary/30 text-primary",
-          "hover:bg-primary hover:text-primary-foreground hover:border-primary",
+          "hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-110",
           "focus:scale-110 focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          "hover:scale-105 active:scale-95",
+          "active:scale-95",
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
         aria-label="Go to top"
       >
-        <ArrowUp className="h-6 w-6" />
+        <ArrowUp className="h-6 w-6 transition-transform duration-300 group-hover:-translate-y-0.5" />
       </Button>
     </div>
   );
