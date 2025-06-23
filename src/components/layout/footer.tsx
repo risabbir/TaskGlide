@@ -47,7 +47,7 @@ export function Footer() {
             &copy; {currentYear} {APP_NAME}. All Rights Reserved.
           </p>
           <p className="mt-1">
-            Lovingly crafted by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a> with assistance from Firebase Studio, powered by Gemini.
+            Built by <a href={DEVELOPER_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{DEVELOPER_NAME}</a> in Firebase Studio, with AI assistance from Gemini.
           </p>
         </div>
       </div>
