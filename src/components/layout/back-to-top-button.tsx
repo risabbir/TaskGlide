@@ -32,18 +32,20 @@ export function BackToTopButton() {
   }, []);
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6">
+    <div className="fixed bottom-20 right-5 z-50 md:bottom-5">
       <Button
-        variant="outline"
+        variant="default"
         size="icon"
         onClick={scrollToTop}
         className={cn(
-          "h-12 w-12 rounded-full shadow-lg transition-all duration-300 ease-in-out bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur-sm transform hover:-translate-y-1 hover:scale-110",
+          "group h-12 w-12 rounded-xl shadow-lg transition-all duration-300 ease-in-out transform",
+          "bg-gradient-to-br from-primary/90 via-primary/80 to-primary/90 text-primary-foreground",
+          "hover:scale-110 hover:shadow-xl hover:from-primary hover:to-primary/80",
           isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
         )}
         aria-label="Go to top"
       >
-        <ArrowUp className="h-6 w-6" />
+        <ArrowUp className="h-6 w-6 transition-transform duration-300 group-hover:-translate-y-0.5" />
       </Button>
     </div>
   );
