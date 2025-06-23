@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { APP_NAME } from "@/lib/constants";
-import { Send, Info } from "lucide-react";
+import { APP_NAME, GITHUB_URL } from "@/lib/constants";
+import { Send, Info, Github } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Link from "next/link";
 
 export default function FeatureRequestPage() {
   useEffect(() => {
@@ -19,23 +20,23 @@ export default function FeatureRequestPage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <>
       <Header />
       <main className="flex-grow py-8 px-4">
         <div className="max-w-2xl mx-auto space-y-8">
           
           <div className="text-center">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Suggest an Improvement
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-3 text-lg text-muted-foreground">
               Have an idea to make {APP_NAME} better? We'd love to hear it.
             </p>
           </div>
 
-          <Card className="shadow-md border">
+          <Card className="shadow-lg border">
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl flex items-center">
+              <CardTitle className="text-xl flex items-center">
                 Your Feature Idea
               </CardTitle>
               <CardDescription>
@@ -133,9 +134,23 @@ export default function FeatureRequestPage() {
             </AlertDescription>
           </Alert>
 
+          <Alert variant="default" className="bg-accent/50 border-accent">
+            <Github className="h-5 w-5 text-primary" />
+            <AlertTitle className="font-semibold text-primary/90">Technical Issues or Contributions?</AlertTitle>
+            <AlertDescription className="text-accent-foreground">
+              For bug reports, technical issues, or to contribute to the project, please visit our{' '}
+              <Link href={GITHUB_URL} legacyBehavior>
+                <a target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-primary/90">
+                  GitHub repository
+                </a>
+              </Link>
+              . You can open an issue there for a more technical discussion.
+            </AlertDescription>
+          </Alert>
+
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 }
