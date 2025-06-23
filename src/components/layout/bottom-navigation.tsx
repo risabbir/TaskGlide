@@ -93,13 +93,13 @@ export function BottomNavigation() {
     <>
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-24 bg-transparent z-40">
         {/* Raised Central Button */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
           <Button
             onClick={handleOpenNewTaskModal}
-            className="h-16 w-16 rounded-full shadow-lg"
+            className="h-20 w-20 rounded-full shadow-lg"
             aria-label="Add new task"
           >
-            <Plus className="h-8 w-8" />
+            <Plus className="h-10 w-10" />
           </Button>
         </div>
         
@@ -123,7 +123,7 @@ export function BottomNavigation() {
             </div>
 
             {/* Spacer for central button */}
-            <div className="w-20 shrink-0"></div>
+            <div className="w-24 shrink-0"></div>
 
             {/* Right Side Items */}
             <div className="flex items-center justify-around w-full">
