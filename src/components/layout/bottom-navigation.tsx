@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, SlidersHorizontal, Plus, Search, User as GuestIcon, LogIn, XCircle } from "lucide-react";
+import { Home, Search, Plus, History, User as ProfileIcon, LogIn, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
@@ -27,14 +27,17 @@ interface NavLinkProps {
   label: string;
   isActive: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isActive, className }) => {
+const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isActive, className, disabled = false }) => {
   const content = (
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-1 w-full h-full rounded-lg transition-colors duration-200",
-        isActive ? "text-primary" : "text-muted-foreground hover:text-primary",
+        isActive ? "text-primary" : "text-muted-foreground",
+        !isActive && !disabled && "hover:text-primary",
+        disabled && "opacity-50 cursor-not-allowed",
         className
       )}
     >
@@ -43,12 +46,16 @@ const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isAc
     </div>
   );
 
+  if (disabled) {
+    return <div className="flex-1 h-full">{content}</div>;
+  }
+
   const buttonContent = <button className="w-full h-full">{content}</button>;
 
   if (href) {
     return (
       <Link href={href} legacyBehavior>
-        <a onClick={action}>{buttonContent}</a>
+        <a onClick={action} className="flex-1 h-full">{buttonContent}</a>
       </Link>
     );
   }
@@ -77,10 +84,6 @@ export function BottomNavigation() {
     dispatch({ type: "OPEN_TASK_MODAL", payload: null });
   };
   
-  const handleToggleFilterSidebar = () => {
-    dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
-  };
-  
   const handleModalSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setModalSearchTerm(event.target.value);
   };
@@ -103,7 +106,7 @@ export function BottomNavigation() {
               <NavLink
                 href="/"
                 icon={Home}
-                label="Board"
+                label="Home"
                 isActive={pathname === "/"}
               />
               <NavLink
@@ -120,22 +123,22 @@ export function BottomNavigation() {
             {/* Right Side Items */}
             <div className="flex items-center justify-around w-full h-full">
               <NavLink
-                action={handleToggleFilterSidebar}
-                icon={SlidersHorizontal}
-                label="Filters"
-                isActive={kanbanState.isFilterSidebarOpen}
+                icon={History}
+                label="History"
+                isActive={false}
+                disabled={true}
               />
               
               {authLoading ? (
                  <div className="flex flex-1 h-full flex-col items-center justify-center gap-1 w-16 text-muted-foreground/50">
-                    <GuestIcon className="h-6 w-6" />
-                    <span className="text-xs">Guest</span>
+                    <ProfileIcon className="h-6 w-6" />
+                    <span className="text-xs">Profile</span>
                  </div>
               ) : isGuest ? (
                  <NavLink
                   href="/profile"
-                  icon={GuestIcon}
-                  label="Guest"
+                  icon={ProfileIcon}
+                  label="Profile"
                   isActive={pathname === "/profile"}
                 />
               ) : (
