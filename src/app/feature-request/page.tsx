@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,7 +30,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { APP_NAME } from "@/lib/constants";
-import { Lightbulb, Send, AlertTriangle, Info, Loader2 } from "lucide-react";
+import { Lightbulb, Send, Info, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // --- Configuration ---
@@ -43,6 +45,10 @@ const featureRequestSchema = z.object({
   category: z.enum(["ui_ux", "new_functionality", "ai_feature", "improvement", "other"], {
     errorMap: () => ({ message: "Please select a category." }),
   }),
+  importance: z.enum(["low", "medium", "high"], {
+    errorMap: () => ({ message: "Please select an importance level." }),
+  }),
+  email: z.string().email("Please enter a valid email address.").optional().or(z.literal('')),
 });
 
 type FeatureRequestFormData = z.infer<typeof featureRequestSchema>;
@@ -53,6 +59,12 @@ const categories = [
   { value: "ai_feature", label: "AI Feature Suggestion" },
   { value: "improvement", label: "Existing Feature Improvement" },
   { value: "other", label: "Other" },
+];
+
+const importanceLevels = [
+  { value: "low", label: "Nice to Have" },
+  { value: "medium", label: "Important" },
+  { value: "high", label: "Critical" },
 ];
 
 export default function FeatureRequestPage() {
@@ -69,6 +81,8 @@ export default function FeatureRequestPage() {
       title: "",
       description: "",
       category: undefined,
+      email: "",
+      importance: "medium",
     },
   });
 
@@ -78,7 +92,7 @@ export default function FeatureRequestPage() {
     if (FEATURE_REQUEST_FUNCTION_URL === "YOUR_CLOUD_FUNCTION_URL_HERE") {
         toast({
             title: "Configuration Needed",
-            description: "The feature request submission URL is not configured. Please contact the site administrator or check the developer console.",
+            description: "The feature request submission URL is not configured. Please contact the site administrator.",
             variant: "destructive",
             duration: 10000,
         });
@@ -93,12 +107,10 @@ export default function FeatureRequestPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data), // Sends all form data
       });
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (response.ok) {
         toast({
           title: "Feature Request Submitted!",
           description: "Thank you for your feedback. Your suggestion has been sent.",
@@ -106,6 +118,7 @@ export default function FeatureRequestPage() {
         });
         form.reset();
       } else {
+        const result = await response.json().catch(() => ({ error: "An unknown error occurred."}));
         console.error("Submission Error from backend:", result);
         toast({
           title: "Submission Failed",
@@ -159,9 +172,8 @@ export default function FeatureRequestPage() {
                         <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <AlertTitle className="text-blue-700 dark:text-blue-300 font-semibold">Developer Note: Backend Required</AlertTitle>
                         <AlertDescription className="text-blue-700 dark:text-blue-400">
-                            This form is configured to send data to a backend Firebase Cloud Function.
-                            Ensure the function is deployed and the `FEATURE_REQUEST_FUNCTION_URL` constant in this file (`src/app/feature-request/page.tsx`) is updated with the correct URL.
-                            If the URL is still set to the placeholder `YOUR_CLOUD_FUNCTION_URL_HERE`, submissions will fail.
+                            This form is configured to send data (including the new `email` and `importance` fields) to a backend Firebase Cloud Function.
+                            Ensure the function is deployed and the `FEATURE_REQUEST_FUNCTION_URL` is updated. You must also update your Cloud Function code to handle and email these new fields.
                         </AlertDescription>
                     </Alert>
 
@@ -221,6 +233,49 @@ export default function FeatureRequestPage() {
                       </FormItem>
                     )}
                   />
+                   <FormField
+                    control={form.control}
+                    name="importance"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3 rounded-lg border p-4">
+                        <FormLabel className="text-base font-semibold">How important is this feature to you?</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex flex-col sm:flex-row gap-4 pt-2"
+                            disabled={isSubmitting}
+                          >
+                            {importanceLevels.map((level) => (
+                              <FormItem key={level.value} className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value={level.value} />
+                                </FormControl>
+                                <FormLabel className="font-normal text-base">
+                                  {level.label}
+                                </FormLabel>
+                              </FormItem>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">Your Email (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="So we can follow up if needed" {...field} className="text-base h-11" disabled={isSubmitting} />
+                        </FormControl>
+                        <FormDescription>We'll only use this to contact you about your feature request.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-6 border-t flex-col items-start gap-3">
                   <Button type="submit" className="w-full sm:w-auto text-base py-2.5 px-6 h-11" disabled={isSubmitting}>
@@ -228,7 +283,7 @@ export default function FeatureRequestPage() {
                     {isSubmitting ? "Submitting..." : "Submit Feature Request"}
                   </Button>
                    <p className="text-xs text-muted-foreground">
-                    This will send your request directly to the team.
+                    This will send your request directly to the development team.
                   </p>
                 </CardFooter>
               </form>
@@ -240,4 +295,5 @@ export default function FeatureRequestPage() {
     </div>
   );
 }
+
     
