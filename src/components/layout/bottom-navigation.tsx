@@ -26,14 +26,16 @@ interface NavLinkProps {
   icon: React.ElementType;
   label: string;
   isActive: boolean;
+  className?: string;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isActive }) => {
+const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isActive, className }) => {
   const content = (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-lg transition-colors duration-200",
-        isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
+        "flex flex-col items-center justify-center gap-1 w-full h-full rounded-lg transition-colors duration-200",
+        isActive ? "text-primary" : "text-muted-foreground hover:text-primary",
+        className
       )}
     >
       <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
@@ -50,7 +52,7 @@ const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isAc
       </Link>
     );
   }
-  return <div onClick={action}>{buttonContent}</div>;
+  return <div onClick={action} className="flex-1 h-full">{buttonContent}</div>;
 };
 
 
@@ -74,7 +76,7 @@ export function BottomNavigation() {
   const handleOpenNewTaskModal = () => {
     dispatch({ type: "OPEN_TASK_MODAL", payload: null });
   };
-
+  
   const handleToggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
@@ -91,23 +93,13 @@ export function BottomNavigation() {
 
   return (
     <>
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-24 bg-transparent z-40 pointer-events-none">
-        {/* Raised Central Button */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
-          <Button
-            onClick={handleOpenNewTaskModal}
-            className="h-16 w-16 rounded-full shadow-lg"
-            aria-label="Add new task"
-          >
-            <Plus className="h-14 w-14" />
-          </Button>
-        </div>
+      <div className="md:hidden fixed bottom-4 left-4 right-4 h-[72px] z-40 pointer-events-none">
         
-        {/* Navigation Bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-[72px] bg-background/90 backdrop-blur-lg border-t border-border/80 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] pointer-events-auto">
+        {/* Floating Navigation Bar */}
+        <div className="relative h-full w-full pointer-events-auto bg-background/80 backdrop-blur-lg rounded-2xl border border-border/80 shadow-lg">
           <nav className="flex h-full items-center justify-around">
             {/* Left Side Items */}
-            <div className="flex items-center justify-around w-full">
+            <div className="flex items-center justify-around w-full h-full">
               <NavLink
                 href="/"
                 icon={Home}
@@ -123,10 +115,10 @@ export function BottomNavigation() {
             </div>
 
             {/* Spacer for central button */}
-            <div className="w-24 shrink-0"></div>
+            <div className="w-[88px] shrink-0"></div>
 
             {/* Right Side Items */}
-            <div className="flex items-center justify-around w-full">
+            <div className="flex items-center justify-around w-full h-full">
               <NavLink
                 action={handleToggleFilterSidebar}
                 icon={SlidersHorizontal}
@@ -135,7 +127,7 @@ export function BottomNavigation() {
               />
               
               {authLoading ? (
-                 <div className="flex flex-col items-center justify-center gap-1 w-16 h-14 text-muted-foreground/50">
+                 <div className="flex flex-1 h-full flex-col items-center justify-center gap-1 w-16 text-muted-foreground/50">
                     <GuestIcon className="h-6 w-6" />
                     <span className="text-xs">Guest</span>
                  </div>
@@ -157,6 +149,26 @@ export function BottomNavigation() {
             </div>
           </nav>
         </div>
+        
+        {/* Notch for the central button */}
+        <div
+          className="absolute left-1/2 top-0 h-[34px] w-[88px] -translate-x-1/2 transform"
+          style={{ clipPath: 'path("M 0 34 C 4.5 34 4.5 0 8 0 L 80 0 C 83.5 0 83.5 34 88 34 L 0 34 Z")' }}
+        >
+          <div className="h-full w-full bg-background" />
+        </div>
+
+        {/* Raised Central Button */}
+        <div className="absolute left-1/2 top-[-28px] -translate-x-1/2 transform">
+          <Button
+            onClick={handleOpenNewTaskModal}
+            className="h-[64px] w-[64px] rounded-full shadow-lg"
+            aria-label="Add new task"
+          >
+            <Plus className="h-[25px] w-[25px] text-primary-foreground" />
+          </Button>
+        </div>
+
       </div>
 
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
