@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/footer";
 import { APP_NAME } from "@/lib/constants";
 import { useEffect } from "react";
 import { FileText } from "lucide-react";
+import { CommunitySupportSection } from "@/components/layout/community-support-section";
 
 export default function TermsOfServicePage() {
   useEffect(() => {
@@ -73,6 +74,9 @@ export default function TermsOfServicePage() {
              These terms primarily cover the current guest-only mode. If registered user accounts are introduced, these Terms of Service will be updated, and additional terms may apply to account holders.
             </Section>
           </div>
+
+          <CommunitySupportSection />
+          
         </div>
       </main>
       <Footer />

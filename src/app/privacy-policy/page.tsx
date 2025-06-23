@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/footer";
 import { APP_NAME } from "@/lib/constants";
 import { useEffect } from "react";
 import { FileText } from "lucide-react";
+import { CommunitySupportSection } from "@/components/layout/community-support-section";
 
 export default function PrivacyPolicyPage() {
   useEffect(() => {
@@ -85,6 +86,9 @@ export default function PrivacyPolicyPage() {
               We may update this privacy policy from time to time, especially if new features (like registered accounts) are introduced. We will notify you of any significant changes by posting the new privacy policy on this page and updating the "Last updated" date. You are advised to review this privacy policy periodically for any changes.
             </Section>
           </div>
+
+          <CommunitySupportSection />
+
         </div>
       </main>
       <Footer />

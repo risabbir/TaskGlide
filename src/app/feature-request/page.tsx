@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { APP_NAME, GITHUB_URL } from "@/lib/constants";
-import { Send, Github, Lightbulb, CheckCircle2, Users, ListChecks, Mail } from "lucide-react";
-import Link from "next/link";
+import { APP_NAME } from "@/lib/constants";
+import { Send, Lightbulb } from "lucide-react";
+import { CommunitySupportSection } from "@/components/layout/community-support-section";
 
 export default function FeatureRequestPage() {
   useEffect(() => {
@@ -89,7 +89,6 @@ export default function FeatureRequestPage() {
 
             {/* What's Next Alert */}
             <Alert variant="default" className="bg-accent/50 border-accent text-accent-foreground">
-              {/* Icon removed as per request */}
               <AlertTitle className="font-semibold text-foreground">What Happens Next?</AlertTitle>
               <AlertDescription className="text-accent-foreground/90">
                 <ul className="list-disc list-outside space-y-1.5 pl-5 mt-2">
@@ -100,21 +99,7 @@ export default function FeatureRequestPage() {
               </AlertDescription>
             </Alert>
             
-            {/* GitHub Info Alert */}
-            <Alert variant="default" className="bg-accent/50 border-accent text-accent-foreground">
-              <Github className="h-5 w-5 !text-primary mt-0.5" />
-              <AlertTitle className="font-semibold text-foreground">Bug Reports & Community</AlertTitle>
-              <AlertDescription className="text-accent-foreground/90">
-                For technical issues or bug reports, please head over to our{' '}
-                <Link href={GITHUB_URL} legacyBehavior>
-                  <a target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline-offset-4 hover:underline">
-                    GitHub repository
-                  </a>
-                </Link>
-                . If you enjoy using {APP_NAME}, consider giving it a star—it helps a lot! ⭐
-              </AlertDescription>
-            </Alert>
-
+            <CommunitySupportSection />
           </div>
         </div>
       </main>

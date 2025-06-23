@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { useEffect } from "react";
 import { HelpCircle } from "lucide-react";
+import { CommunitySupportSection } from "@/components/layout/community-support-section";
 
 const faqs = [
   {
@@ -113,6 +114,9 @@ export default function FAQPage() {
               ))}
             </Accordion>
           </div>
+
+          <CommunitySupportSection />
+          
         </div>
       </main>
       <Footer />
