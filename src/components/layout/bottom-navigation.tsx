@@ -99,7 +99,7 @@ export function BottomNavigation() {
   return (
     <>
       {/* New Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl bg-background px-4 pt-3 pb-6 shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background rounded-t-3xl shadow-[0_-2px_10px_rgba(0,0,0,0.08)] px-4 pt-3 pb-6 sm:hidden">
         <div className="relative grid grid-cols-5 items-center text-center max-w-md mx-auto">
           
           <NavItem href="/" label="Board" isActive={pathname === "/"}>
@@ -182,7 +182,7 @@ export function BottomNavigation() {
                 </Button>
               )}
             </div>
-            <DialogFooter className="sm:justify-end">
+            <DialogFooter className="sm:justify-end gap-2">
               <DialogClose asChild>
                 <Button type="button" variant="outline">
                   Cancel
