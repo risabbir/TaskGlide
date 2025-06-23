@@ -99,7 +99,7 @@ export function BottomNavigation() {
             className="h-20 w-20 rounded-full shadow-lg"
             aria-label="Add new task"
           >
-            <Plus className="h-10 w-10" />
+            <Plus className="h-12 w-12" />
           </Button>
         </div>
         
