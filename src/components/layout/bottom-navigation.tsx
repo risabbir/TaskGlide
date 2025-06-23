@@ -3,8 +3,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Plus, SlidersHorizontal, User as ProfileIcon, LogIn } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
@@ -18,81 +16,67 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, XCircle } from "lucide-react"; // For search modal
 
-// NavLink component for individual items
-interface NavLinkProps {
+// NavItem component for individual items, handles Link vs Button
+interface NavItemProps {
   href?: string;
   action?: () => void;
-  icon: React.ElementType;
+  children: React.ReactNode;
   label: string;
   isActive: boolean;
-  className?: string;
-  disabled?: boolean;
 }
 
-const NavLink: React.FC<NavLinkProps> = ({ href, action, icon: Icon, label, isActive, className, disabled = false }) => {
-  const content = (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center gap-1 w-full h-full rounded-lg transition-colors duration-200",
-        isActive ? "text-primary" : "text-muted-foreground",
-        !isActive && !disabled && "hover:text-primary",
-        disabled && "opacity-50 cursor-not-allowed",
-        className
-      )}
-    >
-      <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
-      <span className={cn("text-xs", isActive && "font-bold")}>{label}</span>
-    </div>
+const NavItem: React.FC<NavItemProps> = ({ href, action, children, label, isActive }) => {
+  const commonClasses = cn(
+    "flex flex-col items-center transition-colors duration-200 w-full",
+    isActive ? "text-primary" : "text-muted-foreground",
+    !isActive ? "hover:text-primary" : ""
   );
 
-  if (disabled) {
-    return <div className="flex-1 h-full">{content}</div>;
-  }
-
-  // Use a button for action-based links for better accessibility
-  const interactiveElement = (
-    <button className="w-full h-full" onClick={action}>
-      {content}
-    </button>
+  const content = (
+    <>
+      {children}
+      <span className="text-xs font-medium">{label}</span>
+    </>
   );
 
   if (href) {
     return (
       <Link href={href} legacyBehavior>
-        <a className="flex-1 h-full">{interactiveElement}</a>
+        <a className={commonClasses}>{content}</a>
       </Link>
     );
   }
 
   return (
-    <div className="flex-1 h-full cursor-pointer">
-      {interactiveElement}
-    </div>
+    <button onClick={action} className={commonClasses}>
+      {content}
+    </button>
   );
 };
 
+
 export function BottomNavigation() {
   const { dispatch, state: kanbanState } = useKanban();
-  const { isGuest, loading: authLoading } = useAuth();
+  const { isGuest } = useAuth();
   const pathname = usePathname();
 
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [modalSearchTerm, setModalSearchTerm] = useState("");
-
-  const filters = kanbanState.filters;
-
+  const [modalSearchTerm, setModalSearchTerm] = useState(kanbanState.filters?.searchTerm ?? "");
+  
   useEffect(() => {
-    if (isSearchModalOpen && filters?.searchTerm !== modalSearchTerm) {
-        setModalSearchTerm(filters?.searchTerm ?? "");
+    if (kanbanState.filters?.searchTerm !== modalSearchTerm) {
+      setModalSearchTerm(kanbanState.filters?.searchTerm ?? "");
     }
-  }, [filters?.searchTerm, isSearchModalOpen, modalSearchTerm]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kanbanState.filters?.searchTerm]);
 
   const handleOpenNewTaskModal = () => {
     dispatch({ type: "OPEN_TASK_MODAL", payload: null });
   };
-  
+
   const handleModalSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setModalSearchTerm(event.target.value);
   };
@@ -106,93 +90,64 @@ export function BottomNavigation() {
   const toggleFilterSidebar = () => {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
-
-  // Do not render on non-mobile screens
-  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-    // You can also use a hook like useMediaQuery for a more React-idiomatic way
-    return null;
-  }
-
+  
   return (
     <>
-      <div className="md:hidden fixed bottom-4 left-4 right-4 h-[64px] z-40 pointer-events-none">
-        
-        {/* Floating Navigation Bar */}
-        <div className="relative h-full w-full pointer-events-auto bg-background/80 backdrop-blur-lg rounded-2xl border border-border/80 shadow-lg">
-          <nav className="flex h-full items-center justify-around">
-            {/* Left Side Items */}
-            <div className="flex items-center justify-around w-full h-full">
-              <NavLink
-                href="/"
-                icon={Home}
-                label="Board"
-                isActive={pathname === "/"}
-              />
-              <NavLink
-                action={() => setIsSearchModalOpen(true)}
-                icon={Search}
-                label="Search"
-                isActive={isSearchModalOpen || (!!filters.searchTerm && filters.searchTerm.length > 0)}
-              />
-            </div>
+      {/* New Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 rounded-t-3xl bg-background px-4 pt-3 pb-6 shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden">
+        <div className="relative grid grid-cols-5 items-center text-center max-w-md mx-auto">
+          
+          <NavItem href="/" label="Board" isActive={pathname === "/"}>
+            <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
+            </svg>
+          </NavItem>
 
-            {/* Spacer for central button */}
-            <div className="w-[72px] shrink-0"></div>
-
-            {/* Right Side Items */}
-            <div className="flex items-center justify-around w-full h-full">
-              <NavLink
-                action={toggleFilterSidebar}
-                icon={SlidersHorizontal}
-                label="Filter"
-                isActive={kanbanState.isFilterSidebarOpen}
-              />
-              
-              {authLoading ? (
-                 <div className="flex flex-1 h-full flex-col items-center justify-center gap-1 w-16 text-muted-foreground/50">
-                    <ProfileIcon className="h-6 w-6" />
-                    <span className="text-xs">Guest</span>
-                 </div>
-              ) : isGuest ? (
-                 <NavLink
-                  href="/profile"
-                  icon={ProfileIcon}
-                  label="Guest"
-                  isActive={pathname === "/profile"}
-                />
-              ) : (
-                <NavLink
-                  href="/auth/signin"
-                  icon={LogIn}
-                  label="Start"
-                  isActive={pathname.startsWith("/auth")}
-                />
-              )}
-            </div>
-          </nav>
-        </div>
-        
-        {/* Notch for the central button */}
-        <div
-          className="absolute left-1/2 top-0 h-[30px] w-[72px] -translate-x-1/2 transform"
-          style={{ clipPath: 'path("M 0 30 C 4.5 30 4.5 0 8 0 L 64 0 C 67.5 0 67.5 30 72 30 L 0 30 Z")' }}
-        >
-          <div className="h-full w-full bg-background" />
-        </div>
-
-        {/* Raised Central Button */}
-        <div className="absolute left-1/2 top-[-24px] -translate-x-1/2 transform">
-          <Button
-            onClick={handleOpenNewTaskModal}
-            className="h-[56px] w-[56px] rounded-full shadow-lg"
-            aria-label="Add new task"
+          <NavItem 
+            action={() => setIsSearchModalOpen(true)} 
+            label="Search" 
+            isActive={isSearchModalOpen || (!!kanbanState.filters.searchTerm && kanbanState.filters.searchTerm.length > 0)}
           >
-            <Plus className="h-8 w-8 text-primary-foreground" />
-          </Button>
+            <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M18 10.5a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+            </svg>
+          </NavItem>
+          
+          {/* Center Plus Button Placeholder & Button */}
+          <div className="relative">
+            <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
+              <button
+                onClick={handleOpenNewTaskModal}
+                className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-xl flex items-center justify-center hover:bg-primary/90 transition"
+                aria-label="Add new task"
+              >
+                <svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <NavItem 
+            action={toggleFilterSidebar} 
+            label="Filter" 
+            isActive={kanbanState.isFilterSidebarOpen}
+          >
+            <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 10h12M9 15h6" />
+            </svg>
+          </NavItem>
+
+          <NavItem href="/profile" label="Guest" isActive={pathname === "/profile"}>
+            <svg className="w-6 h-6 mb-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a8.25 8.25 0 0115 0" />
+            </svg>
+          </NavItem>
+
         </div>
-
       </div>
-
+      
+      {/* Search Modal (remains unchanged) */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -217,6 +172,7 @@ export function BottomNavigation() {
                   className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                   onClick={() => {
                     setModalSearchTerm("");
+                    dispatch({ type: "SET_FILTERS", payload: { searchTerm: "" } });
                   }}
                 >
                   <XCircle className="h-4 w-4" />
