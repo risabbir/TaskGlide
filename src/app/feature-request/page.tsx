@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -8,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { Send, Github, Lightbulb } from "lucide-react";
 import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
 
 export default function FeatureRequestPage() {
   useEffect(() => {
@@ -32,8 +31,9 @@ export default function FeatureRequestPage() {
             </p>
           </div>
 
-          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-md border space-y-8">
-            <div>
+          <div className="space-y-8">
+            {/* Form Card */}
+            <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-md border">
                 <div className="flex items-start gap-4">
                   <Lightbulb className="h-8 w-8 text-primary shrink-0 mt-1" />
                   <div>
@@ -86,25 +86,21 @@ export default function FeatureRequestPage() {
                 </form>
             </div>
 
-            <Separator />
+            {/* GitHub Info Alert */}
+            <Alert variant="default" className="bg-accent/50 border-accent text-accent-foreground">
+              <Github className="h-5 w-5 !text-primary mt-0.5" />
+              <AlertTitle className="font-semibold text-foreground">Bug Reports & Community</AlertTitle>
+              <AlertDescription className="text-accent-foreground/90">
+                For technical issues or bug reports, please head over to our{' '}
+                <Link href={GITHUB_URL} legacyBehavior>
+                  <a target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline-offset-4 hover:underline">
+                    GitHub repository
+                  </a>
+                </Link>
+                . If you enjoy using {APP_NAME}, consider giving it a star—it helps a lot! ⭐
+              </AlertDescription>
+            </Alert>
 
-            <div>
-                <div className="flex items-start gap-4">
-                  <Github className="h-8 w-8 text-primary shrink-0" />
-                  <div>
-                      <h3 className="text-xl font-semibold text-foreground mb-1">Bug Reports & Community</h3>
-                      <p className="text-muted-foreground">
-                        For technical issues or bug reports, please head over to our{' '}
-                        <Link href={GITHUB_URL} legacyBehavior>
-                          <a target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline-offset-4 hover:underline">
-                            GitHub repository
-                          </a>
-                        </Link>
-                        . If you enjoy using {APP_NAME}, consider giving it a star—it helps a lot! ⭐
-                      </p>
-                  </div>
-                </div>
-            </div>
           </div>
         </div>
       </main>
