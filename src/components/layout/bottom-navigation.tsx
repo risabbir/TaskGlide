@@ -165,7 +165,7 @@ export function BottomNavigation() {
             className="h-[64px] w-[64px] rounded-full shadow-lg"
             aria-label="Add new task"
           >
-            <Plus className="h-[25px] w-[25px] text-primary-foreground" />
+            <Plus className="h-9 w-9 text-primary-foreground" />
           </Button>
         </div>
 
