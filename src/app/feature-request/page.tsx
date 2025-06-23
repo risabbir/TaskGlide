@@ -27,7 +27,7 @@ export default function FeatureRequestPage() {
           <Card className="shadow-xl border">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl flex items-center">
-                Suggest an Improvement for {APP_NAME}
+                Submit a Feature Request
               </CardTitle>
               <CardDescription>
                 This form submits your request directly to our team via Formspree.
@@ -84,11 +84,11 @@ export default function FeatureRequestPage() {
                     required
                     className="flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="" disabled>Select priority level</option>
-                    <option value="Low">Low</option>
-                    <option value="Nice to have">Nice to have</option>
-                    <option value="High">High</option>
-                    <option value="Critical">Critical</option>
+                    <option value="" disabled>How important is this for you?</option>
+                    <option value="Low">Low - A minor improvement</option>
+                    <option value="Nice to have">Nice to Have - Would improve my experience</option>
+                    <option value="High">High - Important for my workflow</option>
+                    <option value="Critical">Critical - A key feature is missing or broken</option>
                   </select>
                 </div>
 
