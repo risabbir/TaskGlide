@@ -60,7 +60,9 @@ export function SignUpForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-2xl">Create an Account</CardTitle>
+        <CardTitle>
+          <h1 className="text-2xl">Create an Account</h1>
+        </CardTitle>
         <CardDescription>Enter your details to get started.</CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -160,5 +162,3 @@ export function SignUpForm() {
     </Card>
   );
 }
-
-    

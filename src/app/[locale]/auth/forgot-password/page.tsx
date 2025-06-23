@@ -13,8 +13,8 @@ export default function ForgotPasswordPage() {
   const tApp = useTranslations("App");
 
   useEffect(() => {
-    document.title = t("forgotPasswordTitle", { appName: tApp("name") });
-  }, [t, tApp]);
+    document.title = `Forgot Password | ${tApp("name")}`;
+  }, [tApp]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">

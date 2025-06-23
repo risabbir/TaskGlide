@@ -77,7 +77,7 @@ const faqs = [
 
 export default function FAQPage() {
   useEffect(() => {
-    document.title = `FAQ | ${APP_NAME}`;
+    document.title = `Frequently Asked Questions | ${APP_NAME}`;
   }, []);
 
   return (

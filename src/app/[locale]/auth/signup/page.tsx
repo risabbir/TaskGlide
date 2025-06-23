@@ -13,8 +13,8 @@ export default function SignUpPage() {
   const tApp = useTranslations("App");
 
   useEffect(() => {
-    document.title = t("signUpTitle", { appName: tApp("name") });
-  }, [t, tApp]);
+    document.title = `Sign Up | ${tApp("name")}`;
+  }, [tApp]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">

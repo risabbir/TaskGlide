@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -12,6 +12,7 @@ import { QuickAddTask } from "@/components/kanban/quick-add-task";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { APP_NAME } from "@/lib/constants";
 
 // Dynamic imports for components that might be heavy or not immediately needed
 const TaskModal = dynamic(() => import('@/components/task/task-modal').then(mod => mod.TaskModal), {
@@ -98,8 +99,13 @@ function PageContent() {
     dispatch({ type: "TOGGLE_FILTER_SIDEBAR" });
   };
 
+  useEffect(() => {
+    document.title = `Kanban Board | ${APP_NAME}`;
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <h1 className="sr-only">TaskGlide Kanban Board</h1>
       <Header />
       <QuickActionsBar />
       <main className="flex-grow flex flex-col overflow-hidden">

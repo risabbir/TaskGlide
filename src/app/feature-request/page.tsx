@@ -15,7 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function FeatureRequestPage() {
   useEffect(() => {
-    document.title = `Suggest an Improvement | ${APP_NAME}`;
+    document.title = `Suggest a Feature | ${APP_NAME}`;
   }, []);
 
   return (
@@ -24,10 +24,19 @@ export default function FeatureRequestPage() {
       <main className="flex-grow py-8 px-4">
         <div className="max-w-2xl mx-auto space-y-8">
           
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              Suggest an Improvement
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Have an idea to make {APP_NAME} better? We'd love to hear it.
+            </p>
+          </div>
+
           <Card className="shadow-xl border">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl flex items-center">
-                Submit a Feature Request
+                Your Feature Idea
               </CardTitle>
               <CardDescription>
                 This form submits your request directly to our team via Formspree.

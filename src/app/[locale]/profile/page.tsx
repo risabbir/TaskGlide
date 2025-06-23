@@ -21,10 +21,8 @@ export default function ProfilePage() {
 
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      document.title = t("title", { appName: tApp("name") });
-    }
-  }, [t, tApp]);
+    document.title = `Your Profile | ${tApp("name")}`;
+  }, [tApp]);
 
   useEffect(() => {
     if (!loading && !user) { 
