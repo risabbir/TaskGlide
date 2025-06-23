@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, SlidersHorizontal, Plus, Search, User as GuestIcon } from "lucide-react";
+import { Home, SlidersHorizontal, Plus, Search, User as GuestIcon, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKanban } from "@/lib/store";
 import { useAuth } from "@/contexts/auth-context";
@@ -81,7 +81,7 @@ export function BottomNavigation() {
   } else if (isGuest) { // Always show Guest/Profile icon if guest mode is active or potentially active
     navItems.push({ href: "/profile", label: "Guest", icon: GuestIcon, isActiveOverride: pathname === "/profile" });
   } else { // If not loading and not a guest (e.g. no guestId yet), link to sign-in to start guest session
-    navItems.push({ href: "/auth/signin", label: "Start", icon: GuestIcon, isActiveOverride: pathname.startsWith("/auth") });
+    navItems.push({ href: "/auth/signin", label: "Start", icon: LogIn, isActiveOverride: pathname.startsWith("/auth") });
   }
 
 
@@ -120,17 +120,17 @@ export function BottomNavigation() {
               "group flex flex-col items-center justify-center h-full w-full p-1.5 rounded-lg",
               "transition-all duration-150 ease-in-out",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background",
-              isActive ? "bg-primary/10" : "hover:bg-muted/20 active:bg-muted/30 active:scale-95"
+              isActive ? "bg-primary/10" : "hover:bg-accent/90 active:bg-accent active:scale-95"
             );
 
             const iconClasses = cn(
                 "h-5 w-5 mb-0.5 transition-all duration-150 ease-in-out group-hover:scale-110",
-                isActive ? "text-primary scale-105" : "text-muted-foreground group-hover:text-primary/90"
+                isActive ? "text-primary scale-105" : "text-muted-foreground group-hover:text-primary"
             );
             
             const labelClasses = cn(
                 "text-[11px] leading-tight tracking-tight transition-colors duration-150 ease-in-out",
-                isActive ? "text-primary font-semibold" : "text-muted-foreground group-hover:text-primary/90"
+                isActive ? "text-primary font-semibold" : "text-muted-foreground group-hover:text-primary"
             );
 
             const buttonContent = (
