@@ -68,7 +68,6 @@ const FocusBatchModalSkeleton = () => (
 function QuickActionsBar() {
   const [isFocusBatchModalOpen, setIsFocusBatchModalOpen] = useState(false);
   return (
-    // Container and specific padding for QuickActionsBar if different from root layout
     <div className="py-3"> 
       <div className="bg-card p-3 sm:p-4 rounded-xl shadow-lg border flex flex-col sm:flex-row items-center gap-3">
         <div className="w-full sm:flex-grow">
@@ -115,9 +114,7 @@ function PageContent() {
   }
 
   return (
-    // Removed the outer container div from here, as RootLayout now handles it.
-    // This div now represents the direct content of the page within RootLayout's container.
-    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height,_4rem)_-_var(--bottom-nav-height,_4rem))] bg-background"> {/* Adjust min-height if header/footer heights change */}
+    <div className="flex flex-col min-h-[calc(100vh_-_var(--header-height,_4rem)_-_var(--bottom-nav-height,_4rem))] bg-background">
       <Header />
       {(!authLoading || guestId) && (
           <>
@@ -161,6 +158,10 @@ function PageContent() {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = `${APP_NAME} | Your Personal Task Board`;
+  }, []);
+
   return (
       <PageContent />
   );

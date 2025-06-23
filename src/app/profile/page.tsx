@@ -67,7 +67,7 @@ export default function ProfilePage() {
       <div className="flex flex-grow flex-col items-center bg-gradient-to-br from-background via-secondary/5 to-background dark:from-background dark:via-card/10 dark:to-background py-8">
         <div className="w-full max-w-2xl space-y-8"> 
           <div className="flex flex-col items-center text-center mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl mt-3">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl mt-3">
               Guest User Information
             </h1>
             <p className="mt-2 text-md text-muted-foreground sm:text-lg max-w-xl">You are currently browsing and managing tasks as a guest.</p>

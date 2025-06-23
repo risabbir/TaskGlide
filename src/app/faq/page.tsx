@@ -83,10 +83,10 @@ export default function FAQPage() {
   return (
     <>
       <Header />
-      <main className="flex-grow py-8 px-4">
+      <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl mt-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl mt-4">
               Frequently Asked Questions
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -94,7 +94,7 @@ export default function FAQPage() {
             </p>
           </div>
           
-          <div className="bg-card text-card-foreground p-6 sm:p-8 rounded-xl shadow-md border">
+          <div className="bg-card text-card-foreground p-6 sm:p-8 rounded-xl shadow-sm border">
             <Accordion type="single" collapsible className="w-full space-y-3">
               {faqs.map((faq) => (
                 <AccordionItem value={faq.id} key={faq.id} className="border-b last:border-b-0">

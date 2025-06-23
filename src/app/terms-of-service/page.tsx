@@ -17,10 +17,10 @@ export default function TermsOfServicePage() {
   return (
     <>
       <Header />
-      <main className="flex-grow py-8 px-4">
+      <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl mt-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl mt-4">
               Terms of Service
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
             </p>
           </div>
 
-          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-md border space-y-8">
+          <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-sm border space-y-8">
             <Section title="1. Acceptance of Terms">
               By accessing and using {APP_NAME} (the "Service"), you accept and agree to be bound by the terms and provision of this agreement. Currently, the Service operates in a guest-only mode where data is stored in your browser's local storage. Your use of this Service constitutes acceptance of this agreement. If you do not agree to abide by these terms, please do not use this Service.
             </Section>

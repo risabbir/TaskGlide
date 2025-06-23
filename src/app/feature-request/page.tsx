@@ -22,7 +22,7 @@ export default function FeatureRequestPage() {
   return (
     <>
       <Header />
-      <main className="flex-grow py-8 px-4">
+      <main className="flex-grow py-8">
         <div className="max-w-2xl mx-auto space-y-8">
           
           <div className="text-center">
@@ -34,7 +34,7 @@ export default function FeatureRequestPage() {
             </p>
           </div>
 
-          <Card className="shadow-lg border">
+          <Card className="shadow-sm border">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl flex items-center">
                 Your Feature Idea
@@ -95,10 +95,10 @@ export default function FeatureRequestPage() {
                     className="flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="" disabled>How important is this for you?</option>
-                    <option value="Low">Low - A minor improvement</option>
-                    <option value="Nice to have">Nice to Have - Would improve my experience</option>
-                    <option value="High">High - Important for my workflow</option>
-                    <option value="Critical">Critical - A key feature is missing or broken</option>
+                    <option value="Low">Low - A minor improvement, but nice to have.</option>
+                    <option value="Medium">Medium - Would improve my experience.</option>
+                    <option value="High">High - Very useful, would improve my daily workflow.</option>
+                    <option value="Critical">Critical - A key feature is missing for my use case.</option>
                   </select>
                 </div>
 
