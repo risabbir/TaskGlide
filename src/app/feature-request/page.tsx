@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
-import { Send, Github } from "lucide-react";
+import { Send, Github, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 
@@ -24,7 +24,7 @@ export default function FeatureRequestPage() {
       <main className="flex-grow py-8">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Suggest an Improvement
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -34,8 +34,13 @@ export default function FeatureRequestPage() {
 
           <div className="bg-card text-card-foreground p-6 sm:p-10 rounded-xl shadow-md border space-y-8">
             <div>
-                <h2 className="text-2xl font-semibold mb-2">Your Feature Idea</h2>
-                <p className="text-muted-foreground mb-6">This form submits your request directly to our team via Formspree.</p>
+                <div className="flex items-start gap-4">
+                  <Lightbulb className="h-8 w-8 text-primary shrink-0 mt-1" />
+                  <div>
+                      <h2 className="text-2xl font-semibold mb-1">Your Feature Idea</h2>
+                      <p className="text-muted-foreground mb-6">This form submits your request directly to our team via Formspree.</p>
+                  </div>
+                </div>
                 <form action="https://formspree.io/f/mjkraydw" method="POST" className="space-y-6">
                     <div className="space-y-2">
                     <Label htmlFor="featureTitle" className="text-base font-medium">Feature Title</Label>
@@ -84,11 +89,10 @@ export default function FeatureRequestPage() {
             <Separator />
 
             <div>
-                <h2 className="text-2xl font-semibold mb-4">Bug Reports & Community</h2>
                 <div className="flex items-start gap-4">
                   <Github className="h-8 w-8 text-primary shrink-0" />
                   <div>
-                      <h3 className="font-semibold text-foreground mb-1">Found a Bug or Love the App?</h3>
+                      <h3 className="text-xl font-semibold text-foreground mb-1">Bug Reports & Community</h3>
                       <p className="text-muted-foreground">
                         For technical issues or bug reports, please head over to our{' '}
                         <Link href={GITHUB_URL} legacyBehavior>
