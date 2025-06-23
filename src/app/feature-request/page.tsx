@@ -89,10 +89,14 @@ export default function FeatureRequestPage() {
 
             {/* What's Next Alert */}
             <Alert variant="default" className="bg-accent/50 border-accent text-accent-foreground">
-              <Send className="h-5 w-5 !text-primary mt-0.5" />
+              {/* Icon removed as per request */}
               <AlertTitle className="font-semibold text-foreground">What Happens Next?</AlertTitle>
               <AlertDescription className="text-accent-foreground/90">
-                After submitting, you'll see a confirmation that your request was sent. Our team reviews every suggestion and prioritizes them based on user value and our goals for {APP_NAME}. If you provide an email, we may contact you for more details.
+                <ul className="list-disc list-outside space-y-1.5 pl-5 mt-2">
+                  <li>After submitting, you'll see a confirmation that your request was sent via Formspree.</li>
+                  <li>Our team reviews every suggestion and prioritizes them based on user value and our goals for {APP_NAME}.</li>
+                  <li>If you provide an email, we may contact you for more details about your idea.</li>
+                </ul>
               </AlertDescription>
             </Alert>
             
