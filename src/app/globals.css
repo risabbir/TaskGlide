@@ -3,6 +3,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .text-priority-low {
+    color: hsl(var(--priority-low));
+  }
+  .text-priority-medium {
+    color: hsl(var(--priority-medium));
+  }
+  .text-priority-high {
+    color: hsl(var(--priority-high));
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -32,6 +44,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 225 66% 61%; /* Ring color based on new primary */
+    --radius: 0.5rem;
 
     /* Chart colors */
     --chart-1: 225 66% 61%; /* primary */
@@ -84,6 +97,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 225 66% 71%; /* Ring color based on new primary for dark mode */
+    --radius: 0.5rem;
     
     /* Chart colors for dark theme */
     --chart-1: 225 66% 71%;   /* primary dark */
