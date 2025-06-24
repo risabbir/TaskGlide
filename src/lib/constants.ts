@@ -19,9 +19,9 @@ export const DEFAULT_COLUMNS: Column[] = [
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];
 
 export const PRIORITY_STYLES: Record<Priority, { icon: React.ElementType; colorClass: string; label: string }> = {
-  low: { icon: ArrowDown, colorClass: "text-chart-3", label: "Low" },
-  medium: { icon: Minus, colorClass: "text-chart-5", label: "Medium" },
-  high: { icon: ArrowUp, colorClass: "text-destructive", label: "High" },
+  low: { icon: ArrowDown, colorClass: "text-priority-low", label: "Low" },
+  medium: { icon: Minus, colorClass: "text-priority-medium", label: "Medium" },
+  high: { icon: ArrowUp, colorClass: "text-priority-high", label: "High" },
 };
 
 export const RECURRENCE_ICON = Repeat;
