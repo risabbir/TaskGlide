@@ -40,7 +40,7 @@
     --chart-2: 0 84.2% 60.2%;  /* destructive */
     --chart-3: 142.1 70.6% 45.3%; /* a green */
     --chart-4: 262.1 83.3% 57.8%; /* a purple */
-    --chart-5: 35.8 91.7% 50%;   /* an orange */
+    --chart-5: 45 95% 58%;   /* a yellow */
 
     /* Sidebar specific theme variables (adjusted for new theme) */
     --sidebar-background: 210 40% 98%; /* Slightly off-white */
@@ -87,7 +87,7 @@
     --chart-2: 0 70% 50%;    /* brighter destructive red for dark */
     --chart-3: 142.1 60.6% 55.3%;   /* a lighter green for dark */
     --chart-4: 262.1 73.3% 67.8%;   /* a lighter purple for dark */
-    --chart-5: 30.8 81.7% 60%;    /* a lighter orange for dark */
+    --chart-5: 45 90% 65%;    /* a lighter yellow for dark */
     
     --sidebar-background: 222.2 80% 3.9%; /* Darker for sidebar */
     --sidebar-foreground: 210 40% 98%;
