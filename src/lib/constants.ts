@@ -1,4 +1,3 @@
-
 import type { Column, Priority, FilterState, SortState } from "@/lib/types";
 import { ListTodo, Flame, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
@@ -40,8 +39,3 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   dueDateEnd: undefined,
   searchTerm: "",
 };
-
-
-
-
-
