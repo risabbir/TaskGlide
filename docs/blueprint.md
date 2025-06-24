@@ -1,4 +1,4 @@
-# **App Name**: KanvasAI
+# **App Name**: TaskGlide
 
 ## Core Features:
 
