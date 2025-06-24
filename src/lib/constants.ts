@@ -19,8 +19,8 @@ export const DEFAULT_COLUMNS: Column[] = [
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];
 
 export const PRIORITY_STYLES: Record<Priority, { icon: React.ElementType; colorClass: string; label: string }> = {
-  low: { icon: ArrowDown, colorClass: "text-primary", label: "Low" },
-  medium: { icon: Minus, colorClass: "text-orange-500", label: "Medium" },
+  low: { icon: ArrowDown, colorClass: "text-green-500", label: "Low" },
+  medium: { icon: Minus, colorClass: "text-yellow-500", label: "Medium" },
   high: { icon: ArrowUp, colorClass: "text-destructive", label: "High" },
 };
 
@@ -40,6 +40,7 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   dueDateEnd: undefined,
   searchTerm: "",
 };
+
 
 
 
