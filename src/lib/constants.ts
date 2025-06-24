@@ -1,3 +1,4 @@
+
 import type { Column, Priority, FilterState, SortState } from "@/lib/types";
 import { ListTodo, Flame, CheckCircle2, ArrowDown, Minus, ArrowUp, Repeat, Link as LinkIcon } from "lucide-react";
 
@@ -18,8 +19,8 @@ export const DEFAULT_COLUMNS: Column[] = [
 export const PRIORITIES: Priority[] = ["low", "medium", "high"];
 
 export const PRIORITY_STYLES: Record<Priority, { icon: React.ElementType; colorClass: string; label: string }> = {
-  low: { icon: ArrowDown, colorClass: "text-green-500", label: "Low" },
-  medium: { icon: Minus, colorClass: "text-yellow-500", label: "Medium" },
+  low: { icon: ArrowDown, colorClass: "text-chart-3", label: "Low" },
+  medium: { icon: Minus, colorClass: "text-chart-5", label: "Medium" },
   high: { icon: ArrowUp, colorClass: "text-destructive", label: "High" },
 };
 
