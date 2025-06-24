@@ -1,4 +1,3 @@
-
 import type {Metadata, Viewport} from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
@@ -13,6 +12,9 @@ import { BackToTopButton } from '@/components/layout/back-to-top-button';
 export const metadata: Metadata = {
   title: APP_NAME,
   description: 'Comprehensive Task Management Tool.',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export const viewport: Viewport = {
