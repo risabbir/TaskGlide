@@ -18,7 +18,7 @@ This version operates in a **Guest-Only Mode**, meaning you can get started inst
 
 Experience TaskGlide in action. No sign-up required.
 
-**[View TaskGlide Live](https://your-live-link-here.com)**
+**[View TaskGlide Live](https://task-glide.vercel.app/)**
 
 
 ---
@@ -73,7 +73,7 @@ TaskGlide is built with a modern, performant, and type-safe technology stack:
 
 Have an idea to make TaskGlide even better? We'd love to hear it.
 
-**[Submit a Feature Request or Suggestion](/feature-request)**
+**[Submit a Feature Request or Suggestion](https://task-glide.vercel.app/feature-request)**
 
 ---
 
