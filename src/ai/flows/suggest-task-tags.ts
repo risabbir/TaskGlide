@@ -75,7 +75,10 @@ const suggestTaskTagsFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[suggestTaskTagsFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; // For non-retryable errors, we still throw
+          return {
+            tags: [],
+            error: `AI Tag Suggestion Error: ${error.message || 'Unknown non-retryable error'}`
+          };
         }
       }
 
@@ -88,21 +91,10 @@ const suggestTaskTagsFlow = ai.defineFlow(
     }
 
     const finalErrorMessage = `Failed to suggest task tags after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
-    const wasRetryableFailure = lastError && (
-        String(lastError.message || lastError).toLowerCase().includes('503') ||
-        String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
-        String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
-        String(lastError.message || lastError).toLowerCase().includes('internal error') ||
-        String(lastError.message || lastError).toLowerCase().includes('timeout') ||
-        String(lastError.message || lastError).toLowerCase().includes('malformed response')
-    );
-
-    if (wasRetryableFailure) {
-        console.warn(`[suggestTaskTagsFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
-        return { tags: [], error: finalErrorMessage }; // Return empty tags and error
-    } else {
-        console.error(`[suggestTaskTagsFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
-        throw lastError || new Error(finalErrorMessage);
-    }
+    console.warn(`[suggestTaskTagsFlow] ${finalErrorMessage}`);
+    return { 
+        tags: [], 
+        error: finalErrorMessage 
+    };
   }
 );
