@@ -134,7 +134,7 @@ const suggestFocusBatchFlow = ai.defineFlow(
 
       attempts++;
       if (attempts < maxAttempts) {
-        const delay = baseDelayMs * Math.pow(2, attempts -1);
+        const delay = baseDelayMs * Math.pow(2, attempts - 1);
         console.log(`[suggestFocusBatchFlow] Retrying in ${delay / 1000}s (attempt ${attempts + 1}/${maxAttempts})...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
