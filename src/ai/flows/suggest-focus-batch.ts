@@ -125,7 +125,10 @@ const suggestFocusBatchFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[suggestFocusBatchFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; // For non-retryable errors, we still throw
+          return {
+            suggestions: [],
+            error: `AI Focus Suggestion Error: ${error.message || 'Unknown non-retryable error'}`
+          };
         }
       }
 
@@ -138,22 +141,10 @@ const suggestFocusBatchFlow = ai.defineFlow(
     }
 
     const finalErrorMessage = `Failed to get AI suggestions after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
-    const wasRetryableFailure = lastError && (
-        String(lastError.message || lastError).toLowerCase().includes('503') ||
-        String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
-        String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
-        String(lastError.message || lastError).toLowerCase().includes('internal error') ||
-        String(lastError.message || lastError).toLowerCase().includes('timeout') ||
-        String(lastError.message || lastError).toLowerCase().includes('malformed response')
-    );
-
-    if (wasRetryableFailure) {
-        console.warn(`[suggestFocusBatchFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
-        return { suggestions: [], error: finalErrorMessage }; // Return empty suggestions and error
-    } else {
-        console.error(`[suggestFocusBatchFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
-        throw lastError || new Error(finalErrorMessage); // Still throw for truly unexpected/non-retryable errors
-    }
+    console.warn(`[suggestFocusBatchFlow] ${finalErrorMessage}`);
+    return { 
+        suggestions: [], 
+        error: finalErrorMessage 
+    };
   }
 );
-
