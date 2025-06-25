@@ -75,7 +75,11 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
           // Retryable error
         } else {
           console.error(`[enhanceTaskDescriptionFlow] Non-retryable error encountered on attempt ${attempts + 1}:`, error);
-          throw error; // For non-retryable errors, we still throw
+          // For non-retryable errors, return immediately with the error and original description
+          return {
+            enhancedDescription: input.existingDescription,
+            error: `AI Description Enhancement Error: ${error.message || 'Unknown non-retryable error'}`
+          };
         }
       }
 
@@ -88,23 +92,10 @@ const enhanceTaskDescriptionFlow = ai.defineFlow(
     }
 
     const finalErrorMessage = `Failed to enhance task description after ${maxAttempts} attempts. Last error: ${lastError?.message || String(lastError) || 'Unknown error'}`;
-    const wasRetryableFailure = lastError && (
-        String(lastError.message || lastError).toLowerCase().includes('503') ||
-        String(lastError.message || lastError).toLowerCase().includes('overloaded') ||
-        String(lastError.message || lastError).toLowerCase().includes('service unavailable') ||
-        String(lastError.message || lastError).toLowerCase().includes('internal error') ||
-        String(lastError.message || lastError).toLowerCase().includes('timeout') ||
-        String(lastError.message || lastError).toLowerCase().includes('malformed response')
-    );
-
-    if (wasRetryableFailure) {
-        console.warn(`[enhanceTaskDescriptionFlow] ${finalErrorMessage} (All retries exhausted for a potentially transient error)`);
-        return { enhancedDescription: input.existingDescription, error: finalErrorMessage }; // Return original description and error
-    } else {
-        // This case should ideally be caught by the non-retryable throw above.
-        // If it reaches here for a non-retryable error after loop, something is wrong.
-        console.error(`[enhanceTaskDescriptionFlow] ${finalErrorMessage} (Non-retryable or unexpected final error)`);
-        throw lastError || new Error(finalErrorMessage);
-    }
+    console.warn(`[enhanceTaskDescriptionFlow] ${finalErrorMessage}`);
+    return { 
+        enhancedDescription: input.existingDescription, 
+        error: finalErrorMessage 
+    };
   }
 );
