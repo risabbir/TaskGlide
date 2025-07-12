@@ -14,7 +14,7 @@ This version operates in a **Guest-Only Mode**, meaning you can get started inst
 
 ---
 
-## Live Demo
+## Live
 
 Experience TaskGlide in action. No sign-up required.
 
